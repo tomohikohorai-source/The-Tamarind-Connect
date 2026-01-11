@@ -4,7 +4,7 @@ import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { db, doc, updateDoc } from '../firebase';
 
@@ -41,7 +41,9 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     const fortuneDate = parseISO(profile.lastFortuneDate);
     if (!isSameDay(fortuneDate, new Date())) return null;
     try {
-      return JSON.parse(profile.lastFortuneResult);
+      // Basic cleanup for stored JSON just in case
+      const stored = profile.lastFortuneResult;
+      return JSON.parse(stored);
     } catch {
       return null;
     }
@@ -53,19 +55,49 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Stronger instruction to ensure strictly JSON and strictly English
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: "Generate a 'Daily Resident Fortune' for a condominium community app. The tone should be warm, friendly, and encourage social interaction between neighbors. Return the result in JSON format. The content MUST be written in English. Properties: rank (e.g., 'Super Lucky', 'Wonderful', 'Radiant', 'Positive'), message (a friendly message to the resident in English, around 150-250 characters. Include specific advice for connecting with neighbors), luckyPlace (One of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (a matching emoji).",
-        config: { responseMimeType: "application/json" },
+        contents: "Task: Generate a 'Daily Resident Fortune' in English for a condominium community app. Tone: Warm, friendly, neighborly. Response format: STRICT JSON ONLY. Do not include markdown formatting or backticks. Properties: rank (e.g., 'Super Lucky', 'Wonderful', 'Radiant', 'Positive'), message (friendly English message, 150-250 chars, encouraging neighbor connection), luckyPlace (One of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (one matching emoji). Language: ENGLISH ONLY.",
+        config: { 
+          responseMimeType: "application/json",
+          temperature: 0.7 
+        },
       });
 
-      const result: FortuneResult = JSON.parse(response.text || "{}");
+      const rawText = response.text || "{}";
+      // Robust cleaning for mobile: Remove potential markdown wrappers
+      const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      
+      let result: FortuneResult;
+      try {
+        result = JSON.parse(cleanedJson);
+      } catch (parseError) {
+        console.error("JSON Parse Error, falling back to basic result", parseError);
+        result = {
+          rank: "Good Day",
+          message: "A wonderful day awaits you and your family at the Tamarind. Keep smiling and say hello to your neighbors!",
+          luckyPlace: "Lobby",
+          emoji: "✨"
+        };
+      }
+
       const today = new Date().toISOString();
-      const updatedProfile = { ...profile, lastFortuneDate: today, lastFortuneResult: JSON.stringify(result) };
-      await updateDoc(doc(db, "users", profile.uid), { lastFortuneDate: today, lastFortuneResult: JSON.stringify(result) });
+      const updatedProfile = { 
+        ...profile, 
+        lastFortuneDate: today, 
+        lastFortuneResult: JSON.stringify(result) 
+      };
+
+      await updateDoc(doc(db, "users", profile.uid), { 
+        lastFortuneDate: today, 
+        lastFortuneResult: JSON.stringify(result) 
+      });
+
       onUpdateProfile(updatedProfile);
     } catch (error) {
-      console.error(error);
+      console.error("Fortune API Error:", error);
+      alert("Communication error. Please check your internet connection and try again.");
     } finally {
       setIsFortuneLoading(false);
     }
@@ -153,12 +185,21 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
       {/* Daily Fortune */}
       <section className="animate-fade-in">
         {!currentFortune ? (
-          <button onClick={handleDrawFortune} disabled={isFortuneLoading} className="w-full p-6 bg-gradient-to-br from-pink-400 to-orange-300 rounded-[32px] shadow-xl text-white active:scale-[0.98] transition-all flex items-center justify-between">
-            <div className="text-left"><span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1 opacity-80">Resident Fortune</span><span className="text-lg font-black">{isFortuneLoading ? 'Generating Luck...' : 'Draw Today\'s Fortune'}</span></div>
-            <div className="bg-white/20 p-4 rounded-3xl"><Wand2 size={24} className={isFortuneLoading ? 'animate-spin' : ''} /></div>
+          <button 
+            onClick={handleDrawFortune} 
+            disabled={isFortuneLoading} 
+            className="w-full p-6 bg-gradient-to-br from-pink-400 to-orange-300 rounded-[32px] shadow-xl text-white active:scale-[0.98] transition-all flex items-center justify-between"
+          >
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1 opacity-80">Resident Fortune</span>
+              <span className="text-lg font-black">{isFortuneLoading ? 'Connecting...' : 'Draw Today\'s Fortune'}</span>
+            </div>
+            <div className="bg-white/20 p-4 rounded-3xl">
+              {isFortuneLoading ? <Loader2 size={24} className="animate-spin" /> : <Wand2 size={24} />}
+            </div>
           </button>
         ) : (
-          <div className="bg-white border-2 border-pink-100 rounded-[40px] shadow-sm p-6 flex items-start gap-5 transition-all">
+          <div className="bg-white border-2 border-pink-100 rounded-[40px] shadow-sm p-6 flex items-start gap-5 transition-all animate-slide-up">
             <div className="w-16 h-16 bg-pink-50 rounded-[24px] flex items-center justify-center text-4xl shrink-0 mt-1">{currentFortune.emoji || '✨'}</div>
             <div className="flex-grow min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
@@ -167,7 +208,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
               </div>
               <p className={`text-sm font-bold text-gray-800 leading-snug transition-all ${isFortuneExpanded ? '' : 'line-clamp-2'}`}>{currentFortune.message}</p>
               {currentFortune.message?.length > 50 && (
-                <button onClick={() => setIsFortuneExpanded(!isFortuneExpanded)} className="text-[10px] font-black text-pink-500 uppercase mt-2 flex items-center gap-1">
+                <button onClick={() => setIsFortuneExpanded(!isFortuneExpanded)} className="text-[10px] font-black text-pink-500 uppercase mt-2 flex items-center gap-1 active:scale-95">
                   {isFortuneExpanded ? <><ChevronUp size={12}/> Close</> : <><ChevronDown size={12}/> Read More</> }
                 </button>
               )}
