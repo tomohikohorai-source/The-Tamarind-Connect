@@ -16,17 +16,20 @@ export interface Child {
 
 export interface UserProfile {
   uid: string;
+  customUserId: string;
   parentNickname: string;
   roomNumber: string;
   children: Child[];
   avatarIcon: string;
+  lastFortuneDate?: string;   // ISO date string
+  lastFortuneResult?: string; // JSON string of the fortune result
 }
 
 export interface Activity {
   id: string;
   userId: string;
-  parentNickname: string; // Denormalized for fast display
-  roomNumber: string;     // Denormalized for fast display
+  parentNickname: string;
+  roomNumber: string;
   parentAvatarIcon: string;
   location: LocationType;
   startTime: string; 

@@ -35,13 +35,9 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
     e.preventDefault();
     setError('');
 
-    let start: Date;
-    if (type === 'NOW') {
-      start = new Date();
-    } else {
-      const [sh, sm] = startTime.split(':').map(Number);
-      start = setMinutes(setHours(date, sh), sm);
-    }
+    // Use manually set or default startTime for both NOW and FUTURE types
+    const [sh, sm] = startTime.split(':').map(Number);
+    const start = setMinutes(setHours(date, sh), sm);
     
     const [eh, em] = endTime.split(':').map(Number);
     const end = setMinutes(setHours(date, eh), em);
@@ -100,6 +96,13 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 text-[10px] font-black bg-red-50 p-3 rounded-xl border border-red-100">
+            <AlertCircle size={14} />
+            <span>{error}</span>
+          </div>
+        )}
+
         <div>
           <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Select Area</label>
           <div className="grid grid-cols-3 gap-3">
@@ -165,7 +168,6 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
               <input
                 type="time"
                 value={startTime}
-                disabled={type === 'NOW' && !initialActivity}
                 max="20:00"
                 onChange={e => setStartTime(e.target.value)}
                 className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
@@ -204,6 +206,20 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
                 <span className="text-xs font-black uppercase tracking-tight">{child.nickname}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Memo (Optional)</label>
+          <div className="relative">
+            <MessageSquare className="absolute left-4 top-4 text-gray-300" size={18} />
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder="e.g. Bringing some snacks! / Let's play tag!"
+              rows={3}
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-3xl border-none outline-none font-medium text-sm text-gray-700 resize-none focus:ring-2 ring-pink-100"
+            />
           </div>
         </div>
 

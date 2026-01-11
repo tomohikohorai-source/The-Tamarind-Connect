@@ -37,6 +37,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
     if (isFormValid && auth.currentUser) {
       const profile: UserProfile = {
         uid: auth.currentUser.uid,
+        customUserId: auth.currentUser.displayName || 'unknown_user',
         parentNickname,
         roomNumber: block,
         children,

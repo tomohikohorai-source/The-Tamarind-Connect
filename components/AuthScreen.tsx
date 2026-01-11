@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../firebase';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
 import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 
 type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
@@ -37,9 +37,14 @@ export const AuthScreen: React.FC = () => {
 
     try {
       if (mode === 'LOGIN') {
-        await signInWithEmailAndPassword(auth, virtualEmail, password);
+        const userCredential = await signInWithEmailAndPassword(auth, virtualEmail, password);
+        // Ensure displayName is set even for old accounts if missing
+        if (!userCredential.user.displayName) {
+          await updateProfile(userCredential.user, { displayName: userId });
+        }
       } else {
-        await createUserWithEmailAndPassword(auth, virtualEmail, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, virtualEmail, password);
+        await updateProfile(userCredential.user, { displayName: userId });
       }
     } catch (err: any) {
       console.error("Auth Error:", err.code, err.message);
@@ -161,17 +166,6 @@ export const AuthScreen: React.FC = () => {
             {loading ? 'Processing...' : mode === 'LOGIN' ? <><LogIn size={18}/> Login</> : <><UserPlus size={18}/> Sign Up</>}
           </button>
         </form>
-
-        {mode === 'LOGIN' && (
-          <div className="mt-8 p-4 bg-orange-50 rounded-2xl border border-orange-100">
-            <p className="text-[10px] font-black text-orange-600 leading-relaxed uppercase tracking-tighter">
-              ⚠️ Password forgotten?
-            </p>
-            <p className="text-[9px] font-bold text-orange-400 mt-1 leading-normal">
-              For security reasons, please create a new account (Sign Up) and set up your profile again.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

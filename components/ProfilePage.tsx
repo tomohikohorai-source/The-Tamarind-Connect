@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserProfile, Activity, Child } from '../types';
 import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
-import { Home, Baby, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User } from 'lucide-react';
+import { Home, Baby, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Fingerprint } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 
@@ -87,9 +87,15 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
             <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate">
               {profile.parentNickname}
             </h2>
-            <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider">
-              <Home size={12} className="text-pink-300" /> Block {profile.roomNumber}
-            </p>
+            <div className="space-y-1">
+              <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider">
+                <Home size={12} className="text-pink-300" /> Block {profile.roomNumber}
+              </p>
+              {/* REMOVED 'uppercase' class below to preserve ID casing */}
+              <p className="text-pink-400 flex items-center gap-1 font-black text-[9px] tracking-widest bg-pink-50 px-2 py-0.5 rounded-full w-fit">
+                <User size={10} /> {profile.customUserId || 'Unknown ID'}
+              </p>
+            </div>
           </div>
         </div>
         {!isEditingProfile && (

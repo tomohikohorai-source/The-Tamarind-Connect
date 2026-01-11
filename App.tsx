@@ -30,7 +30,18 @@ const App: React.FC = () => {
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setProfile(userDoc.data() as UserProfile);
+          const userData = userDoc.data() as UserProfile;
+          
+          if (!userData.customUserId && user.displayName) {
+            userData.customUserId = user.displayName;
+            try {
+              await updateDoc(doc(db, "users", user.uid), { customUserId: user.displayName });
+            } catch (e) {
+              console.error("Failed to auto-patch customUserId:", e);
+            }
+          }
+          
+          setProfile(userData);
           setAppState('READY');
         } else {
           setAppState('SETUP');
@@ -124,7 +135,15 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-grow">
-        {activeTab === 'HOME' && <Timeline activities={activities} profile={profile} onEdit={setEditingActivity} onDelete={handleDeleteActivity} />}
+        {activeTab === 'HOME' && (
+          <Timeline 
+            activities={activities} 
+            profile={profile} 
+            onEdit={setEditingActivity} 
+            onDelete={handleDeleteActivity}
+            onUpdateProfile={setProfile}
+          />
+        )}
         {activeTab === 'PROFILE' && profile && (
           <ProfilePage 
             profile={profile} activities={activities} onLogout={handleLogout} 
