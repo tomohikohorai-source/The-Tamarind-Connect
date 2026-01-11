@@ -15,6 +15,10 @@ interface Props {
   onUpdateProfile: (profile: UserProfile) => void;
 }
 
+const AGE_OPTIONS = [
+  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16+"
+];
+
 export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, onEdit, onDelete, onUpdateProfile }) => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
@@ -52,7 +56,7 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
     setEditChildren([...editChildren, {
       id: crypto.randomUUID(),
       nickname: '',
-      age: '',
+      age: '3',
       gender: 'boy',
       intro: '',
       avatarIcon: AVATAR_ICONS.CHILDREN[0]
@@ -84,7 +88,7 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
               {profile.parentNickname}
             </h2>
             <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider">
-              <Home size={12} className="text-pink-300" /> Unit {profile.roomNumber}
+              <Home size={12} className="text-pink-300" /> Block {profile.roomNumber}
             </p>
           </div>
         </div>
@@ -181,13 +185,16 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
                         placeholder="Name"
                         className="flex-grow p-3 rounded-xl bg-gray-50 border-none text-xs font-bold outline-none" 
                       />
-                      <input 
-                        type="text" 
-                        value={child.age} 
-                        onChange={e => updateChild(child.id, { age: e.target.value })} 
-                        placeholder="Age"
-                        className="w-16 p-3 rounded-xl bg-gray-50 border-none text-xs font-bold outline-none" 
-                      />
+                      <div className="relative">
+                        <select 
+                          value={child.age} 
+                          onChange={e => updateChild(child.id, { age: e.target.value })}
+                          className="w-20 p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none appearance-none"
+                        >
+                          {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">YRS</div>
+                      </div>
                     </div>
 
                     <div className="flex gap-2">

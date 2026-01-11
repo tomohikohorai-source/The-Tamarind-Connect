@@ -118,7 +118,7 @@ const App: React.FC = () => {
         <h1 className="text-xl font-black text-pink-500 tracking-tighter uppercase">The Tamarind Connect</h1>
         {profile && (
           <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">
-            Unit {profile.roomNumber}
+            Block {profile.roomNumber}
           </div>
         )}
       </header>
@@ -146,15 +146,23 @@ const App: React.FC = () => {
       )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
-        <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4">
+        <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4 relative">
           <button onClick={() => setActiveTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Home size={24} /><span className="text-[10px] font-black uppercase">Home</span>
+            <Home size={22} /><span className="text-[9px] font-black uppercase">Home</span>
           </button>
-          <button onClick={() => setShowCheckIn(true)} className="flex flex-col items-center justify-center -translate-y-8 w-1/3">
-            <div className="w-16 h-16 bg-pink-400 rounded-[28px] flex items-center justify-center text-white shadow-2xl border-4 border-white"><PlusCircle size={32} /></div>
-          </button>
+          
+          <div className="w-1/3 flex justify-center">
+            <button 
+              onClick={() => setShowCheckIn(true)} 
+              className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"
+            >
+              <PlusCircle size={20} />
+              <span className="text-[10px] uppercase tracking-widest">Add Plans</span>
+            </button>
+          </div>
+
           <button onClick={() => setActiveTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <UserCircle size={24} /><span className="text-[10px] font-black uppercase">Profile</span>
+            <UserCircle size={22} /><span className="text-[9px] font-black uppercase">Profile</span>
           </button>
         </div>
       </nav>

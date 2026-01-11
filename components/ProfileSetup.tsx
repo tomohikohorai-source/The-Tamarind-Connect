@@ -9,11 +9,14 @@ interface Props {
   onComplete: (profile: UserProfile) => void;
 }
 
+const AGE_OPTIONS = [
+  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16+"
+];
+
 export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
   const [parentNickname, setParentNickname] = useState('');
   const [parentAvatar, setParentAvatar] = useState(AVATAR_ICONS.PARENTS[0]);
   const [block, setBlock] = useState<'3A' | '3B'>('3A');
-  const [unitPath, setUnitPath] = useState('');
   const [children, setChildren] = useState<Child[]>([]);
 
   const addChild = () => {
@@ -21,21 +24,21 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
     setChildren([...children, {
       id: crypto.randomUUID(),
       nickname: '',
-      age: '',
+      age: '3',
       gender: 'boy',
       intro: '',
       avatarIcon: AVATAR_ICONS.CHILDREN[0]
     }]);
   };
 
-  const isFormValid = parentNickname.trim().length > 0 && unitPath.trim().length > 0 && children.length > 0 && children.every(c => c.nickname.trim().length > 0 && c.age.trim().length > 0);
+  const isFormValid = parentNickname.trim().length > 0 && children.length > 0 && children.every(c => c.nickname.trim().length > 0);
 
   const handleSubmit = async () => {
     if (isFormValid && auth.currentUser) {
       const profile: UserProfile = {
         uid: auth.currentUser.uid,
         parentNickname,
-        roomNumber: `${block}-${unitPath}`,
+        roomNumber: block,
         children,
         avatarIcon: parentAvatar
       };
@@ -60,9 +63,19 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
             </div>
             <div className="space-y-4">
               <input type="text" value={parentNickname} onChange={e => setParentNickname(e.target.value)} placeholder="Parent Nickname" className="w-full p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm" />
-              <div className="flex gap-2">
-                <select value={block} onChange={(e) => setBlock(e.target.value as any)} className="p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm"><option value="3A">3A</option><option value="3B">3B</option></select>
-                <input type="text" value={unitPath} onChange={e => setUnitPath(e.target.value)} placeholder="Unit e.g. 10-01" className="flex-grow p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm" />
+              <div className="flex flex-col gap-2">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Your Block</label>
+                <div className="flex gap-2">
+                  {['3A', '3B'].map(b => (
+                    <button
+                      key={b}
+                      onClick={() => setBlock(b as any)}
+                      className={`flex-1 py-3 rounded-2xl font-black text-sm transition-all ${block === b ? 'bg-pink-400 text-white shadow-md' : 'bg-gray-50 text-gray-400'}`}
+                    >
+                      Block {b}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
@@ -81,7 +94,16 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
 
                 <div className="flex gap-2">
                   <input type="text" value={child.nickname} onChange={e => setChildren(children.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder="Name" className="flex-grow p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none" />
-                  <input type="text" value={child.age} onChange={e => setChildren(children.map(c => c.id === child.id ? {...c, age: e.target.value} : c))} placeholder="Age" className="w-16 p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none" />
+                  <div className="relative">
+                    <select 
+                      value={child.age} 
+                      onChange={e => setChildren(children.map(c => c.id === child.id ? {...c, age: e.target.value} : c))}
+                      className="w-20 p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none appearance-none"
+                    >
+                      {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                    <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">YRS</div>
+                  </div>
                 </div>
 
                 <div className="flex gap-2">
