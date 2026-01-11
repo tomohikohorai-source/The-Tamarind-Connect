@@ -40,4 +40,13 @@ export interface Activity {
   isInvitation: boolean;
 }
 
+export interface Shout {
+  id: string;
+  userId: string;
+  parentNickname: string;
+  avatarIcon: string;
+  text: string;
+  createdAt: string;
+}
+
 export type AppState = 'AUTH' | 'SETUP' | 'READY';

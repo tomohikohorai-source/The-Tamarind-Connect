@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppState, UserProfile, Activity } from './types';
+import { AppState, UserProfile, Activity, Shout } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Timeline } from './components/Timeline';
@@ -11,7 +11,7 @@ import { store } from './services/store';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut 
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, limit 
 } from './firebase';
 
 const App: React.FC = () => {
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('AUTH');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [shouts, setShouts] = useState<Shout[]>([]);
   const [activeTab, setActiveTab] = useState<'HOME' | 'PROFILE'>('HOME');
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
@@ -31,16 +32,10 @@ const App: React.FC = () => {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data() as UserProfile;
-          
           if (!userData.customUserId && user.displayName) {
             userData.customUserId = user.displayName;
-            try {
-              await updateDoc(doc(db, "users", user.uid), { customUserId: user.displayName });
-            } catch (e) {
-              console.error("Failed to auto-patch customUserId:", e);
-            }
+            try { await updateDoc(doc(db, "users", user.uid), { customUserId: user.displayName }); } catch (e) { console.error(e); }
           }
-          
           setProfile(userData);
           setAppState('READY');
         } else {
@@ -57,27 +52,27 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (appState === 'READY') {
-      const q = query(collection(db, "activities"), orderBy("startTime", "asc"));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const qAct = query(collection(db, "activities"), orderBy("startTime", "asc"));
+      const unsubAct = onSnapshot(qAct, (snapshot) => {
         const data: Activity[] = [];
-        snapshot.forEach((doc) => {
-          data.push({ ...doc.data(), id: doc.id } as Activity);
-        });
+        snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Activity));
         setActivities(data);
       });
-      return () => unsubscribe();
+
+      // 最新20件の掲示板投稿を取得
+      const qShout = query(collection(db, "shouts"), orderBy("createdAt", "desc"), limit(20));
+      const unsubShout = onSnapshot(qShout, (snapshot) => {
+        const data: Shout[] = [];
+        snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Shout));
+        setShouts(data);
+      });
+
+      return () => { unsubAct(); unsubShout(); };
     }
   }, [appState]);
 
-  const handlePasscodeSuccess = () => {
-    store.setVerified(true);
-    setIsVerified(true);
-  };
-
-  const handleProfileComplete = (newProfile: UserProfile) => {
-    setProfile(newProfile);
-    setAppState('READY');
-  };
+  const handlePasscodeSuccess = () => { store.setVerified(true); setIsVerified(true); };
+  const handleProfileComplete = (newProfile: UserProfile) => { setProfile(newProfile); setAppState('READY'); };
 
   const handleAddActivity = async (activity: Activity) => {
     try {
@@ -90,54 +85,34 @@ const App: React.FC = () => {
       }
       setShowCheckIn(false);
       setEditingActivity(undefined);
-    } catch (e: any) {
-      alert("Error: " + e.message);
-    }
+    } catch (e: any) { alert(e.message); }
   };
 
   const handleDeleteActivity = async (id: string) => {
-    try {
-      if (confirm('Delete this schedule?')) {
-        await deleteDoc(doc(db, "activities", id));
-      }
-    } catch (e: any) {
-      alert("Error: " + e.message);
+    if (confirm('Delete this schedule?')) {
+      try { await deleteDoc(doc(db, "activities", id)); } catch (e: any) { alert(e.message); }
     }
   };
 
-  const handleLogout = async () => {
-    if (confirm('Logout?')) {
-      await signOut(auth);
-      setAppState('AUTH');
-    }
-  };
+  const handleLogout = async () => { if (confirm('Logout?')) { await signOut(auth); setAppState('AUTH'); } };
 
   if (!isVerified) return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">
-      Loading Connect...
-    </div>
-  );
-
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Loading Connect...</div>;
   if (appState === 'AUTH') return <AuthScreen />;
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden">
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md p-5 flex flex-col items-center border-b border-gray-100">
-        <h1 className="text-xl font-black text-pink-500 tracking-tighter uppercase">The Tamarind Connect</h1>
-        {profile && (
-          <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">
-            Block {profile.roomNumber}
-          </div>
-        )}
+        <h1 className="text-xl font-black text-pink-500 tracking-tighter uppercase text-center">The Tamarind Connect</h1>
+        {profile && <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">Block {profile.roomNumber}</div>}
       </header>
 
       <main className="flex-grow">
         {activeTab === 'HOME' && (
           <Timeline 
             activities={activities} 
+            shouts={shouts}
             profile={profile} 
             onEdit={setEditingActivity} 
             onDelete={handleDeleteActivity}
@@ -145,10 +120,7 @@ const App: React.FC = () => {
           />
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage 
-            profile={profile} activities={activities} onLogout={handleLogout} 
-            onEdit={setEditingActivity} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} 
-          />
+          <ProfilePage profile={profile} activities={activities} onLogout={handleLogout} onEdit={setEditingActivity} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} />
         )}
       </main>
 
@@ -156,33 +128,16 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowCheckIn(false); setEditingActivity(undefined); }} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
-            <CheckInForm
-              profile={profile} initialActivity={editingActivity}
-              onSubmit={handleAddActivity} onCancel={() => { setShowCheckIn(false); setEditingActivity(undefined); }}
-            />
+            <CheckInForm profile={profile} initialActivity={editingActivity} onSubmit={handleAddActivity} onCancel={() => { setShowCheckIn(false); setEditingActivity(undefined); }} />
           </div>
         </div>
       )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4 relative">
-          <button onClick={() => setActiveTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Home size={22} /><span className="text-[9px] font-black uppercase">Home</span>
-          </button>
-          
-          <div className="w-1/3 flex justify-center">
-            <button 
-              onClick={() => setShowCheckIn(true)} 
-              className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"
-            >
-              <PlusCircle size={20} />
-              <span className="text-[10px] uppercase tracking-widest">Add Plans</span>
-            </button>
-          </div>
-
-          <button onClick={() => setActiveTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <UserCircle size={22} /><span className="text-[9px] font-black uppercase">Profile</span>
-          </button>
+          <button onClick={() => setActiveTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Home</span></button>
+          <div className="w-1/3 flex justify-center"><button onClick={() => setShowCheckIn(true)} className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"><PlusCircle size={20} /><span className="text-[10px] uppercase tracking-widest">Add Plans</span></button></div>
+          <button onClick={() => setActiveTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}><UserCircle size={22} /><span className="text-[9px] font-black uppercase">Profile</span></button>
         </div>
       </nav>
 
@@ -190,6 +145,8 @@ const App: React.FC = () => {
         @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
   );
