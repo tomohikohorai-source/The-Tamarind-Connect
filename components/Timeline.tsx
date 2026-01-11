@@ -23,9 +23,6 @@ interface FortuneResult {
   emoji: string;
 }
 
-// FIX: Removed the custom global declaration for 'aistudio' to resolve modifier and type mismatch conflicts. 
-// We will use type assertions in the implementation for safe access.
-
 export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete, onUpdateProfile }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isFortuneLoading, setIsFortuneLoading] = useState(false);
@@ -53,51 +50,54 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   const handleDrawFortune = async () => {
     if (!profile || isFortuneLoading) return;
 
-    // FIX: Check for key selection using window.aistudio and follow race-condition-safe guidelines.
     const aistudio = (window as any).aistudio;
-    if (aistudio) {
-      const hasKey = await aistudio.hasSelectedApiKey();
-      if (!hasKey) {
-        try {
+
+    // 1. APIキーの存在確認と選択ダイアログのトリガー
+    if (!process.env.API_KEY && aistudio) {
+      try {
+        const hasKey = await aistudio.hasSelectedApiKey();
+        if (!hasKey) {
           await aistudio.openSelectKey();
-          // GUIDELINE: Assume the key selection was successful after triggering openSelectKey() and proceed.
-        } catch (e) {
-          console.error("Failed to open key selection dialog", e);
+          // キー選択後は自動でリロードされるか、環境変数が更新される想定
         }
+      } catch (e) {
+        console.error("Key selection failed", e);
       }
     }
 
     setIsFortuneLoading(true);
 
     try {
-      // FIX: Create a new GoogleGenAI instance right before the call to ensure the latest API key is used.
+      // 2. インスタンス生成（最新のAPIキーを反映させるため直前に行う）
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
+      // 3. 軽量モデル gemini-flash-lite-latest を使用してタイムアウトを防止
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: "Task: Generate a 'Daily Resident Fortune' in English. Format: STRICT JSON ONLY. Properties: rank (e.g., 'Super Lucky', 'Radiant'), message (friendly English message, 150-250 chars), luckyPlace (one of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (matching emoji). Language: ENGLISH ONLY.",
+        model: 'gemini-flash-lite-latest',
+        contents: "Generate a 'Daily Resident Fortune' for a condo app. Format: STRICT JSON ONLY. Language: English. Include: rank, message (short, friendly), luckyPlace (one of: Pool, Outdoor Playground, Indoor Playground, Lobby), emoji.",
         config: { 
           responseMimeType: "application/json",
-          temperature: 0.8
+          temperature: 1.0 
         },
       });
 
       const rawText = response.text || "";
       
-      // Robust JSON Extraction
+      // 4. JSON抽出のロジックを強化
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       const cleanedJson = jsonMatch ? jsonMatch[0] : "";
       
       let result: FortuneResult;
       try {
-        if (!cleanedJson) throw new Error("No JSON found in response");
+        if (!cleanedJson) throw new Error("Empty response");
         result = JSON.parse(cleanedJson);
       } catch (parseError) {
-        console.warn("JSON Parse Error, using fallback:", parseError);
+        // パース失敗時のフォールバック
         result = {
-          rank: "Wonderful Day",
-          message: "A lovely day is waiting for you! Take a deep breath and enjoy some quality time with your family at the Tamarind. A friendly smile can make someone's day today.",
-          luckyPlace: "Lobby",
-          emoji: "✨"
+          rank: "Bright Day",
+          message: "A wonderful day is waiting for you and your kids! Enjoy the sunshine and the community spirit at The Tamarind.",
+          luckyPlace: "Outdoor Playground",
+          emoji: "🌞"
         };
       }
 
@@ -117,15 +117,14 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     } catch (error: any) {
       console.error("Fortune API Error:", error);
       
-      // FIX: Handle specific "entity not found" error which implies API Key needs reset
-      if (error?.message?.includes('Requested entity was not found') && (window as any).aistudio) {
-        alert("API Key configuration error. Please select your key again.");
-        await (window as any).aistudio.openSelectKey();
+      // 5. エラー原因に応じたユーザーへのフィードバック
+      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
+        alert("API Key is not active or incorrect. Please re-select your API key.");
+        if (aistudio) await aistudio.openSelectKey();
+      } else if (error?.message?.includes('fetch') || error?.message?.includes('NetworkError')) {
+        alert("Network Error: Please check your internet connection or turn off VPN/Ad-blockers.");
       } else {
-        const errorMsg = error?.message?.includes('fetch') 
-          ? "Network Error: Could not connect to the server. Please check your mobile data or Wi-Fi signal."
-          : "Drawing fortune failed. Please try again in a few seconds.";
-        alert(errorMsg);
+        alert(`Drawing failed: ${error.message || 'Unknown error'}. Please try again later.`);
       }
     } finally {
       setIsFortuneLoading(false);
