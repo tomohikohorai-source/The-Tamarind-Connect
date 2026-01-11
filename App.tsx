@@ -1,54 +1,58 @@
 
 import React, { useState, useEffect } from 'react';
 import { AppState, UserProfile, Activity } from './types';
-import { store } from './services/store';
-import { PasscodeGate } from './components/PasscodeGate';
+import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Timeline } from './components/Timeline';
 import { CheckInForm } from './components/CheckInForm';
 import { ProfilePage } from './components/ProfilePage';
+import { PasscodeGate } from './components/PasscodeGate';
+import { store } from './services/store';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
-import { db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from './firebase';
+import { 
+  db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut 
+} from './firebase';
 
 const App: React.FC = () => {
-  const [appState, setAppState] = useState<AppState>('LOCKED');
+  const [isVerified, setIsVerified] = useState(store.isVerified());
+  const [appState, setAppState] = useState<AppState>('AUTH');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activeTab, setActiveTab] = useState<'HOME' | 'PROFILE'>('HOME');
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (store.isVerified()) {
-      const savedProfile = store.getUserProfile();
-      if (savedProfile) {
-        setProfile(savedProfile);
-        setAppState('READY');
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setProfile(userDoc.data() as UserProfile);
+          setAppState('READY');
+        } else {
+          setAppState('SETUP');
+        }
       } else {
-        setAppState('SETUP');
+        setAppState('AUTH');
+        setProfile(null);
       }
-    }
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (appState === 'READY') {
-      console.log("Starting Firebase sync...");
       const q = query(collection(db, "activities"), orderBy("startTime", "asc"));
-      
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
         const data: Activity[] = [];
-        querySnapshot.forEach((doc) => {
+        snapshot.forEach((doc) => {
           data.push({ ...doc.data(), id: doc.id } as Activity);
         });
-        console.log(`Synced ${data.length} activities from Firebase`);
         setActivities(data);
-      }, (error) => {
-        console.error("Firebase Sync Error:", error);
-        if (error.message.includes("index")) {
-          alert("Firebaseの準備（インデックス作成）が必要です。コンソールのリンクをクリックして作成してください。");
-        } else {
-          alert("データの受信に失敗しました。Firebaseのセキュリティルールを確認してください。\n" + error.message);
-        }
       });
       return () => unsubscribe();
     }
@@ -56,70 +60,57 @@ const App: React.FC = () => {
 
   const handlePasscodeSuccess = () => {
     store.setVerified(true);
-    setAppState('SETUP');
+    setIsVerified(true);
   };
 
   const handleProfileComplete = (newProfile: UserProfile) => {
-    store.setUserProfile(newProfile);
     setProfile(newProfile);
     setAppState('READY');
   };
 
-  const handleUpdateProfile = (newProfile: UserProfile) => {
-    store.setUserProfile(newProfile);
-    setProfile(newProfile);
-  };
-
   const handleAddActivity = async (activity: Activity) => {
     try {
-      // 編集モード（editingActivityが存在する）か、新規作成かを明示的に判定
       if (editingActivity) {
-        console.log("Updating existing activity:", editingActivity.id);
         const { id, ...data } = activity;
         await updateDoc(doc(db, "activities", editingActivity.id), data);
       } else {
-        console.log("Adding new activity...");
         const { id, ...data } = activity;
         await addDoc(collection(db, "activities"), data);
       }
       setShowCheckIn(false);
       setEditingActivity(undefined);
     } catch (e: any) {
-      console.error("Firebase Add/Update Error:", e);
-      alert("データの保存に失敗しました。詳細:\n" + e.message);
+      alert("Error: " + e.message);
     }
   };
 
   const handleDeleteActivity = async (id: string) => {
     try {
-      if (confirm('この予定を削除しますか？')) {
+      if (confirm('Delete this schedule?')) {
         await deleteDoc(doc(db, "activities", id));
       }
     } catch (e: any) {
-      console.error("Delete Error:", e);
-      alert("削除に失敗しました: " + e.message);
+      alert("Error: " + e.message);
     }
   };
 
-  const handleEditActivity = (activity: Activity) => {
-    setEditingActivity(activity);
-    setShowCheckIn(true);
-  };
-
-  const handleLogout = () => {
-    if (confirm('ログアウトしますか？プロフィール情報が消去されます。')) {
-      store.clearAll();
-      window.location.reload();
+  const handleLogout = async () => {
+    if (confirm('Logout?')) {
+      await signOut(auth);
+      setAppState('AUTH');
     }
   };
 
-  const handleOpenCheckIn = () => {
-    setEditingActivity(undefined);
-    setShowCheckIn(true);
-  };
+  if (!isVerified) return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
 
-  if (appState === 'LOCKED') return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
-  if (appState === 'SETUP') return <ProfileSetup onComplete={handleProfileComplete} />;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">
+      Loading Connect...
+    </div>
+  );
+
+  if (appState === 'AUTH') return <AuthScreen />;
+  if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden">
@@ -133,35 +124,22 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-grow">
-        {activeTab === 'HOME' && (
-          <Timeline 
-            activities={activities} 
-            profile={profile}
-            onEdit={handleEditActivity}
-            onDelete={handleDeleteActivity}
-          />
-        )}
+        {activeTab === 'HOME' && <Timeline activities={activities} profile={profile} onEdit={setEditingActivity} onDelete={handleDeleteActivity} />}
         {activeTab === 'PROFILE' && profile && (
           <ProfilePage 
-            profile={profile} 
-            activities={activities} 
-            onLogout={handleLogout} 
-            onEdit={handleEditActivity}
-            onDelete={handleDeleteActivity}
-            onUpdateProfile={handleUpdateProfile}
+            profile={profile} activities={activities} onLogout={handleLogout} 
+            onEdit={setEditingActivity} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} 
           />
         )}
       </main>
 
-      {showCheckIn && profile && (
+      {(showCheckIn || editingActivity) && profile && (
         <div className="fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCheckIn(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowCheckIn(false); setEditingActivity(undefined); }} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <CheckInForm
-              profile={profile}
-              initialActivity={editingActivity}
-              onSubmit={handleAddActivity}
-              onCancel={() => setShowCheckIn(false)}
+              profile={profile} initialActivity={editingActivity}
+              onSubmit={handleAddActivity} onCancel={() => { setShowCheckIn(false); setEditingActivity(undefined); }}
             />
           </div>
         </div>
@@ -170,19 +148,13 @@ const App: React.FC = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4">
           <button onClick={() => setActiveTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Home size={24} />
-            <span className="text-[10px] font-black uppercase">Home</span>
+            <Home size={24} /><span className="text-[10px] font-black uppercase">Home</span>
           </button>
-          
-          <button onClick={handleOpenCheckIn} className="flex flex-col items-center justify-center -translate-y-8 w-1/3">
-            <div className="w-16 h-16 bg-pink-400 rounded-[28px] flex items-center justify-center text-white shadow-2xl border-4 border-white">
-              <PlusCircle size={32} />
-            </div>
+          <button onClick={() => setShowCheckIn(true)} className="flex flex-col items-center justify-center -translate-y-8 w-1/3">
+            <div className="w-16 h-16 bg-pink-400 rounded-[28px] flex items-center justify-center text-white shadow-2xl border-4 border-white"><PlusCircle size={32} /></div>
           </button>
-
           <button onClick={() => setActiveTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <UserCircle size={24} />
-            <span className="text-[10px] font-black uppercase">Profile</span>
+            <UserCircle size={24} /><span className="text-[10px] font-black uppercase">Profile</span>
           </button>
         </div>
       </nav>

@@ -4,6 +4,7 @@ import { UserProfile, Activity, Child } from '../types';
 import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
 import { Home, Baby, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { db, doc, setDoc } from '../firebase';
 
 interface Props {
   profile: UserProfile;
@@ -18,298 +19,264 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
   const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
-  
-  const initialBlock = profile.roomNumber.split('-')[0] || '3A';
-  const initialUnit = profile.roomNumber.split('-').slice(1).join('-') || '';
-  
-  const [editBlock, setEditBlock] = useState<'3A' | '3B'>(initialBlock as any);
-  const [editUnitPath, setEditUnitPath] = useState(initialUnit);
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
   const myActivities = activities
+    .filter(a => a.userId === profile.uid)
     .sort((a, b) => b.startTime.localeCompare(a.startTime));
 
-  // Relaxed validation to ensure the button is clickable
-  const isUnitValid = editUnitPath.trim().length > 0;
-  const isFormValid = editNickname.trim().length > 0 && isUnitValid && editChildren.length > 0 && editChildren.every(c => c.nickname.trim().length > 0 && c.age.trim().length > 0);
+  const handleSaveProfile = async () => {
+    if (!editNickname.trim() || editChildren.length === 0 || editChildren.some(c => !c.nickname.trim())) {
+      alert("Please fill in all required fields.");
+      return;
+    }
 
-  const handleSaveProfile = () => {
-    if (isFormValid) {
-      onUpdateProfile({
-        parentNickname: editNickname,
-        roomNumber: `${editBlock}-${editUnitPath}`,
-        children: editChildren,
-        avatarIcon: editAvatar
-      });
+    const updatedProfile: UserProfile = {
+      ...profile,
+      parentNickname: editNickname,
+      avatarIcon: editAvatar,
+      children: editChildren
+    };
+
+    try {
+      await setDoc(doc(db, "users", profile.uid), updatedProfile);
+      onUpdateProfile(updatedProfile);
       setIsEditingProfile(false);
+    } catch (e: any) {
+      alert("Error saving profile: " + e.message);
     }
   };
 
-  const handleAddChild = () => {
+  const addChild = () => {
     if (editChildren.length >= 10) return;
-    const newChild: Child = {
+    setEditChildren([...editChildren, {
       id: crypto.randomUUID(),
       nickname: '',
       age: '',
       gender: 'boy',
       intro: '',
       avatarIcon: AVATAR_ICONS.CHILDREN[0]
-    };
-    setEditChildren([...editChildren, newChild]);
+    }]);
   };
 
-  const updateEditChild = (id: string, updates: Partial<Child>) => {
-    setEditChildren(editChildren.map(c => c.id === id ? { ...c, ...updates } : c));
-  };
-
-  const removeEditChild = (id: string) => {
+  const removeChild = (id: string) => {
+    if (editChildren.length <= 1) {
+      alert("You must have at least one child registered.");
+      return;
+    }
     setEditChildren(editChildren.filter(c => c.id !== id));
   };
 
+  const updateChild = (id: string, updates: Partial<Child>) => {
+    setEditChildren(editChildren.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
   return (
-    <div className="p-6 pb-24 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar">
+    <div className="p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar">
+      {/* Header Section */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-pink-50 rounded-[20px] flex items-center justify-center text-4xl border border-pink-100 shadow-inner">
+          <div className="w-16 h-16 bg-white rounded-[24px] flex items-center justify-center text-4xl border-2 border-pink-100 shadow-sm shrink-0">
             {profile.avatarIcon}
           </div>
-          {!isEditingProfile ? (
-            <div>
-              <h2 className="text-2xl font-black text-gray-800 tracking-tight">{profile.parentNickname}</h2>
-              <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider">
-                <Home size={12} /> Unit {profile.roomNumber}
-              </p>
-            </div>
-          ) : (
-            <div className="font-black text-gray-800 uppercase tracking-widest text-sm">Update Profile</div>
-          )}
+          <div className="min-w-0">
+            <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate">
+              {profile.parentNickname}
+            </h2>
+            <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider">
+              <Home size={12} className="text-pink-300" /> Unit {profile.roomNumber}
+            </p>
+          </div>
         </div>
         {!isEditingProfile && (
           <button 
-            onClick={() => setIsEditingProfile(true)}
-            className="p-3 bg-pink-50 text-pink-500 rounded-2xl hover:bg-pink-100 transition-colors flex items-center gap-1.5 text-xs font-black uppercase active:scale-95"
+            onClick={() => {
+              setEditNickname(profile.parentNickname);
+              setEditAvatar(profile.avatarIcon);
+              setEditChildren([...profile.children]);
+              setIsEditingProfile(true);
+            }} 
+            className="p-3 bg-pink-50 text-pink-500 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 border border-pink-100 shadow-sm"
           >
-            <Edit3 size={16} /> Edit
+            <Edit3 size={18} />
           </button>
         )}
       </div>
 
+      {/* Edit Profile Section (Modal-like Inline) */}
       {isEditingProfile && (
-        <section className="bg-orange-50 p-6 rounded-[32px] border border-orange-100 space-y-5 animate-slide-up">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-black text-orange-800 uppercase text-xs tracking-widest">Profile Editor</h3>
-            <button onClick={() => setIsEditingProfile(false)} className="text-gray-400 bg-white p-1.5 rounded-full shadow-sm"><X size={18} /></button>
+        <section className="bg-orange-50/50 p-6 rounded-[40px] border-2 border-orange-100 space-y-6 animate-slide-up">
+          <div className="flex justify-between items-center">
+            <h3 className="font-black text-orange-600 uppercase text-[10px] tracking-widest flex items-center gap-2">
+              <User size={14}/> Edit My Profile
+            </h3>
+            <button onClick={() => setIsEditingProfile(false)} className="bg-white p-2 rounded-xl text-gray-400">
+              <X size={18} />
+            </button>
           </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="text-[10px] text-orange-600 block mb-2 font-black uppercase tracking-widest">Icon (Optional)</label>
-              <div className="flex gap-2 overflow-x-auto pb-4 pt-2 -mx-2 px-2 snap-x scrollbar-thin scrollbar-thumb-orange-200">
-                {AVATAR_ICONS.PARENTS.map(icon => (
-                  <button
-                    key={icon}
-                    onClick={() => setEditAvatar(icon)}
-                    className={`shrink-0 w-12 h-12 text-2xl rounded-xl flex items-center justify-center border-2 transition-all snap-center ${
-                      editAvatar === icon ? 'border-pink-400 bg-white scale-110 shadow-sm' : 'border-orange-100 bg-orange-50/50'
-                    }`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
+
+          <div className="space-y-6">
+            {/* Parent Avatar & Name */}
+            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-orange-50">
+               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Parent Identity</label>
+               <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                  {AVATAR_ICONS.PARENTS.map(icon => (
+                    <button 
+                      key={icon} 
+                      onClick={() => setEditAvatar(icon)}
+                      className={`shrink-0 w-12 h-12 text-2xl rounded-xl flex items-center justify-center border-2 transition-all ${editAvatar === icon ? 'border-orange-400 bg-orange-50 scale-105' : 'border-gray-50'}`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+               </div>
+               <input 
+                 type="text" 
+                 value={editNickname} 
+                 onChange={e => setEditNickname(e.target.value)} 
+                 placeholder="Parent Nickname"
+                 className="w-full p-4 rounded-2xl bg-gray-50 border-none font-bold text-sm outline-none focus:ring-2 ring-orange-200" 
+               />
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="text-[10px] text-orange-600 block mb-1 font-black uppercase tracking-widest">Nickname</label>
-                <input
-                  type="text"
-                  value={editNickname}
-                  onChange={e => setEditNickname(e.target.value)}
-                  className="w-full p-3 rounded-2xl border-none outline-none bg-white text-sm font-bold shadow-sm"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-orange-600 block mb-1 font-black uppercase tracking-widest">Room Number</label>
-                <div className="flex gap-2">
-                  <select 
-                    value={editBlock}
-                    onChange={(e) => setEditBlock(e.target.value as any)}
-                    className="p-3 rounded-2xl border-none outline-none bg-white text-sm font-black shadow-sm"
-                  >
-                    <option value="3A">3A</option>
-                    <option value="3B">3B</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={editUnitPath}
-                    onChange={e => setEditUnitPath(e.target.value)}
-                    placeholder="e.g. 10-01"
-                    className="flex-grow p-3 rounded-2xl border-none outline-none bg-white text-sm font-bold shadow-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <div className="flex justify-between items-center mb-4">
-                <label className="text-[10px] text-orange-600 block font-black uppercase tracking-widest">Children ({editChildren.length})</label>
+            {/* Children Management */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">My Children</label>
                 <button 
-                  onClick={handleAddChild}
-                  className="text-[10px] font-black px-4 py-2 rounded-full flex items-center gap-1 uppercase bg-pink-400 text-white shadow-md active:scale-95 transition-transform"
+                  onClick={addChild}
+                  className="text-[9px] font-black text-orange-600 bg-orange-100 px-3 py-1.5 rounded-full flex items-center gap-1 uppercase tracking-widest"
                 >
-                  <PlusCircle size={14} /> Add
+                  <PlusCircle size={12} /> Add
                 </button>
               </div>
-              <div className="space-y-4 max-h-80 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-orange-200">
-                {editChildren.map(child => (
-                  <div key={child.id} className="p-4 bg-white rounded-3xl border border-orange-100 relative shadow-sm space-y-3">
-                    <button onClick={() => removeEditChild(child.id)} className="absolute top-2 right-2 text-red-300 hover:text-red-500"><X size={18}/></button>
-                    
-                    <div>
-                      <label className="text-[10px] text-gray-400 block mb-1 font-bold uppercase">Child Icon</label>
-                      <div className="flex gap-2 overflow-x-auto pb-3 pt-1 -mx-2 px-2 snap-x scrollbar-thin scrollbar-thumb-pink-100">
-                        {AVATAR_ICONS.CHILDREN.map(icon => (
-                          <button
-                            key={icon}
-                            onClick={() => updateEditChild(child.id, { avatarIcon: icon })}
-                            className={`shrink-0 w-10 h-10 text-xl rounded-xl flex items-center justify-center border-2 transition-all snap-center ${
-                              child.avatarIcon === icon ? 'border-pink-400 bg-pink-50 scale-110 shadow-sm' : 'border-gray-50'
-                            }`}
-                          >
-                            {icon}
-                          </button>
-                        ))}
-                      </div>
+              
+              <div className="space-y-3">
+                {editChildren.map((child) => (
+                  <div key={child.id} className="bg-white p-4 rounded-3xl shadow-sm border border-orange-50 relative space-y-3">
+                    <button 
+                      onClick={() => removeChild(child.id)} 
+                      className="absolute top-3 right-3 text-red-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+
+                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                      {AVATAR_ICONS.CHILDREN.map(icon => (
+                        <button 
+                          key={icon} 
+                          onClick={() => updateChild(child.id, { avatarIcon: icon })}
+                          className={`shrink-0 w-10 h-10 text-xl rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-orange-400 bg-orange-50' : 'border-gray-50'}`}
+                        >
+                          {icon}
+                        </button>
+                      ))}
                     </div>
 
                     <div className="flex gap-2">
                       <input 
-                        type="text" value={child.nickname} 
-                        onChange={e => updateEditChild(child.id, { nickname: e.target.value })} 
-                        placeholder="Nickname"
-                        className="flex-1 p-2 bg-gray-50 rounded-xl text-xs font-bold border-none outline-none"
+                        type="text" 
+                        value={child.nickname} 
+                        onChange={e => updateChild(child.id, { nickname: e.target.value })} 
+                        placeholder="Name"
+                        className="flex-grow p-3 rounded-xl bg-gray-50 border-none text-xs font-bold outline-none" 
                       />
                       <input 
-                        type="text" value={child.age} 
-                        onChange={e => updateEditChild(child.id, { age: e.target.value })} 
+                        type="text" 
+                        value={child.age} 
+                        onChange={e => updateChild(child.id, { age: e.target.value })} 
                         placeholder="Age"
-                        className="w-16 p-2 bg-gray-50 rounded-xl text-xs font-bold border-none outline-none"
+                        className="w-16 p-3 rounded-xl bg-gray-50 border-none text-xs font-bold outline-none" 
                       />
                     </div>
 
-                    <div>
-                      <label className="text-[10px] text-gray-400 block mb-1.5 font-bold uppercase">Gender</label>
-                      <div className="flex gap-2">
-                        {(['boy', 'girl', 'other'] as const).map((g) => (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => updateEditChild(child.id, { gender: g })}
-                            className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-tighter border-2 transition-all ${
-                              child.gender === g
-                                ? g === 'boy' ? 'bg-blue-50 border-blue-200 text-blue-500 shadow-sm' : 
-                                  g === 'girl' ? 'bg-pink-50 border-pink-200 text-pink-500 shadow-sm' : 
-                                  'bg-gray-100 border-gray-300 text-gray-700 shadow-sm'
-                                : 'bg-white border-gray-50 text-gray-300'
-                            }`}
-                          >
-                            {g === 'boy' ? 'Boy' : g === 'girl' ? 'Girl' : 'Other'}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="flex gap-2">
+                      {[
+                        { id: 'boy', label: 'Boy', color: 'blue' },
+                        { id: 'girl', label: 'Girl', color: 'pink' },
+                        { id: 'other', label: 'Other', color: 'purple' }
+                      ].map(g => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => updateChild(child.id, { gender: g.id as any })}
+                          className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${
+                            child.gender === g.id 
+                              ? `bg-${g.color}-50 border-${g.color}-400 text-${g.color}-500` 
+                              : 'bg-white border-gray-50 text-gray-300'
+                          }`}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <button
-              onClick={handleSaveProfile}
-              disabled={!isFormValid}
-              className={`w-full py-5 rounded-3xl font-black shadow-xl flex items-center justify-center gap-3 transition-all uppercase tracking-widest active:scale-95 ${isFormValid ? 'bg-pink-400 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'}`}
+            <button 
+              onClick={handleSaveProfile} 
+              className="w-full py-4 rounded-2xl font-black bg-orange-400 text-white shadow-xl shadow-orange-100 uppercase tracking-widest text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
-              <Save size={20} /> Update Profile
+              <Save size={18} /> Update Profile
             </button>
           </div>
         </section>
       )}
 
-      {!isEditingProfile && (
-        <section className="animate-fade-in">
-          <h3 className="font-black text-gray-800 mb-4 flex items-center gap-2 uppercase text-xs tracking-widest">
-            <Baby className="text-pink-400" /> Registered Kids
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {profile.children.map(child => (
-              <div key={child.id} className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col gap-2 transition-transform active:scale-95">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0 border-2 ${
-                    child.gender === 'boy' ? 'bg-blue-50 border-blue-100' : 
-                    child.gender === 'girl' ? 'bg-pink-50 border-pink-100' : 
-                    'bg-gray-50 border-gray-100'
-                  }`}>
-                    {child.avatarIcon}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-black text-gray-700 truncate text-sm tracking-tight">{child.nickname}</div>
-                    <div className="text-[9px] text-gray-400 uppercase font-black">{child.age}</div>
-                  </div>
-                </div>
-                <div className={`text-[8px] font-black uppercase tracking-widest text-center py-1 rounded-full ${
-                  child.gender === 'boy' ? 'text-blue-500 bg-blue-50/50' : 
-                  child.gender === 'girl' ? 'text-pink-500 bg-pink-50/50' : 
-                  'text-gray-500 bg-gray-50/50'
-                }`}>
-                  {child.gender}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section>
-        <h3 className="font-black text-gray-800 mb-4 flex items-center gap-2 uppercase text-xs tracking-widest">
-          <Calendar className="text-pink-400" /> My Activity History
+      {/* Activity History Section */}
+      <section className="space-y-4">
+        <h3 className="font-black text-gray-800 mb-2 flex items-center gap-2 uppercase text-[10px] tracking-widest">
+          <Calendar className="text-pink-400" size={14}/> My Activity History
         </h3>
         <div className="space-y-4">
           {myActivities.length > 0 ? (
             myActivities.map(a => (
-              <div key={a.id} className="bg-white p-5 rounded-[32px] shadow-sm border border-gray-100 flex flex-col gap-4">
-                <div className="flex justify-between items-start">
+              <div key={a.id} className="bg-white p-5 rounded-[32px] shadow-sm border border-gray-100 flex justify-between items-center group transition-all hover:border-pink-100">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl ${LOCATION_METADATA[a.location].bgColor} flex items-center justify-center text-2xl`}>
+                    {LOCATION_METADATA[a.location].icon}
+                  </div>
                   <div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 mb-2 uppercase tracking-wider">
-                      <span>{LOCATION_METADATA[a.location].icon}</span>
-                      <span>{LOCATION_METADATA[a.location].label}</span>
+                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                      {LOCATION_METADATA[a.location].label}
                     </div>
                     <div className="font-black text-gray-800 text-sm">
-                      {format(parseISO(a.startTime), 'MMM d')} | {format(parseISO(a.startTime), 'HH:mm')} - {format(parseISO(a.endTime), 'HH:mm')}
-                    </div>
-                    <div className="text-[11px] text-pink-500 font-black uppercase mt-1 tracking-tight">
-                      {a.childNicknames.join(' • ')}
+                      {format(parseISO(a.startTime), 'MMM d')} | {format(parseISO(a.startTime), 'HH:mm')}
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => onEdit(a)} className="p-2.5 bg-gray-50 text-gray-400 rounded-2xl hover:bg-pink-50 hover:text-pink-400 transition-colors"><Edit3 size={18} /></button>
-                    <button onClick={() => onDelete(a.id)} className="p-2.5 bg-gray-50 text-gray-400 rounded-2xl hover:bg-red-50 hover:text-red-400 transition-colors"><Trash2 size={18} /></button>
-                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => onEdit(a)} 
+                    className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-pink-50 hover:text-pink-400 transition-all active:scale-90"
+                  >
+                    <Edit3 size={16}/>
+                  </button>
+                  <button 
+                    onClick={() => onDelete(a.id)} 
+                    className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all active:scale-90"
+                  >
+                    <Trash2 size={16}/>
+                  </button>
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-[32px] text-gray-300 border-2 border-dashed border-gray-100 text-xs font-black uppercase tracking-widest">
-              No Registered Activities
+            <div className="text-center py-16 bg-white border-2 border-dashed border-gray-100 rounded-[40px] text-gray-300 text-[10px] font-black uppercase tracking-widest">
+              No History Yet
             </div>
           )}
         </div>
       </section>
 
-      <button
-        onClick={onLogout}
-        className="w-full flex items-center justify-center gap-2 py-4 text-red-400 font-black uppercase text-xs tracking-widest bg-red-50/50 rounded-3xl border border-red-50 active:scale-95 transition-transform"
+      {/* Logout Button */}
+      <button 
+        onClick={onLogout} 
+        className="w-full flex items-center justify-center gap-2 py-5 text-red-400 font-black uppercase text-[10px] tracking-widest bg-red-50/50 rounded-3xl border-2 border-red-50 hover:bg-red-50 transition-colors"
       >
-        <LogOut size={18} /> Sign Out (Reset Data)
+        <LogOut size={16}/> Logout Account
       </button>
     </div>
   );

@@ -15,6 +15,7 @@ export interface Child {
 }
 
 export interface UserProfile {
+  uid: string;
   parentNickname: string;
   roomNumber: string;
   children: Child[];
@@ -24,15 +25,16 @@ export interface UserProfile {
 export interface Activity {
   id: string;
   userId: string;
-  parentNickname: string;
-  roomNumber: string;
+  parentNickname: string; // Denormalized for fast display
+  roomNumber: string;     // Denormalized for fast display
+  parentAvatarIcon: string;
   location: LocationType;
-  startTime: string; // ISO String
-  endTime: string;   // ISO String
+  startTime: string; 
+  endTime: string;   
   message: string;
   childNicknames: string[];
+  childAvatars: string[]; 
   isInvitation: boolean;
-  parentAvatarIcon: string;
 }
 
-export type AppState = 'LOCKED' | 'SETUP' | 'READY';
+export type AppState = 'AUTH' | 'SETUP' | 'READY';

@@ -1,7 +1,8 @@
 
 import { LocationType } from './types';
 
-export const RESIDENT_PASSCODE = '1234'; // Demo passcode
+// Fix: Added missing RESIDENT_PASSCODE required by PasscodeGate.tsx
+export const RESIDENT_PASSCODE = '1234';
 
 export const LOCATION_METADATA = {
   [LocationType.POOL]: {

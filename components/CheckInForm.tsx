@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserProfile, LocationType, Activity } from '../types';
+import { UserProfile, LocationType, Activity, Child } from '../types';
 import { LOCATION_METADATA } from '../constants';
 import { addDays, format, setHours, setMinutes, parseISO, isAfter } from 'date-fns';
-import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar } from 'lucide-react';
+import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
@@ -27,12 +27,8 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (endTime > "20:00") {
-      setEndTime("20:00");
-    }
-    if (startTime > "20:00") {
-      setStartTime("20:00");
-    }
+    if (endTime > "20:00") setEndTime("20:00");
+    if (startTime > "20:00") setStartTime("20:00");
   }, [endTime, startTime]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,14 +51,13 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
       return;
     }
 
-    if (endTime > "20:00") {
-      setError('Facility closes at 20:00');
-      return;
-    }
+    const selectedAvatars = profile.children
+      .filter(c => selectedChildren.includes(c.nickname))
+      .map(c => c.avatarIcon);
 
     const activity: Activity = {
       id: initialActivity?.id || crypto.randomUUID(),
-      userId: initialActivity?.userId || 'user-unique', 
+      userId: profile.uid, 
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       location,
@@ -70,6 +65,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
       endTime: end.toISOString(),
       message,
       childNicknames: selectedChildren,
+      childAvatars: selectedAvatars,
       isInvitation,
       parentAvatarIcon: profile.avatarIcon
     };
@@ -86,16 +82,26 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
   };
 
   return (
-    <div className="bg-white p-8 rounded-t-[40px] shadow-2xl overflow-y-auto max-h-[95vh] border-t border-pink-50 hide-scrollbar">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-2xl font-black text-gray-800 tracking-tight">{initialActivity ? 'Edit Activity' : 'Register Activity'}</h2>
-        <button onClick={onCancel} className="text-gray-300 hover:text-gray-500 bg-gray-50 w-10 h-10 rounded-full flex items-center justify-center transition-colors">✕</button>
+    <div className="bg-white p-8 rounded-t-[40px] shadow-2xl overflow-y-auto max-h-[95vh] border-t border-pink-50 hide-scrollbar relative">
+      <div className="flex justify-between items-center mb-10">
+        <button 
+          type="button"
+          onClick={onCancel}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-black text-xs bg-gray-50 px-4 py-2.5 rounded-2xl transition-all active:scale-95 border border-gray-100 uppercase tracking-widest shadow-sm"
+        >
+          <ChevronLeft size={18} /> Back
+        </button>
+        <h2 className="text-xl font-black text-gray-800 tracking-tighter uppercase pr-2">
+          {initialActivity ? 'Edit Plan' : 'Check-In'}
+        </h2>
+        <button onClick={onCancel} className="text-gray-300 hover:text-gray-500">
+           <X size={24} />
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 pb-12">
-        {/* Location */}
         <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest">Select Location</label>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Select Area</label>
           <div className="grid grid-cols-3 gap-3">
             {(Object.keys(LocationType) as LocationType[]).map(loc => (
               <button
@@ -103,7 +109,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
                 type="button"
                 onClick={() => setLocation(loc)}
                 className={`p-4 rounded-3xl border-2 flex flex-col items-center transition-all ${
-                  location === loc ? `${LOCATION_METADATA[loc].borderColor} bg-white ring-4 ring-pink-50` : 'border-transparent bg-gray-50 opacity-60'
+                  location === loc ? `${LOCATION_METADATA[loc].borderColor} bg-white ring-4 ring-pink-50/50` : 'border-transparent bg-gray-50 opacity-60'
                 }`}
               >
                 <span className="text-3xl mb-1">{LOCATION_METADATA[loc].icon}</span>
@@ -115,10 +121,9 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
           </div>
         </div>
 
-        {/* Type */}
         {!initialActivity && (
           <div>
-            <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest">When?</label>
+            <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Schedule</label>
             <div className="flex gap-3">
               {[
                 { id: 'NOW', label: 'Play Now' },
@@ -128,8 +133,8 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
                   key={t.id}
                   type="button"
                   onClick={() => setType(t.id as any)}
-                  className={`flex-1 py-4 rounded-2xl font-black transition-all text-sm uppercase tracking-widest ${
-                    type === t.id ? 'bg-pink-400 text-white shadow-xl' : 'bg-gray-50 text-gray-400'
+                  className={`flex-1 py-4 rounded-2xl font-black transition-all text-[11px] uppercase tracking-widest ${
+                    type === t.id ? 'bg-pink-400 text-white shadow-xl scale-[1.02]' : 'bg-gray-50 text-gray-400'
                   }`}
                 >
                   {t.label}
@@ -139,123 +144,98 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
           </div>
         )}
 
-        {/* Time */}
         <div className="space-y-4">
           {(type === 'FUTURE' || initialActivity) && (
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-1"><Calendar size={12}/> Date</label>
-              <label className="block bg-gray-50 rounded-2xl cursor-pointer">
-                <input
-                  type="date"
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  max={format(addDays(new Date(), 7), 'yyyy-MM-dd')}
-                  value={format(date, 'yyyy-MM-dd')}
-                  onChange={e => setDate(new Date(e.target.value))}
-                  className="w-full p-4 bg-transparent border-none outline-none text-base font-bold text-gray-700 cursor-pointer"
-                />
-              </label>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Calendar size={14}/> Date</label>
+              <input
+                type="date"
+                min={format(new Date(), 'yyyy-MM-dd')}
+                max={format(addDays(new Date(), 7), 'yyyy-MM-dd')}
+                value={format(date, 'yyyy-MM-dd')}
+                onChange={e => setDate(new Date(e.target.value))}
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-base font-bold text-gray-700"
+              />
             </div>
           )}
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-1"><Clock size={12}/> Start Time</label>
-              <label className={`block bg-gray-50 rounded-2xl cursor-pointer ${type === 'NOW' && !initialActivity ? 'opacity-50 pointer-events-none' : ''}`}>
-                <input
-                  type="time"
-                  value={startTime}
-                  disabled={type === 'NOW' && !initialActivity}
-                  max="20:00"
-                  onChange={e => setStartTime(e.target.value)}
-                  className="w-full p-4 bg-transparent border-none outline-none text-lg font-black text-gray-800 cursor-pointer"
-                />
-              </label>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> From</label>
+              <input
+                type="time"
+                value={startTime}
+                disabled={type === 'NOW' && !initialActivity}
+                max="20:00"
+                onChange={e => setStartTime(e.target.value)}
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
+              />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-1"><Clock size={12}/> End Time (Max 20:00)</label>
-              <label className="block bg-gray-50 rounded-2xl cursor-pointer">
-                <input
-                  type="time"
-                  max="20:00"
-                  value={endTime}
-                  onChange={e => setEndTime(e.target.value)}
-                  className="w-full p-4 bg-transparent border-none outline-none text-lg font-black text-gray-800 cursor-pointer"
-                />
-              </label>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> Until</label>
+              <input
+                type="time"
+                max="20:00"
+                value={endTime}
+                onChange={e => setEndTime(e.target.value)}
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
+              />
             </div>
           </div>
         </div>
 
-        {/* Kids Selection */}
         <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest">Who is playing?</label>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Who's playing?</label>
           <div className="flex flex-wrap gap-3">
             {profile.children.map(child => (
               <button
                 key={child.id}
                 type="button"
                 onClick={() => toggleChild(child.nickname)}
-                className={`flex items-center gap-3 pr-5 pl-1.5 py-1.5 rounded-full border-2 transition-all ${
+                className={`flex items-center gap-3 pr-5 pl-1.5 py-1.5 rounded-[20px] border-2 transition-all ${
                   selectedChildren.includes(child.nickname)
-                    ? 'bg-pink-100 border-pink-300 text-pink-600 font-black'
-                    : 'bg-white border-gray-100 text-gray-300'
+                    ? 'bg-pink-400 border-pink-400 text-white font-black shadow-lg scale-[1.05]'
+                    : 'bg-white border-gray-100 text-gray-400'
                 }`}
               >
-                <div className="w-8 h-8 rounded-full bg-gray-50 overflow-hidden border border-gray-200 flex items-center justify-center text-lg">
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-xl shadow-inner ${selectedChildren.includes(child.nickname) ? 'bg-white/20' : 'bg-gray-50'}`}>
                   {child.avatarIcon}
                 </div>
-                <span className="text-sm tracking-tight">{child.nickname}</span>
+                <span className="text-xs font-black uppercase tracking-tight">{child.nickname}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Message */}
-        <div>
-          <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest flex items-center gap-2">
-            <MessageSquare size={16} /> Short Note
-          </label>
-          <input
-            type="text"
-            value={message}
-            onChange={e => setMessage(e.target.value)}
-            placeholder="e.g. Bringing water toys / At the sandbox"
-            className="w-full p-4 bg-gray-50 rounded-2xl border-none outline-none text-sm font-bold placeholder:font-medium placeholder:text-gray-300"
-          />
-        </div>
-
-        {/* Invitation */}
-        <div className="flex items-center justify-between p-5 bg-orange-50 rounded-[32px] border border-orange-100">
-          <div className="flex items-center gap-4 text-orange-700">
-            <Megaphone size={24} className="animate-pulse" />
+        <div className="flex items-center justify-between p-6 bg-orange-400 rounded-[32px] text-white shadow-xl shadow-orange-100">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-3 rounded-2xl">
+              <Megaphone size={24} className="animate-pulse" />
+            </div>
             <div>
-              <div className="font-black text-xs uppercase tracking-wider">Invite Neighbors</div>
-              <div className="text-[10px] font-bold opacity-60">Shown in the invitation banner</div>
+              <div className="font-black text-[13px] uppercase tracking-widest">Invite Neighbors</div>
+              <div className="text-[10px] font-bold opacity-80">Add INVITE badge to card</div>
             </div>
           </div>
-          <input
-            type="checkbox"
-            checked={isInvitation}
-            onChange={e => setIsInvitation(e.target.checked)}
-            className="w-7 h-7 rounded-xl accent-orange-500 cursor-pointer"
-          />
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isInvitation}
+              onChange={e => setIsInvitation(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-12 h-7 bg-white/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/40"></div>
+          </label>
         </div>
-
-        {error && (
-          <div className="flex items-center gap-2 text-red-500 text-xs font-black bg-red-50 p-4 rounded-2xl animate-pulse">
-            <AlertCircle size={18} />
-            {error}
-          </div>
-        )}
 
         <button
           type="submit"
           disabled={selectedChildren.length === 0}
-          className={`w-full py-5 rounded-[28px] font-black shadow-xl transition-all active:scale-95 uppercase tracking-widest ${
-            selectedChildren.length > 0 ? 'bg-pink-400 text-white' : 'bg-gray-200 text-gray-400'
+          className={`w-full py-5 rounded-[28px] font-black shadow-2xl transition-all active:scale-95 uppercase tracking-[0.2em] text-[13px] ${
+            selectedChildren.length > 0 ? 'bg-pink-400 text-white shadow-pink-200' : 'bg-gray-200 text-gray-400'
           }`}
         >
-          {initialActivity ? 'Update Status' : 'Post Status'}
+          {initialActivity ? 'Save Changes' : 'Confirm Check-In'}
         </button>
       </form>
     </div>
