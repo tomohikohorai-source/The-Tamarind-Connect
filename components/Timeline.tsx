@@ -51,39 +51,44 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     if (!profile || isFortuneLoading) return;
 
     const aistudio = (window as any).aistudio;
+    const apiKey = process.env.API_KEY;
 
-    // 1. APIキーの存在確認と選択ダイアログのトリガー
-    if (!process.env.API_KEY && aistudio) {
-      try {
-        const hasKey = await aistudio.hasSelectedApiKey();
-        if (!hasKey) {
+    // 1. APIキーが設定されていない場合
+    if (!apiKey) {
+      if (aistudio) {
+        try {
+          // キー選択ダイアログを開く
           await aistudio.openSelectKey();
-          // キー選択後は自動でリロードされるか、環境変数が更新される想定
+          // ダイアログ表示後は処理を一度中断し、ユーザーがキーを選んだ後にもう一度ボタンを押してもらう
+          return;
+        } catch (e) {
+          console.error("Failed to open key selector", e);
         }
-      } catch (e) {
-        console.error("Key selection failed", e);
+      } else {
+        alert("API Key is missing. Please set up the environment.");
+        return;
       }
     }
 
     setIsFortuneLoading(true);
 
     try {
-      // 2. インスタンス生成（最新のAPIキーを反映させるため直前に行う）
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // 2. リクエスト直前にインスタンスを生成
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       
-      // 3. 軽量モデル gemini-flash-lite-latest を使用してタイムアウトを防止
+      // 3. レスポンスが速くエラーに強い軽量モデルを使用
       const response = await ai.models.generateContent({
         model: 'gemini-flash-lite-latest',
-        contents: "Generate a 'Daily Resident Fortune' for a condo app. Format: STRICT JSON ONLY. Language: English. Include: rank, message (short, friendly), luckyPlace (one of: Pool, Outdoor Playground, Indoor Playground, Lobby), emoji.",
+        contents: "Generate a 'Daily Resident Fortune' for a condo app. Format: STRICT JSON ONLY. Language: English. Include: rank (short phrase), message (warm resident message, max 150 chars), luckyPlace (one of: Pool, Outdoor Playground, Indoor Playground, Lobby), emoji.",
         config: { 
           responseMimeType: "application/json",
-          temperature: 1.0 
+          temperature: 0.9
         },
       });
 
       const rawText = response.text || "";
       
-      // 4. JSON抽出のロジックを強化
+      // 4. JSON抽出
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       const cleanedJson = jsonMatch ? jsonMatch[0] : "";
       
@@ -92,7 +97,6 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
         if (!cleanedJson) throw new Error("Empty response");
         result = JSON.parse(cleanedJson);
       } catch (parseError) {
-        // パース失敗時のフォールバック
         result = {
           rank: "Bright Day",
           message: "A wonderful day is waiting for you and your kids! Enjoy the sunshine and the community spirit at The Tamarind.",
@@ -117,14 +121,15 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     } catch (error: any) {
       console.error("Fortune API Error:", error);
       
-      // 5. エラー原因に応じたユーザーへのフィードバック
-      if (error?.message?.includes('404') || error?.message?.includes('not found')) {
-        alert("API Key is not active or incorrect. Please re-select your API key.");
+      // 5. 特定のエラーメッセージへの対処
+      const errorStr = error?.message || "";
+      if (errorStr.includes('API Key must be set') || errorStr.includes('403') || errorStr.includes('401')) {
+        alert("API Key error. Please click 'Setup API Key' or try again to refresh the connection.");
         if (aistudio) await aistudio.openSelectKey();
-      } else if (error?.message?.includes('fetch') || error?.message?.includes('NetworkError')) {
-        alert("Network Error: Please check your internet connection or turn off VPN/Ad-blockers.");
+      } else if (errorStr.includes('fetch') || errorStr.includes('NetworkError')) {
+        alert("Connection Error: Please check your internet signal.");
       } else {
-        alert(`Drawing failed: ${error.message || 'Unknown error'}. Please try again later.`);
+        alert("Drawing failed. Please try again in a moment.");
       }
     } finally {
       setIsFortuneLoading(false);
@@ -210,20 +215,22 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
   return (
     <div className="p-4 space-y-6">
-      {/* Daily Fortune */}
+      {/* Daily Fortune Section */}
       <section className="animate-fade-in">
         {!currentFortune ? (
           <button 
             onClick={handleDrawFortune} 
             disabled={isFortuneLoading} 
-            className="w-full p-6 bg-gradient-to-br from-pink-400 to-orange-300 rounded-[32px] shadow-xl text-white active:scale-[0.98] transition-all flex items-center justify-between"
+            className={`w-full p-6 rounded-[32px] shadow-xl text-white active:scale-[0.98] transition-all flex items-center justify-between ${!process.env.API_KEY ? 'bg-orange-400' : 'bg-gradient-to-br from-pink-400 to-orange-300'}`}
           >
             <div className="text-left">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1 opacity-80">Resident Fortune</span>
-              <span className="text-lg font-black">{isFortuneLoading ? 'Connecting...' : (!process.env.API_KEY && (window as any).aistudio ? 'Setup API Key' : 'Draw Today\'s Fortune')}</span>
+              <span className="text-lg font-black">
+                {isFortuneLoading ? 'Connecting...' : (!process.env.API_KEY ? 'Setup API Key' : 'Draw Today\'s Fortune')}
+              </span>
             </div>
             <div className="bg-white/20 p-4 rounded-3xl">
-              {isFortuneLoading ? <Loader2 size={24} className="animate-spin" /> : (!process.env.API_KEY && (window as any).aistudio ? <Key size={24} /> : <Wand2 size={24} />)}
+              {isFortuneLoading ? <Loader2 size={24} className="animate-spin" /> : (!process.env.API_KEY ? <Key size={24} /> : <Wand2 size={24} />)}
             </div>
           </button>
         ) : (
