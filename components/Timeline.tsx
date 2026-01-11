@@ -41,9 +41,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     const fortuneDate = parseISO(profile.lastFortuneDate);
     if (!isSameDay(fortuneDate, new Date())) return null;
     try {
-      // Basic cleanup for stored JSON just in case
-      const stored = profile.lastFortuneResult;
-      return JSON.parse(stored);
+      return JSON.parse(profile.lastFortuneResult);
     } catch {
       return null;
     }
@@ -51,32 +49,41 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
   const handleDrawFortune = async () => {
     if (!profile || isFortuneLoading) return;
+
+    if (!process.env.API_KEY) {
+      alert("System Error: API Key is missing.");
+      return;
+    }
+
     setIsFortuneLoading(true);
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      // Stronger instruction to ensure strictly JSON and strictly English
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: "Task: Generate a 'Daily Resident Fortune' in English for a condominium community app. Tone: Warm, friendly, neighborly. Response format: STRICT JSON ONLY. Do not include markdown formatting or backticks. Properties: rank (e.g., 'Super Lucky', 'Wonderful', 'Radiant', 'Positive'), message (friendly English message, 150-250 chars, encouraging neighbor connection), luckyPlace (One of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (one matching emoji). Language: ENGLISH ONLY.",
+        contents: "Task: Generate a 'Daily Resident Fortune' in English. Format: STRICT JSON ONLY. Properties: rank (e.g., 'Super Lucky', 'Radiant'), message (friendly English message, 150-250 chars), luckyPlace (one of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (matching emoji). Language: ENGLISH ONLY.",
         config: { 
           responseMimeType: "application/json",
-          temperature: 0.7 
+          temperature: 0.8
         },
       });
 
-      const rawText = response.text || "{}";
-      // Robust cleaning for mobile: Remove potential markdown wrappers
-      const cleanedJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const rawText = response.text || "";
+      
+      // Robust JSON Extraction for Mobile Browsers
+      // Find the first '{' and last '}' to isolate the JSON object
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      const cleanedJson = jsonMatch ? jsonMatch[0] : "";
       
       let result: FortuneResult;
       try {
+        if (!cleanedJson) throw new Error("No JSON found in response");
         result = JSON.parse(cleanedJson);
       } catch (parseError) {
-        console.error("JSON Parse Error, falling back to basic result", parseError);
+        console.warn("JSON Parse Error, using fallback:", parseError, "Raw text:", rawText);
         result = {
-          rank: "Good Day",
-          message: "A wonderful day awaits you and your family at the Tamarind. Keep smiling and say hello to your neighbors!",
+          rank: "Wonderful Day",
+          message: "A lovely day is waiting for you! Take a deep breath and enjoy some quality time with your family at the Tamarind. A friendly smile can make someone's day today.",
           luckyPlace: "Lobby",
           emoji: "✨"
         };
@@ -95,9 +102,13 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
       });
 
       onUpdateProfile(updatedProfile);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Fortune API Error:", error);
-      alert("Communication error. Please check your internet connection and try again.");
+      // More specific error message for mobile users
+      const errorMsg = error?.message?.includes('fetch') 
+        ? "Network Error: Could not connect to the server. Please check your signal."
+        : "Drawing fortune failed. Please wait a moment and try again.";
+      alert(errorMsg);
     } finally {
       setIsFortuneLoading(false);
     }
