@@ -1,16 +1,15 @@
 
 import React, { useState, useMemo } from 'react';
-import { Activity, LocationType, UserProfile, Shout } from '../types';
+import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Lightbulb, Send } from 'lucide-react';
+import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-import { db, doc, updateDoc, collection, addDoc } from '../firebase';
+import { db, doc, updateDoc } from '../firebase';
 
 interface Props {
   activities: Activity[];
-  shouts: Shout[];
   profile: UserProfile | null;
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
@@ -24,13 +23,10 @@ interface FortuneResult {
   emoji: string;
 }
 
-export const Timeline: React.FC<Props> = ({ activities, shouts, profile, onEdit, onDelete, onUpdateProfile }) => {
+export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete, onUpdateProfile }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isFortuneLoading, setIsFortuneLoading] = useState(false);
   const [isFortuneExpanded, setIsFortuneExpanded] = useState(false);
-  const [playIdea, setPlayIdea] = useState<string | null>(null);
-  const [isIdeaLoading, setIsIdeaLoading] = useState(false);
-  const [newShout, setNewShout] = useState('');
 
   const dates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
@@ -59,7 +55,7 @@ export const Timeline: React.FC<Props> = ({ activities, shouts, profile, onEdit,
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: "Generate a 'Daily Resident Fortune' for a condominium community app. The tone should be warm, friendly, and encourage social interaction between neighbors. Return the result in JSON format. The content MUST be written in English. Properties: rank (e.g., 'Super Lucky', 'Wonderful', 'Radiant', 'Positive'), message (a message to the resident, around 150-250 characters. Include specific friendly advice or encouragement for connecting with neighbors), luckyPlace (One of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (a matching emoji for the fortune).",
+        contents: "Generate a 'Daily Resident Fortune' for a condominium community app. The tone should be warm, friendly, and encourage social interaction between neighbors. Return the result in JSON format. The content MUST be written in English. Properties: rank (e.g., 'Super Lucky', 'Wonderful', 'Radiant', 'Positive'), message (a friendly message to the resident in English, around 150-250 characters. Include specific advice for connecting with neighbors), luckyPlace (One of: 'Pool Area', 'Outdoor Playground', 'Indoor Playground', 'Lobby'), emoji (a matching emoji).",
         config: { responseMimeType: "application/json" },
       });
 
@@ -72,40 +68,6 @@ export const Timeline: React.FC<Props> = ({ activities, shouts, profile, onEdit,
       console.error(error);
     } finally {
       setIsFortuneLoading(false);
-    }
-  };
-
-  const handleGetPlayIdea = async () => {
-    if (isIdeaLoading) return;
-    setIsIdeaLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: "Give me one creative, simple, no-equipment-needed play idea for kids at a condominium playground or pool. One sentence only, English. Short and fun!",
-      });
-      setPlayIdea(response.text);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsIdeaLoading(false);
-    }
-  };
-
-  const handlePostShout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newShout.trim() || !profile) return;
-    try {
-      await addDoc(collection(db, "shouts"), {
-        userId: profile.uid,
-        parentNickname: profile.parentNickname,
-        avatarIcon: profile.avatarIcon,
-        text: newShout.trim(),
-        createdAt: new Date().toISOString()
-      });
-      setNewShout('');
-    } catch (error) {
-      console.error(error);
     }
   };
 
@@ -188,70 +150,34 @@ export const Timeline: React.FC<Props> = ({ activities, shouts, profile, onEdit,
 
   return (
     <div className="p-4 space-y-6">
-      {/* Daily Fortune & AI Play Idea */}
-      <section className="animate-fade-in space-y-4">
+      {/* Daily Fortune */}
+      <section className="animate-fade-in">
         {!currentFortune ? (
           <button onClick={handleDrawFortune} disabled={isFortuneLoading} className="w-full p-6 bg-gradient-to-br from-pink-400 to-orange-300 rounded-[32px] shadow-xl text-white active:scale-[0.98] transition-all flex items-center justify-between">
             <div className="text-left"><span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1 opacity-80">Resident Fortune</span><span className="text-lg font-black">{isFortuneLoading ? 'Generating Luck...' : 'Draw Today\'s Fortune'}</span></div>
             <div className="bg-white/20 p-4 rounded-3xl"><Wand2 size={24} className={isFortuneLoading ? 'animate-spin' : ''} /></div>
           </button>
         ) : (
-          <div className="bg-white border-2 border-pink-100 rounded-[40px] shadow-sm p-6 space-y-4">
-            <div className="flex items-start gap-5">
-              <div className="w-16 h-16 bg-pink-50 rounded-[24px] flex items-center justify-center text-4xl shrink-0 mt-1">{currentFortune.emoji || '✨'}</div>
-              <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="bg-pink-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">{currentFortune.rank}</span>
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1"><Sparkles size={10} className="text-orange-300" /> Today's Luck</span>
-                </div>
-                <p className={`text-sm font-bold text-gray-800 leading-snug transition-all ${isFortuneExpanded ? '' : 'line-clamp-2'}`}>{currentFortune.message}</p>
-                {currentFortune.message?.length > 50 && (
-                  <button onClick={() => setIsFortuneExpanded(!isFortuneExpanded)} className="text-[10px] font-black text-pink-500 uppercase mt-2 flex items-center gap-1">
-                    {isFortuneExpanded ? <><ChevronUp size={12}/> Close</> : <><ChevronDown size={12}/> Read More</>}
-                  </button>
-                )}
+          <div className="bg-white border-2 border-pink-100 rounded-[40px] shadow-sm p-6 flex items-start gap-5 transition-all">
+            <div className="w-16 h-16 bg-pink-50 rounded-[24px] flex items-center justify-center text-4xl shrink-0 mt-1">{currentFortune.emoji || '✨'}</div>
+            <div className="flex-grow min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="bg-pink-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">{currentFortune.rank}</span>
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1"><Sparkles size={10} className="text-orange-300" /> Today's Luck</span>
               </div>
-            </div>
-            
-            {/* Play Idea Tooltip-style Area */}
-            <div className="bg-orange-50/50 p-4 rounded-[24px] border border-orange-100 relative overflow-hidden">
-               <div className="flex justify-between items-center mb-1">
-                 <span className="text-[9px] font-black text-orange-400 uppercase flex items-center gap-1"><Lightbulb size={12} /> AI Play Idea</span>
-                 <button onClick={handleGetPlayIdea} disabled={isIdeaLoading} className="text-[9px] font-black text-white bg-orange-400 px-3 py-1 rounded-full uppercase active:scale-95 transition-all">Refresh</button>
-               </div>
-               <p className="text-[11px] font-bold text-gray-600 italic leading-tight">{isIdeaLoading ? 'Thinking...' : (playIdea || 'Click refresh for a fun game idea!')}</p>
+              <p className={`text-sm font-bold text-gray-800 leading-snug transition-all ${isFortuneExpanded ? '' : 'line-clamp-2'}`}>{currentFortune.message}</p>
+              {currentFortune.message?.length > 50 && (
+                <button onClick={() => setIsFortuneExpanded(!isFortuneExpanded)} className="text-[10px] font-black text-pink-500 uppercase mt-2 flex items-center gap-1">
+                  {isFortuneExpanded ? <><ChevronUp size={12}/> Close</> : <><ChevronDown size={12}/> Read More</> }
+                </button>
+              )}
+              <div className="text-[9px] font-bold text-gray-400 flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full w-fit mt-3">
+                <span className="uppercase tracking-widest">Lucky Place:</span>
+                <span className="text-pink-500 font-black">{currentFortune.luckyPlace}</span>
+              </div>
             </div>
           </div>
         )}
-      </section>
-
-      {/* Community Shoutbox */}
-      <section className="bg-white border-2 border-gray-50 rounded-[40px] p-6 shadow-sm space-y-4">
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-          <MessageCircle size={14} className="text-blue-400" /> Neighbor Shoutbox
-        </h3>
-        <div className="max-h-40 overflow-y-auto space-y-3 hide-scrollbar px-1">
-          {shouts.length > 0 ? shouts.map(s => (
-            <div key={s.id} className="flex gap-3 items-start animate-slide-up">
-              <span className="text-xl bg-gray-50 rounded-xl p-1 shrink-0">{s.avatarIcon}</span>
-              <div className="bg-gray-50 px-4 py-2 rounded-[20px] min-w-0">
-                <div className="text-[8px] font-black text-gray-400 uppercase mb-0.5">{s.parentNickname} • {format(parseISO(s.createdAt), 'HH:mm')}</div>
-                <p className="text-xs font-bold text-gray-700 leading-tight">{s.text}</p>
-              </div>
-            </div>
-          )) : <div className="text-center py-4 text-[9px] font-black text-gray-200 uppercase">No recent shouts</div>}
-        </div>
-        <form onSubmit={handlePostShout} className="relative mt-2">
-          <input 
-            type="text" 
-            maxLength={40}
-            value={newShout}
-            onChange={e => setNewShout(e.target.value)}
-            placeholder="Share something quick..." 
-            className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-4 pr-12 text-xs font-bold focus:ring-2 ring-blue-100 outline-none"
-          />
-          <button type="submit" className="absolute right-2 top-1.5 p-2 bg-blue-400 text-white rounded-xl shadow-md active:scale-90 transition-all"><Send size={14} /></button>
-        </form>
       </section>
 
       <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-3 pt-1 px-1">

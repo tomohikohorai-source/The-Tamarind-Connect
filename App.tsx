@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppState, UserProfile, Activity, Shout } from './types';
+import { AppState, UserProfile, Activity } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Timeline } from './components/Timeline';
@@ -11,7 +11,7 @@ import { store } from './services/store';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, limit 
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut 
 } from './firebase';
 
 const App: React.FC = () => {
@@ -19,7 +19,6 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('AUTH');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [shouts, setShouts] = useState<Shout[]>([]);
   const [activeTab, setActiveTab] = useState<'HOME' | 'PROFILE'>('HOME');
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
@@ -59,15 +58,7 @@ const App: React.FC = () => {
         setActivities(data);
       });
 
-      // 最新20件の掲示板投稿を取得
-      const qShout = query(collection(db, "shouts"), orderBy("createdAt", "desc"), limit(20));
-      const unsubShout = onSnapshot(qShout, (snapshot) => {
-        const data: Shout[] = [];
-        snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Shout));
-        setShouts(data);
-      });
-
-      return () => { unsubAct(); unsubShout(); };
+      return () => { unsubAct(); };
     }
   }, [appState]);
 
@@ -112,7 +103,6 @@ const App: React.FC = () => {
         {activeTab === 'HOME' && (
           <Timeline 
             activities={activities} 
-            shouts={shouts}
             profile={profile} 
             onEdit={setEditingActivity} 
             onDelete={handleDeleteActivity}
