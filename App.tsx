@@ -7,8 +7,10 @@ import { Timeline } from './components/Timeline';
 import { CheckInForm } from './components/CheckInForm';
 import { ProfilePage } from './components/ProfilePage';
 import { PasscodeGate } from './components/PasscodeGate';
+import { PetGarden } from './components/PetGarden';
 import { store } from './services/store';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
   onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut 
@@ -30,11 +32,35 @@ const App: React.FC = () => {
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          const userData = userDoc.data() as UserProfile;
+          let userData = userDoc.data() as UserProfile;
+          
+          // Login Day Count Logic
+          const today = new Date();
+          const todayStr = today.toISOString();
+          const lastLogin = userData.lastLoginDate ? parseISO(userData.lastLoginDate) : null;
+          
+          if (!lastLogin || !isSameDay(lastLogin, today)) {
+            const newTotalDays = (userData.totalLoginDays || 0) + 1;
+            userData = {
+              ...userData,
+              totalLoginDays: newTotalDays,
+              lastLoginDate: todayStr
+            };
+            try {
+              await updateDoc(doc(db, "users", user.uid), {
+                totalLoginDays: newTotalDays,
+                lastLoginDate: todayStr
+              });
+            } catch (e) {
+              console.error("Failed to update login days", e);
+            }
+          }
+
           if (!userData.customUserId && user.displayName) {
             userData.customUserId = user.displayName;
             try { await updateDoc(doc(db, "users", user.uid), { customUserId: user.displayName }); } catch (e) { console.error(e); }
           }
+          
           setProfile(userData);
           setAppState('READY');
         } else {
@@ -63,7 +89,16 @@ const App: React.FC = () => {
   }, [appState]);
 
   const handlePasscodeSuccess = () => { store.setVerified(true); setIsVerified(true); };
-  const handleProfileComplete = (newProfile: UserProfile) => { setProfile(newProfile); setAppState('READY'); };
+  const handleProfileComplete = (newProfile: UserProfile) => {
+    // Initial login data for new profile
+    const profileWithLogin = {
+      ...newProfile,
+      totalLoginDays: 1,
+      lastLoginDate: new Date().toISOString()
+    };
+    setProfile(profileWithLogin);
+    setAppState('READY'); 
+  };
 
   const handleAddActivity = async (activity: Activity) => {
     try {
@@ -100,14 +135,17 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-grow">
-        {activeTab === 'HOME' && (
-          <Timeline 
-            activities={activities} 
-            profile={profile} 
-            onEdit={setEditingActivity} 
-            onDelete={handleDeleteActivity}
-            onUpdateProfile={setProfile}
-          />
+        {activeTab === 'HOME' && profile && (
+          <>
+            <PetGarden profile={profile} />
+            <Timeline 
+              activities={activities} 
+              profile={profile} 
+              onEdit={setEditingActivity} 
+              onDelete={handleDeleteActivity}
+              onUpdateProfile={setProfile}
+            />
+          </>
         )}
         {activeTab === 'PROFILE' && profile && (
           <ProfilePage profile={profile} activities={activities} onLogout={handleLogout} onEdit={setEditingActivity} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} />

@@ -21,6 +21,9 @@ export interface UserProfile {
   roomNumber: string;
   children: Child[];
   avatarIcon: string;
+  // Pet features
+  totalLoginDays: number;
+  lastLoginDate: string; // ISO String
 }
 
 export interface Activity {

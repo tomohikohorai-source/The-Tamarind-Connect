@@ -41,7 +41,9 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
         parentNickname,
         roomNumber: block,
         children,
-        avatarIcon: parentAvatar
+        avatarIcon: parentAvatar,
+        totalLoginDays: 1,
+        lastLoginDate: new Date().toISOString()
       };
       await setDoc(doc(db, "users", auth.currentUser.uid), profile);
       onComplete(profile);
