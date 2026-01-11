@@ -1,0 +1,7 @@
+{
+  "name": "The Tamarind Connect",
+  "description": "A community-focused scheduling and real-time status app for condominium playground facilities.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
