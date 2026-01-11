@@ -21,8 +21,6 @@ export interface UserProfile {
   roomNumber: string;
   children: Child[];
   avatarIcon: string;
-  lastFortuneDate?: string;   // ISO date string
-  lastFortuneResult?: string; // JSON string of the fortune result
 }
 
 export interface Activity {

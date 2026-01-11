@@ -4,9 +4,7 @@ import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Loader2, Key } from 'lucide-react';
-import { GoogleGenAI } from "@google/genai";
-import { db, doc, updateDoc } from '../firebase';
+import { Clock, MessageCircle, Megaphone, Edit3, Trash2 } from 'lucide-react';
 
 interface Props {
   activities: Activity[];
@@ -16,17 +14,8 @@ interface Props {
   onUpdateProfile: (profile: UserProfile) => void;
 }
 
-interface FortuneResult {
-  rank: string;
-  message: string;
-  luckyPlace: string;
-  emoji: string;
-}
-
-export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete, onUpdateProfile }) => {
+export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [isFortuneLoading, setIsFortuneLoading] = useState(false);
-  const [isFortuneExpanded, setIsFortuneExpanded] = useState(false);
 
   const dates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
@@ -35,106 +24,6 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   const filteredActivities = useMemo(() => {
     return activities.filter(a => isSameDay(parseISO(a.startTime), selectedDate));
   }, [activities, selectedDate]);
-
-  const currentFortune = useMemo((): FortuneResult | null => {
-    if (!profile?.lastFortuneDate || !profile?.lastFortuneResult) return null;
-    const fortuneDate = parseISO(profile.lastFortuneDate);
-    if (!isSameDay(fortuneDate, new Date())) return null;
-    try {
-      return JSON.parse(profile.lastFortuneResult);
-    } catch {
-      return null;
-    }
-  }, [profile]);
-
-  const handleDrawFortune = async () => {
-    if (!profile || isFortuneLoading) return;
-
-    const aistudio = (window as any).aistudio;
-    const apiKey = process.env.API_KEY;
-
-    // 1. APIキーが設定されていない場合
-    if (!apiKey) {
-      if (aistudio) {
-        try {
-          // キー選択ダイアログを開く
-          await aistudio.openSelectKey();
-          // ダイアログ表示後は処理を一度中断し、ユーザーがキーを選んだ後にもう一度ボタンを押してもらう
-          return;
-        } catch (e) {
-          console.error("Failed to open key selector", e);
-        }
-      } else {
-        alert("API Key is missing. Please set up the environment.");
-        return;
-      }
-    }
-
-    setIsFortuneLoading(true);
-
-    try {
-      // 2. リクエスト直前にインスタンスを生成
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-      
-      // 3. レスポンスが速くエラーに強い軽量モデルを使用
-      const response = await ai.models.generateContent({
-        model: 'gemini-flash-lite-latest',
-        contents: "Generate a 'Daily Resident Fortune' for a condo app. Format: STRICT JSON ONLY. Language: English. Include: rank (short phrase), message (warm resident message, max 150 chars), luckyPlace (one of: Pool, Outdoor Playground, Indoor Playground, Lobby), emoji.",
-        config: { 
-          responseMimeType: "application/json",
-          temperature: 0.9
-        },
-      });
-
-      const rawText = response.text || "";
-      
-      // 4. JSON抽出
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      const cleanedJson = jsonMatch ? jsonMatch[0] : "";
-      
-      let result: FortuneResult;
-      try {
-        if (!cleanedJson) throw new Error("Empty response");
-        result = JSON.parse(cleanedJson);
-      } catch (parseError) {
-        result = {
-          rank: "Bright Day",
-          message: "A wonderful day is waiting for you and your kids! Enjoy the sunshine and the community spirit at The Tamarind.",
-          luckyPlace: "Outdoor Playground",
-          emoji: "🌞"
-        };
-      }
-
-      const today = new Date().toISOString();
-      const updatedProfile = { 
-        ...profile, 
-        lastFortuneDate: today, 
-        lastFortuneResult: JSON.stringify(result) 
-      };
-
-      await updateDoc(doc(db, "users", profile.uid), { 
-        lastFortuneDate: today, 
-        lastFortuneResult: JSON.stringify(result) 
-      });
-
-      onUpdateProfile(updatedProfile);
-    } catch (error: any) {
-      console.error("Fortune API Error:", error);
-      
-      // 5. 特定のエラーメッセージへの対処
-      const errorStr = error?.message || "";
-      if (errorStr.includes('API Key must be set') || errorStr.includes('403') || errorStr.includes('401')) {
-        alert("API Key error. Please click 'Setup API Key' or try again to refresh the connection.");
-        if (aistudio) await aistudio.openSelectKey();
-      } else if (errorStr.includes('fetch') || errorStr.includes('NetworkError')) {
-        alert("Connection Error: Please check your internet signal.");
-      } else {
-        alert("Drawing failed. Please try again in a moment.");
-      }
-    } finally {
-      setIsFortuneLoading(false);
-    }
-  };
 
   const isNow = (activity: Activity) => {
     const now = new Date();
@@ -215,47 +104,6 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
   return (
     <div className="p-4 space-y-6">
-      {/* Daily Fortune Section */}
-      <section className="animate-fade-in">
-        {!currentFortune ? (
-          <button 
-            onClick={handleDrawFortune} 
-            disabled={isFortuneLoading} 
-            className={`w-full p-6 rounded-[32px] shadow-xl text-white active:scale-[0.98] transition-all flex items-center justify-between ${!process.env.API_KEY ? 'bg-orange-400' : 'bg-gradient-to-br from-pink-400 to-orange-300'}`}
-          >
-            <div className="text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1 opacity-80">Resident Fortune</span>
-              <span className="text-lg font-black">
-                {isFortuneLoading ? 'Connecting...' : (!process.env.API_KEY ? 'Setup API Key' : 'Draw Today\'s Fortune')}
-              </span>
-            </div>
-            <div className="bg-white/20 p-4 rounded-3xl">
-              {isFortuneLoading ? <Loader2 size={24} className="animate-spin" /> : (!process.env.API_KEY ? <Key size={24} /> : <Wand2 size={24} />)}
-            </div>
-          </button>
-        ) : (
-          <div className="bg-white border-2 border-pink-100 rounded-[40px] shadow-sm p-6 flex items-start gap-5 transition-all animate-slide-up">
-            <div className="w-16 h-16 bg-pink-50 rounded-[24px] flex items-center justify-center text-4xl shrink-0 mt-1">{currentFortune.emoji || '✨'}</div>
-            <div className="flex-grow min-w-0">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="bg-pink-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">{currentFortune.rank}</span>
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1"><Sparkles size={10} className="text-orange-300" /> Today's Luck</span>
-              </div>
-              <p className={`text-sm font-bold text-gray-800 leading-snug transition-all ${isFortuneExpanded ? '' : 'line-clamp-2'}`}>{currentFortune.message}</p>
-              {currentFortune.message?.length > 50 && (
-                <button onClick={() => setIsFortuneExpanded(!isFortuneExpanded)} className="text-[10px] font-black text-pink-500 uppercase mt-2 flex items-center gap-1 active:scale-95">
-                  {isFortuneExpanded ? <><ChevronUp size={12}/> Close</> : <><ChevronDown size={12}/> Read More</> }
-                </button>
-              )}
-              <div className="text-[9px] font-bold text-gray-400 flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-full w-fit mt-3">
-                <span className="uppercase tracking-widest">Lucky Place:</span>
-                <span className="text-pink-500 font-black">{currentFortune.luckyPlace}</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
       <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-3 pt-1 px-1">
         {dates.map((d, i) => (
           <button key={i} onClick={() => setSelectedDate(d)} className={`flex flex-col items-center min-w-[72px] p-4 rounded-[28px] transition-all relative ${isSameDay(d, selectedDate) ? 'bg-pink-400 text-white shadow-xl scale-105 font-black' : 'bg-white text-gray-400 border-2 border-transparent shadow-sm'}`}>
@@ -264,7 +112,11 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
           </button>
         ))}
       </div>
-      <div className="pb-24">{renderSection(LocationType.POOL)}{renderSection(LocationType.OUTDOOR)}{renderSection(LocationType.INDOOR)}</div>
+      <div className="pb-24">
+        {renderSection(LocationType.POOL)}
+        {renderSection(LocationType.OUTDOOR)}
+        {renderSection(LocationType.INDOOR)}
+      </div>
     </div>
   );
 };
