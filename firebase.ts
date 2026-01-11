@@ -1,6 +1,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
+/**
+ * Firebaseコンソールから取得したプロジェクトの構成情報です。
+ * この内容は、システムの自動更新によって反映されます。
+ */
 const firebaseConfig = {
   apiKey: "AIzaSyBBh6tz0moZgu9f346ECjFBAzw_-KSCiTQ",
   authDomain: "the-tamarind-connect.firebaseapp.com",

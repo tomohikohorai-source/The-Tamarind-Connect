@@ -8,6 +8,7 @@ import { Timeline } from './components/Timeline';
 import { CheckInForm } from './components/CheckInForm';
 import { ProfilePage } from './components/ProfilePage';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
+import { db, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from './firebase';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>('LOCKED');
@@ -27,8 +28,31 @@ const App: React.FC = () => {
         setAppState('SETUP');
       }
     }
-    setActivities(store.getActivities());
   }, []);
+
+  useEffect(() => {
+    if (appState === 'READY') {
+      console.log("Starting Firebase sync...");
+      const q = query(collection(db, "activities"), orderBy("startTime", "asc"));
+      
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const data: Activity[] = [];
+        querySnapshot.forEach((doc) => {
+          data.push({ ...doc.data(), id: doc.id } as Activity);
+        });
+        console.log(`Synced ${data.length} activities from Firebase`);
+        setActivities(data);
+      }, (error) => {
+        console.error("Firebase Sync Error:", error);
+        if (error.message.includes("index")) {
+          alert("Firebaseの準備（インデックス作成）が必要です。コンソールのリンクをクリックして作成してください。");
+        } else {
+          alert("データの受信に失敗しました。Firebaseのセキュリティルールを確認してください。\n" + error.message);
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [appState]);
 
   const handlePasscodeSuccess = () => {
     store.setVerified(true);
@@ -43,32 +67,38 @@ const App: React.FC = () => {
 
   const handleUpdateProfile = (newProfile: UserProfile) => {
     store.setUserProfile(newProfile);
-    const oldRoom = profile?.roomNumber;
     setProfile(newProfile);
-    setActivities(prev => prev.map(a => ({
-      ...a,
-      parentNickname: a.roomNumber === oldRoom ? newProfile.parentNickname : a.parentNickname,
-      roomNumber: a.roomNumber === oldRoom ? newProfile.roomNumber : a.roomNumber,
-      parentAvatarIcon: a.roomNumber === oldRoom ? newProfile.avatarIcon : a.parentAvatarIcon
-    })));
   };
 
-  const handleAddActivity = (activity: Activity) => {
-    const exists = activities.some(a => a.id === activity.id);
-    if (exists) {
-      store.updateActivity(activity);
-      setActivities(prev => prev.map(a => a.id === activity.id ? activity : a));
-    } else {
-      store.addActivity(activity);
-      setActivities(prev => [...prev, activity]);
+  const handleAddActivity = async (activity: Activity) => {
+    try {
+      // 編集モード（editingActivityが存在する）か、新規作成かを明示的に判定
+      if (editingActivity) {
+        console.log("Updating existing activity:", editingActivity.id);
+        const { id, ...data } = activity;
+        await updateDoc(doc(db, "activities", editingActivity.id), data);
+      } else {
+        console.log("Adding new activity...");
+        const { id, ...data } = activity;
+        await addDoc(collection(db, "activities"), data);
+      }
+      setShowCheckIn(false);
+      setEditingActivity(undefined);
+    } catch (e: any) {
+      console.error("Firebase Add/Update Error:", e);
+      alert("データの保存に失敗しました。詳細:\n" + e.message);
     }
-    setShowCheckIn(false);
-    setEditingActivity(undefined);
   };
 
-  const handleDeleteActivity = (id: string) => {
-    store.deleteActivity(id);
-    setActivities(prev => prev.filter(a => a.id !== id));
+  const handleDeleteActivity = async (id: string) => {
+    try {
+      if (confirm('この予定を削除しますか？')) {
+        await deleteDoc(doc(db, "activities", id));
+      }
+    } catch (e: any) {
+      console.error("Delete Error:", e);
+      alert("削除に失敗しました: " + e.message);
+    }
   };
 
   const handleEditActivity = (activity: Activity) => {
@@ -77,8 +107,8 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to sign out? Your profile data will be cleared from this device.')) {
-      localStorage.clear();
+    if (confirm('ログアウトしますか？プロフィール情報が消去されます。')) {
+      store.clearAll();
       window.location.reload();
     }
   };
@@ -88,17 +118,11 @@ const App: React.FC = () => {
     setShowCheckIn(true);
   };
 
-  if (appState === 'LOCKED') {
-    return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
-  }
-
-  if (appState === 'SETUP') {
-    return <ProfileSetup onComplete={handleProfileComplete} />;
-  }
+  if (appState === 'LOCKED') return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
+  if (appState === 'SETUP') return <ProfileSetup onComplete={handleProfileComplete} />;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden">
-      {/* Header */}
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md p-5 flex flex-col items-center border-b border-gray-100">
         <h1 className="text-xl font-black text-pink-500 tracking-tighter uppercase">The Tamarind Connect</h1>
         {profile && (
@@ -108,7 +132,6 @@ const App: React.FC = () => {
         )}
       </header>
 
-      {/* Main Content */}
       <main className="flex-grow">
         {activeTab === 'HOME' && (
           <Timeline 
@@ -130,9 +153,8 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Check-In Modal / Overlay */}
       {showCheckIn && profile && (
-        <div className="fixed inset-0 z-50 flex items-end animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCheckIn(false)} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <CheckInForm
@@ -145,62 +167,30 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4">
-          <button
-            onClick={() => setActiveTab('HOME')}
-            className={`flex flex-col items-center gap-1 w-1/3 transition-all ${
-              activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'
-            }`}
-          >
-            <Home size={24} className={activeTab === 'HOME' ? 'scale-110 transition-transform' : ''} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Home</span>
+          <button onClick={() => setActiveTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <Home size={24} />
+            <span className="text-[10px] font-black uppercase">Home</span>
           </button>
           
-          <button
-            onClick={handleOpenCheckIn}
-            className="flex flex-col items-center justify-center -translate-y-8 w-1/3"
-          >
-            <div className="w-16 h-16 bg-pink-400 rounded-[28px] flex items-center justify-center text-white shadow-2xl active:scale-90 transition-all border-4 border-white hover:bg-pink-500">
+          <button onClick={handleOpenCheckIn} className="flex flex-col items-center justify-center -translate-y-8 w-1/3">
+            <div className="w-16 h-16 bg-pink-400 rounded-[28px] flex items-center justify-center text-white shadow-2xl border-4 border-white">
               <PlusCircle size={32} />
             </div>
           </button>
 
-          <button
-            onClick={() => setActiveTab('PROFILE')}
-            className={`flex flex-col items-center gap-1 w-1/3 transition-all ${
-              activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'
-            }`}
-          >
-            <UserCircle size={24} className={activeTab === 'PROFILE' ? 'scale-110 transition-transform' : ''} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Profile</span>
+          <button onClick={() => setActiveTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <UserCircle size={24} />
+            <span className="text-[10px] font-black uppercase">Profile</span>
           </button>
         </div>
       </nav>
 
-      {/* Animation helpers */}
       <style>{`
-        @keyframes slide-up {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slide-up {
-          animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.4s ease-out;
-        }
-        .pb-safe {
-          padding-bottom: env(safe-area-inset-bottom);
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
+        @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
       `}</style>
     </div>
   );

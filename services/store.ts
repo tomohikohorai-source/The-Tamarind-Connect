@@ -1,10 +1,9 @@
 
-import { UserProfile, Activity } from '../types';
+import { UserProfile } from '../types';
 
 const STORAGE_KEYS = {
   PASSCODE_VERIFIED: 'play_share_verified',
-  USER_PROFILE: 'play_share_user_profile',
-  ACTIVITIES: 'play_share_activities'
+  USER_PROFILE: 'play_share_user_profile'
 };
 
 export const store = {
@@ -21,21 +20,7 @@ export const store = {
   setUserProfile: (profile: UserProfile) => {
     localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
   },
-  getActivities: (): Activity[] => {
-    const data = localStorage.getItem(STORAGE_KEYS.ACTIVITIES);
-    return data ? JSON.parse(data) : [];
-  },
-  addActivity: (activity: Activity) => {
-    const activities = store.getActivities();
-    activities.push(activity);
-    localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(activities));
-  },
-  updateActivity: (activity: Activity) => {
-    const activities = store.getActivities().map(a => a.id === activity.id ? activity : a);
-    localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(activities));
-  },
-  deleteActivity: (id: string) => {
-    const activities = store.getActivities().filter(a => a.id !== id);
-    localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(activities));
+  clearAll: () => {
+    localStorage.clear();
   }
 };
