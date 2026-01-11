@@ -4,7 +4,7 @@ import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles, Wand2, ChevronDown, ChevronUp, Loader2, Key } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { db, doc, updateDoc } from '../firebase';
 
@@ -22,6 +22,9 @@ interface FortuneResult {
   luckyPlace: string;
   emoji: string;
 }
+
+// FIX: Removed the custom global declaration for 'aistudio' to resolve modifier and type mismatch conflicts. 
+// We will use type assertions in the implementation for safe access.
 
 export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete, onUpdateProfile }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -50,14 +53,24 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   const handleDrawFortune = async () => {
     if (!profile || isFortuneLoading) return;
 
-    if (!process.env.API_KEY) {
-      alert("System Error: API Key is missing.");
-      return;
+    // FIX: Check for key selection using window.aistudio and follow race-condition-safe guidelines.
+    const aistudio = (window as any).aistudio;
+    if (aistudio) {
+      const hasKey = await aistudio.hasSelectedApiKey();
+      if (!hasKey) {
+        try {
+          await aistudio.openSelectKey();
+          // GUIDELINE: Assume the key selection was successful after triggering openSelectKey() and proceed.
+        } catch (e) {
+          console.error("Failed to open key selection dialog", e);
+        }
+      }
     }
 
     setIsFortuneLoading(true);
 
     try {
+      // FIX: Create a new GoogleGenAI instance right before the call to ensure the latest API key is used.
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -70,8 +83,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
       const rawText = response.text || "";
       
-      // Robust JSON Extraction for Mobile Browsers
-      // Find the first '{' and last '}' to isolate the JSON object
+      // Robust JSON Extraction
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       const cleanedJson = jsonMatch ? jsonMatch[0] : "";
       
@@ -80,7 +92,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
         if (!cleanedJson) throw new Error("No JSON found in response");
         result = JSON.parse(cleanedJson);
       } catch (parseError) {
-        console.warn("JSON Parse Error, using fallback:", parseError, "Raw text:", rawText);
+        console.warn("JSON Parse Error, using fallback:", parseError);
         result = {
           rank: "Wonderful Day",
           message: "A lovely day is waiting for you! Take a deep breath and enjoy some quality time with your family at the Tamarind. A friendly smile can make someone's day today.",
@@ -104,11 +116,17 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
       onUpdateProfile(updatedProfile);
     } catch (error: any) {
       console.error("Fortune API Error:", error);
-      // More specific error message for mobile users
-      const errorMsg = error?.message?.includes('fetch') 
-        ? "Network Error: Could not connect to the server. Please check your signal."
-        : "Drawing fortune failed. Please wait a moment and try again.";
-      alert(errorMsg);
+      
+      // FIX: Handle specific "entity not found" error which implies API Key needs reset
+      if (error?.message?.includes('Requested entity was not found') && (window as any).aistudio) {
+        alert("API Key configuration error. Please select your key again.");
+        await (window as any).aistudio.openSelectKey();
+      } else {
+        const errorMsg = error?.message?.includes('fetch') 
+          ? "Network Error: Could not connect to the server. Please check your mobile data or Wi-Fi signal."
+          : "Drawing fortune failed. Please try again in a few seconds.";
+        alert(errorMsg);
+      }
     } finally {
       setIsFortuneLoading(false);
     }
@@ -203,10 +221,10 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
           >
             <div className="text-left">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-1 opacity-80">Resident Fortune</span>
-              <span className="text-lg font-black">{isFortuneLoading ? 'Connecting...' : 'Draw Today\'s Fortune'}</span>
+              <span className="text-lg font-black">{isFortuneLoading ? 'Connecting...' : (!process.env.API_KEY && (window as any).aistudio ? 'Setup API Key' : 'Draw Today\'s Fortune')}</span>
             </div>
             <div className="bg-white/20 p-4 rounded-3xl">
-              {isFortuneLoading ? <Loader2 size={24} className="animate-spin" /> : <Wand2 size={24} />}
+              {isFortuneLoading ? <Loader2 size={24} className="animate-spin" /> : (!process.env.API_KEY && (window as any).aistudio ? <Key size={24} /> : <Wand2 size={24} />)}
             </div>
           </button>
         ) : (
