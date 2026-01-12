@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppState, UserProfile, Activity } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
@@ -25,8 +25,9 @@ const App: React.FC = () => {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const lastActivityIdRef = useRef<string | null>(null);
 
-  // Notification state - Initialize directly from storage to ensure consistency on reload
+  // Notification state
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => {
     return store.getAcknowledgedActivities();
   });
@@ -81,31 +82,37 @@ const App: React.FC = () => {
       const unsubAct = onSnapshot(qAct, (snapshot) => {
         const data: Activity[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Activity));
+        
+        // Push notification logic for invitations
+        if (profile && data.length > activities.length && activities.length > 0) {
+          const newActivity = data[data.length - 1];
+          if (newActivity.isInvitation && newActivity.userId !== profile.uid) {
+            if (Notification.permission === 'granted') {
+              new Notification('新しいお誘い！', {
+                body: `${newActivity.parentNickname}さんからお誘いがあります：${newActivity.message || '一緒に遊びませんか？'}`,
+                icon: 'https://cdn-icons-png.flaticon.com/512/3661/3661448.png'
+              });
+            }
+          }
+        }
+        
         setActivities(data);
       });
       return () => unsubAct();
     }
-  }, [appState]);
+  }, [appState, profile, activities.length]);
 
-  // Notification calculation
   const unseenCount = useMemo(() => {
-    // If the user is currently looking at the HOME tab, the dot should not be visible.
     if (!profile || activeTab === 'HOME') return 0;
-    
     return activities.filter(a => {
-      // Don't notify for own activities
       if (a.userId === profile.uid) return false;
-      
       const lastSeenUpdate = acknowledgedMap[a.id];
-      // If never seen OR the content was updated since last seen
       return !lastSeenUpdate || lastSeenUpdate !== (a.lastUpdated || 'initial');
     }).length;
   }, [activities, acknowledgedMap, profile, activeTab]);
 
-  // Handle automatic acknowledgement when on HOME tab
   useEffect(() => {
     if (activeTab === 'HOME' && profile && activities.length > 0) {
-      // Check if there are actually any items that need marking as seen
       const itemsToAcknowledge = activities.filter(a => {
         if (a.userId === profile.uid) return false;
         return acknowledgedMap[a.id] !== (a.lastUpdated || 'initial');
@@ -113,11 +120,7 @@ const App: React.FC = () => {
 
       if (itemsToAcknowledge.length > 0) {
         const newMapping = { ...acknowledgedMap };
-        activities.forEach(a => {
-          newMapping[a.id] = a.lastUpdated || 'initial';
-        });
-        
-        // Update both state and localStorage
+        activities.forEach(a => { newMapping[a.id] = a.lastUpdated || 'initial'; });
         setAcknowledgedMap(newMapping);
         store.setAcknowledgedActivities(newMapping);
       }
@@ -129,17 +132,8 @@ const App: React.FC = () => {
     window.location.hash = tab.toLowerCase();
   };
 
-  const openCheckIn = () => {
-    setShowCheckIn(true);
-    window.location.hash = 'checkin';
-  };
-
-  const closeCheckIn = () => {
-    setShowCheckIn(false);
-    setEditingActivity(undefined);
-    window.location.hash = activeTab.toLowerCase();
-  };
-
+  const openCheckIn = () => { setShowCheckIn(true); window.location.hash = 'checkin'; };
+  const closeCheckIn = () => { setShowCheckIn(false); setEditingActivity(undefined); window.location.hash = activeTab.toLowerCase(); };
   const handlePasscodeSuccess = () => { store.setVerified(true); setIsVerified(true); };
   const handleProfileComplete = (newProfile: UserProfile) => {
     setProfile({ ...newProfile, totalLoginDays: 1, lastLoginDate: new Date().toISOString() });
@@ -183,14 +177,7 @@ const App: React.FC = () => {
         {activeTab === 'HOME' && profile && (
           <div className="animate-fade-in">
             <PetGarden profile={profile} />
-            <Timeline 
-              activities={activities} 
-              profile={profile} 
-              acknowledgedMap={acknowledgedMap}
-              onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} 
-              onDelete={handleDeleteActivity}
-              onUpdateProfile={setProfile}
-            />
+            <Timeline activities={activities} profile={profile} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} />
           </div>
         )}
         {activeTab === 'PROFILE' && profile && (

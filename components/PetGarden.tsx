@@ -1,138 +1,217 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UserProfile } from '../types';
-import { Sparkles, ChevronRight, Zap, HelpCircle } from 'lucide-react';
+import { Sparkles, ChevronRight, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock } from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
 }
 
-interface PetState {
+interface PetStage {
   icon: string;
   name: string;
   level: string;
-  nextThreshold: number;
+  threshold: number;
+}
+
+interface EvolutionInfo {
+  current: PetStage;
+  next: PetStage | null;
+  pathLabel: string;
+  pathId: string;
+  gradient: string;
+  textColor: string;
+  accentColor: string;
 }
 
 export const PetGarden: React.FC<Props> = ({ profile }) => {
   const days = profile.totalLoginDays || 1;
 
-  // Evolution Roadmap: Max 25 days interval
-  const EVOLUTION_STAGES: PetState[] = [
-    { icon: '🥚', name: 'Mysterious Egg', level: 'Egg', nextThreshold: 2 },
-    { icon: '🐣', name: 'Newborn Baby', level: 'Baby', nextThreshold: 7 },
-    { icon: '🐤', name: 'Playful Chick', level: 'Child', nextThreshold: 15 },
-    { icon: '🐥', name: 'Active Bird', level: 'Young', nextThreshold: 30 },
-    { icon: '🐔', name: 'Energetic Bird', level: 'Grown-up', nextThreshold: 55 },
-    { icon: '🦆', name: 'Explorer Duck', level: 'Adventurer', nextThreshold: 80 },
-    { icon: '🦉', name: 'Wise Owl', level: 'Scholar', nextThreshold: 105 },
-    { icon: '🦜', name: 'Social Parrot', level: 'Speaker', nextThreshold: 130 },
-    { icon: '🕊️', name: 'Peace Messenger', level: 'Messenger', nextThreshold: 155 },
-    { icon: '🦩', name: 'Elegant Flamingo', level: 'Noble', nextThreshold: 180 },
-    { icon: '🦚', name: 'Royal Peacock', level: 'Aristocrat', nextThreshold: 205 },
-    { icon: '🦢', name: 'Graceful Swan', level: 'Beauty', nextThreshold: 230 },
-    { icon: '🦅', name: 'Sky Majesty', level: 'General', nextThreshold: 255 },
-    { icon: '🐆', name: 'Swift Cheetah', level: 'Speedster', nextThreshold: 280 },
-    { icon: '🦓', name: 'Hidden Zebra', level: 'Pattern', nextThreshold: 305 },
-    { icon: '🦒', name: 'Star Reacher', level: 'Dreamer', nextThreshold: 330 },
-    { icon: '🐘', name: 'Mighty Elephant', level: 'Heavyweight', nextThreshold: 355 },
-    { icon: '🐲', name: 'Sky Dragon', level: 'Ancient', nextThreshold: 380 },
-    { icon: '🦖', name: 'Primal King', level: 'Warlord', nextThreshold: 405 },
-    { icon: '🦄', name: 'Mythic Unicorn', level: 'Fantasy', nextThreshold: 430 },
-    { icon: '👾', name: 'Cosmic Entity', level: 'Interstellar', nextThreshold: 455 },
-    { icon: '🧞', name: 'Guardian Spirit', level: 'Demigod', nextThreshold: 480 },
-    { icon: '🧚', name: 'Fairy Queen', level: 'Ethereal', nextThreshold: 500 },
-    { icon: '👑', name: 'Eternal Legend', level: 'God', nextThreshold: 9999 },
-  ];
+  // Stable hash based on UID
+  const getHash = (seed: string) => seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const mainBranchIndex = getHash(profile.uid) % 3; // 0: Forest, 1: Ocean, 2: Cosmic
+  const subBranchIndex = getHash(profile.uid + 'v2') % 2; // 0: Alpha, 1: Beta
 
-  const getCurrentPet = (d: number): { current: PetState; next: PetState | null; prevThreshold: number } => {
-    let prevThreshold = 0;
-    for (let i = 0; i < EVOLUTION_STAGES.length; i++) {
-      if (d < EVOLUTION_STAGES[i].nextThreshold) {
-        return { 
-          current: EVOLUTION_STAGES[i], 
-          next: EVOLUTION_STAGES[i + 1] || null,
-          prevThreshold 
-        };
+  const evolution = useMemo((): EvolutionInfo => {
+    // 1. Common Stages (1-14 days)
+    const COMMON: PetStage[] = [
+      { icon: '🥚', name: 'Mysterious Egg', level: 'Seed', threshold: 1 },
+      { icon: '🐣', name: 'Shell-capped Peep', level: 'Hatchling', threshold: 3 },
+      { icon: '🐥', name: 'Aspirant Chick', level: 'Junior', threshold: 7 },
+    ];
+
+    // 2. Main Branches (15-99 days)
+    const BRANCHES = [
+      { // Forest Path
+        id: 'forest', label: 'Forest Soul', gradient: 'from-green-50 to-emerald-50/40', text: 'text-emerald-600', accent: 'bg-emerald-100',
+        stages: [
+          { icon: '🦊', name: 'Forest Fox', level: 'Ranger', threshold: 15 },
+          { icon: '🦌', name: 'Glade Deer', level: 'Scout', threshold: 30 },
+          { icon: '🐅', name: 'Jade Tiger', level: 'Warrior', threshold: 60 },
+        ],
+        sub: [
+          [ // Forest A: Ancient Protector
+            { icon: '🐘', name: 'Elder Elephant', level: 'Guardian', threshold: 100 },
+            { icon: '🦍', name: 'Jungle King', level: 'Chieftain', threshold: 150 },
+            { icon: '🦕', name: 'Ancient Titan', level: 'God', threshold: 250 },
+          ],
+          [ // Forest B: Wild Hunter
+            { icon: '🐺', name: 'Silver Wolf', level: 'Hunter', threshold: 100 },
+            { icon: '🦁', name: 'Sun Lion', level: 'Sovereign', threshold: 150 },
+            { icon: '🐉', name: 'Wood Dragon', level: 'Overlord', threshold: 250 },
+          ]
+        ]
+      },
+      { // Ocean Path
+        id: 'ocean', label: 'Ocean Soul', gradient: 'from-blue-50 to-cyan-50/40', text: 'text-blue-600', accent: 'bg-blue-100',
+        stages: [
+          { icon: '🐠', name: 'Coral Fish', level: 'Social', threshold: 15 },
+          { icon: '🐢', name: 'Sea Turtle', level: 'Steady', threshold: 30 },
+          { icon: '🐬', name: 'Sky Dolphin', level: 'Ace', threshold: 60 },
+        ],
+        sub: [
+          [ // Ocean A: Mythic Depth
+            { icon: '🐙', name: 'Deep Kraken', level: 'Genius', threshold: 100 },
+            { icon: '🐳', name: 'Island Whale', level: 'Leviathan', threshold: 150 },
+            { icon: '🧜‍♂️', name: 'Sea God', level: 'Eternal', threshold: 250 },
+          ],
+          [ // Ocean B: Coastal King
+            { icon: '🦈', name: 'Great Shark', level: 'Striker', threshold: 100 },
+            { icon: '🐊', name: 'Deep Gator', level: 'Fearless', threshold: 150 },
+            { icon: '🐋', name: 'Glacier Whale', level: 'Ancient', threshold: 250 },
+          ]
+        ]
+      },
+      { // Cosmic Path
+        id: 'cosmic', label: 'Cosmic Soul', gradient: 'from-purple-50 to-pink-50/40', text: 'text-purple-600', accent: 'bg-purple-100',
+        stages: [
+          { icon: '🦄', name: 'Star Pony', level: 'Mystic', threshold: 15 },
+          { icon: '🧚', name: 'Pixie Star', level: 'Fairy', threshold: 30 },
+          { icon: '🤖', name: 'Neon Bot', level: 'Cyber', threshold: 60 },
+        ],
+        sub: [
+          [ // Cosmic A: Celestial Being
+            { icon: '🐲', name: 'Galaxy Dragon', level: 'Astral', threshold: 100 },
+            { icon: '🛰️', name: 'Orbital Eye', level: 'Oracle', threshold: 150 },
+            { icon: '👑', name: 'Cosmic King', level: 'Divinity', threshold: 250 },
+          ],
+          [ // Cosmic B: Dimension Walker
+            { icon: '🛸', name: 'Space Pilot', level: 'Visitor', threshold: 100 },
+            { icon: '👾', name: 'Void Entity', level: 'Stranger', threshold: 150 },
+            { icon: '🧿', name: 'Eye of Time', level: 'Abyss', threshold: 250 },
+          ]
+        ]
       }
-      prevThreshold = EVOLUTION_STAGES[i].nextThreshold;
-    }
-    return { current: EVOLUTION_STAGES[EVOLUTION_STAGES.length - 1], next: null, prevThreshold };
-  };
+    ];
 
-  const { current, next, prevThreshold } = getCurrentPet(days);
-  const daysRemaining = next ? current.nextThreshold - days : 0;
-  
-  // Progress bar within current stage
-  const stageTotalDays = current.nextThreshold - prevThreshold;
-  const stageCurrentProgress = days - prevThreshold;
-  const progress = Math.min(100, (stageCurrentProgress / stageTotalDays) * 100);
+    let currentBranch = BRANCHES[mainBranchIndex];
+    let allStages: PetStage[] = [...COMMON];
+
+    if (days >= 15 && days < 100) {
+      allStages = [...COMMON, ...currentBranch.stages];
+    } else if (days >= 100) {
+      allStages = [...COMMON, ...currentBranch.stages, ...currentBranch.sub[subBranchIndex]];
+    }
+
+    // Find current stage
+    let currentIdx = 0;
+    for (let i = 0; i < allStages.length; i++) {
+      if (days >= allStages[i].threshold) {
+        currentIdx = i;
+      }
+    }
+
+    const current = allStages[currentIdx];
+    const next = allStages[currentIdx + 1] || null;
+
+    // Visual styles adapt based on phase
+    const isCommon = days < 15;
+    return {
+      current,
+      next,
+      pathLabel: isCommon ? 'Common Soul' : (days >= 100 ? `${currentBranch.label} (Final)` : currentBranch.label),
+      pathId: isCommon ? 'common' : currentBranch.id,
+      gradient: isCommon ? 'from-orange-50 to-pink-50/40' : currentBranch.gradient,
+      textColor: isCommon ? 'text-pink-600' : currentBranch.text,
+      accentColor: isCommon ? 'bg-pink-100' : currentBranch.accent,
+    };
+  }, [days, mainBranchIndex, subBranchIndex]);
+
+  const prevThreshold = evolution.current.threshold;
+  const nextThreshold = evolution.next ? evolution.next.threshold : prevThreshold + 100;
+  const progress = Math.min(100, ((days - prevThreshold) / (nextThreshold - prevThreshold)) * 100);
 
   return (
     <div className="mx-4 mt-1 mb-4">
-      <div className="bg-gradient-to-br from-white to-pink-50/40 rounded-[32px] border-2 border-white shadow-lg p-3.5 relative overflow-hidden group">
+      <div className={`bg-gradient-to-br ${evolution.gradient} rounded-[32px] border-2 border-white shadow-lg p-3.5 relative overflow-hidden group`}>
         
-        {/* Compact Background Zap */}
-        <div className="absolute -right-4 -top-4 text-pink-100/10 rotate-12 pointer-events-none">
-          <Zap size={100} fill="currentColor" />
+        {/* Branch-specific background icons */}
+        <div className={`absolute -right-4 -top-4 ${evolution.textColor} opacity-10 rotate-12 pointer-events-none`}>
+          {evolution.pathId === 'forest' ? <Trees size={100} fill="currentColor" /> : 
+           evolution.pathId === 'ocean' ? <Waves size={100} fill="currentColor" /> : 
+           evolution.pathId === 'cosmic' ? <Stars size={100} fill="currentColor" /> : 
+           <Zap size={100} fill="currentColor" />}
         </div>
 
         <div className="flex flex-col gap-3">
-          {/* Main Info Row */}
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-inner border border-pink-50 flex items-center justify-center text-3xl animate-float-mini">
-                {current.icon}
+              <div className="w-14 h-14 bg-white rounded-2xl shadow-inner border border-white flex items-center justify-center text-3xl animate-float-mini">
+                {evolution.current.icon}
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-pink-500 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full border border-white">
+              <div className={`absolute -bottom-1 -right-1 ${evolution.textColor.replace('text', 'bg')} text-[8px] font-black text-white px-1.5 py-0.5 rounded-full border border-white shadow-sm`}>
                 Lv.{days}
               </div>
             </div>
 
             <div className="flex-grow min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="bg-orange-100 text-orange-600 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest whitespace-nowrap">
-                  {current.level}
+                <span className={`${evolution.accentColor} ${evolution.textColor} text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest whitespace-nowrap flex items-center gap-1`}>
+                  {days < 15 ? <HelpCircle size={10}/> : (days >= 100 ? (subBranchIndex === 0 ? <Shield size={10}/> : <Sword size={10}/>) : <Zap size={10}/>)}
+                  {evolution.current.level}
                 </span>
                 <span className="text-[14px] font-black text-gray-800 tracking-tight flex items-center gap-1 truncate">
-                  {current.name} <Sparkles size={12} className="text-yellow-400 shrink-0" />
+                  {evolution.current.name} <Sparkles size={12} className="text-yellow-400 shrink-0" />
                 </span>
               </div>
               
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-grow h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50/50">
                   <div 
-                    className="h-full bg-gradient-to-r from-pink-300 to-pink-400 rounded-full transition-all duration-1000"
+                    className={`h-full bg-gradient-to-r ${evolution.textColor.replace('text', 'from').replace('-600', '-300')} ${evolution.textColor.replace('text', 'to').replace('-600', '-500')} rounded-full transition-all duration-1000`}
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-[9px] font-black text-pink-500 whitespace-nowrap">
-                  {daysRemaining > 0 ? `${daysRemaining}D LEFT` : 'MAX'}
+                <span className={`text-[9px] font-black ${evolution.textColor} whitespace-nowrap`}>
+                  {evolution.next ? `${evolution.next.threshold - days}D LEFT` : 'MAX'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Mystery Footer Row - Single line */}
-          {next && (
-            <div className="flex items-center justify-between border-t border-white/50 pt-2 px-1">
-              <div className="flex items-center gap-1.5">
-                <HelpCircle size={10} className="text-pink-300" />
-                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
-                  Mystery Evolution at Day <span className="text-pink-400">{current.nextThreshold}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1 opacity-40">
-                <div className="w-4 h-4 bg-gray-50 rounded flex items-center justify-center text-[10px] grayscale">
-                  {current.icon}
+          <div className="flex items-center justify-between border-t border-white/50 pt-2 px-1">
+            <div className="flex items-center gap-1.5">
+              <Lock size={10} className={`${evolution.textColor} opacity-40`} />
+              <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                {evolution.next ? (
+                  <>Next evolution in <span className={evolution.textColor}>{evolution.next.threshold - days} days</span></>
+                ) : (
+                  <>Ultimate Form Reached!</>
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 opacity-60">
+              <span className="text-[7px] font-black text-gray-300 uppercase tracking-tighter mr-1">{evolution.pathLabel}</span>
+              <div className="flex -space-x-1.5">
+                <div className={`w-4 h-4 bg-white/50 rounded flex items-center justify-center text-[10px] z-10 border border-white/20`}>
+                  {evolution.current.icon}
                 </div>
-                <ChevronRight size={8} />
-                <div className="w-4 h-4 bg-pink-100 rounded flex items-center justify-center text-[10px]">
-                  ❓
+                <div className={`w-4 h-4 ${evolution.accentColor} rounded flex items-center justify-center text-[10px] border border-white/20`}>
+                  {days < 15 ? '❓' : (days < 100 ? '🧬' : '👑')}
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
