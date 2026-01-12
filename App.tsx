@@ -9,7 +9,7 @@ import { ProfilePage } from './components/ProfilePage';
 import { PasscodeGate } from './components/PasscodeGate';
 import { PetGarden } from './components/PetGarden';
 import { store } from './services/store';
-import { Home, PlusCircle, UserCircle, Wifi, WifiOff } from 'lucide-react';
+import { Home, PlusCircle, UserCircle, RefreshCw } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -27,10 +27,47 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLive, setIsLive] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => {
     return store.getAcknowledgedActivities();
   });
+
+  // Pull-to-refresh logic
+  const touchStartRef = useRef<number | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      touchStartRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartRef.current !== null) {
+      const currentY = e.touches[0].clientY;
+      const distance = currentY - touchStartRef.current;
+      if (distance > 0) {
+        setPullDistance(Math.min(distance * 0.4, 80)); // Limit distance
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 60) {
+      handleManualRefresh();
+    }
+    setPullDistance(0);
+    touchStartRef.current = null;
+  };
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    // Smooth reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -179,19 +216,38 @@ const App: React.FC = () => {
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden">
+    <div 
+      className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh Indicator */}
+      <div 
+        className="fixed top-0 left-0 right-0 z-[60] flex justify-center pointer-events-none transition-transform duration-200"
+        style={{ transform: `translateY(${pullDistance}px)` }}
+      >
+        <div className={`p-2 bg-white rounded-full shadow-lg border border-pink-100 ${pullDistance > 60 ? 'text-pink-500 scale-110' : 'text-gray-300'} transition-all`}>
+          <RefreshCw size={24} className={`${pullDistance > 60 ? 'animate-spin' : ''}`} />
+        </div>
+      </div>
+
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md p-5 flex flex-col items-center border-b border-gray-100">
-        <div className="flex items-center gap-2 mb-1">
+        <button 
+          onClick={handleManualRefresh}
+          className="flex items-center gap-2 mb-1 group active:scale-95 transition-all"
+        >
           <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
           <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isLive && isOnline ? 'text-green-500' : 'text-red-400'}`}>
             {isOnline ? (isLive ? 'Live Syncing' : 'Connecting...') : 'Offline'}
           </span>
-        </div>
+          <RefreshCw size={10} className="text-gray-300 group-hover:text-pink-400 transition-colors" />
+        </button>
         <h1 className="text-xl font-black text-pink-500 tracking-tighter uppercase text-center">The Tamarind Connect</h1>
         {profile && <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">Block {profile.roomNumber}</div>}
       </header>
 
-      <main className="flex-grow">
+      <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'HOME' && profile && (
           <div className="animate-fade-in">
             <PetGarden profile={profile} />
@@ -202,6 +258,15 @@ const App: React.FC = () => {
           <ProfilePage profile={profile} activities={activities} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} />
         )}
       </main>
+
+      {isRefreshing && (
+        <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin"></div>
+            <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Refreshing...</span>
+          </div>
+        </div>
+      )}
 
       {(showCheckIn || editingActivity) && profile && (
         <div className="fixed inset-0 z-50 flex items-end">
