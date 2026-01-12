@@ -26,6 +26,28 @@ const App: React.FC = () => {
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
+  // Sync state with URL hash for browser back/forward support
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#profile') {
+        setActiveTab('PROFILE');
+        setShowCheckIn(false);
+      } else if (hash === '#home' || hash === '') {
+        setActiveTab('HOME');
+        setShowCheckIn(false);
+      } else if (hash === '#checkin') {
+        setShowCheckIn(true);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Handle initial load
+    handleHashChange();
+    
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
@@ -34,26 +56,16 @@ const App: React.FC = () => {
         if (userDoc.exists()) {
           let userData = userDoc.data() as UserProfile;
           
-          // Login Day Count Logic
           const today = new Date();
           const todayStr = today.toISOString();
           const lastLogin = userData.lastLoginDate ? parseISO(userData.lastLoginDate) : null;
           
           if (!lastLogin || !isSameDay(lastLogin, today)) {
             const newTotalDays = (userData.totalLoginDays || 0) + 1;
-            userData = {
-              ...userData,
-              totalLoginDays: newTotalDays,
-              lastLoginDate: todayStr
-            };
+            userData = { ...userData, totalLoginDays: newTotalDays, lastLoginDate: todayStr };
             try {
-              await updateDoc(doc(db, "users", user.uid), {
-                totalLoginDays: newTotalDays,
-                lastLoginDate: todayStr
-              });
-            } catch (e) {
-              console.error("Failed to update login days", e);
-            }
+              await updateDoc(doc(db, "users", user.uid), { totalLoginDays: newTotalDays, lastLoginDate: todayStr });
+            } catch (e) { console.error(e); }
           }
 
           if (!userData.customUserId && user.displayName) {
@@ -83,19 +95,29 @@ const App: React.FC = () => {
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Activity));
         setActivities(data);
       });
-
-      return () => { unsubAct(); };
+      return () => unsubAct();
     }
   }, [appState]);
 
+  const changeTab = (tab: 'HOME' | 'PROFILE') => {
+    setActiveTab(tab);
+    window.location.hash = tab.toLowerCase();
+  };
+
+  const openCheckIn = () => {
+    setShowCheckIn(true);
+    window.location.hash = 'checkin';
+  };
+
+  const closeCheckIn = () => {
+    setShowCheckIn(false);
+    setEditingActivity(undefined);
+    window.location.hash = activeTab.toLowerCase();
+  };
+
   const handlePasscodeSuccess = () => { store.setVerified(true); setIsVerified(true); };
   const handleProfileComplete = (newProfile: UserProfile) => {
-    // Initial login data for new profile
-    const profileWithLogin = {
-      ...newProfile,
-      totalLoginDays: 1,
-      lastLoginDate: new Date().toISOString()
-    };
+    const profileWithLogin = { ...newProfile, totalLoginDays: 1, lastLoginDate: new Date().toISOString() };
     setProfile(profileWithLogin);
     setAppState('READY'); 
   };
@@ -109,8 +131,7 @@ const App: React.FC = () => {
         const { id, ...data } = activity;
         await addDoc(collection(db, "activities"), data);
       }
-      setShowCheckIn(false);
-      setEditingActivity(undefined);
+      closeCheckIn();
     } catch (e: any) { alert(e.message); }
   };
 
@@ -136,42 +157,44 @@ const App: React.FC = () => {
 
       <main className="flex-grow">
         {activeTab === 'HOME' && profile && (
-          <>
+          <div className="animate-fade-in">
             <PetGarden profile={profile} />
             <Timeline 
               activities={activities} 
               profile={profile} 
-              onEdit={setEditingActivity} 
+              onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} 
               onDelete={handleDeleteActivity}
               onUpdateProfile={setProfile}
             />
-          </>
+          </div>
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} activities={activities} onLogout={handleLogout} onEdit={setEditingActivity} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} />
+          <ProfilePage profile={profile} activities={activities} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} />
         )}
       </main>
 
       {(showCheckIn || editingActivity) && profile && (
         <div className="fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setShowCheckIn(false); setEditingActivity(undefined); }} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeCheckIn} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
-            <CheckInForm profile={profile} initialActivity={editingActivity} onSubmit={handleAddActivity} onCancel={() => { setShowCheckIn(false); setEditingActivity(undefined); }} />
+            <CheckInForm profile={profile} initialActivity={editingActivity} onSubmit={handleAddActivity} onCancel={closeCheckIn} />
           </div>
         </div>
       )}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4 relative">
-          <button onClick={() => setActiveTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Home</span></button>
-          <div className="w-1/3 flex justify-center"><button onClick={() => setShowCheckIn(true)} className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"><PlusCircle size={20} /><span className="text-[10px] uppercase tracking-widest">Add Plans</span></button></div>
-          <button onClick={() => setActiveTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}><UserCircle size={22} /><span className="text-[9px] font-black uppercase">Profile</span></button>
+          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Home</span></button>
+          <div className="w-1/3 flex justify-center"><button onClick={openCheckIn} className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"><PlusCircle size={20} /><span className="text-[10px] uppercase tracking-widest">Add Plans</span></button></div>
+          <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}><UserCircle size={22} /><span className="text-[9px] font-black uppercase">Profile</span></button>
         </div>
       </nav>
 
       <style>{`
         @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .animate-slide-up { animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

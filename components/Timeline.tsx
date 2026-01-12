@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
-import { format, addDays, isSameDay, parseISO, isWithinInterval } from 'date-fns';
+import { format, addDays, isSameDay, parseISO, isWithinInterval, isAfter, isBefore, subDays } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Clock, MessageCircle, Megaphone, Edit3, Trash2 } from 'lucide-react';
 
@@ -16,6 +16,9 @@ interface Props {
 
 export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchY, setTouchY] = useState<number | null>(null);
+  const [animationKey, setAnimationKey] = useState(0);
 
   const dates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
@@ -28,6 +31,46 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   const isNow = (activity: Activity) => {
     const now = new Date();
     return isWithinInterval(now, { start: parseISO(activity.startTime), end: parseISO(activity.endTime) });
+  };
+
+  // Swipe logic
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setTouchY(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null || touchY === null) return;
+    
+    const touchEnd = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const xDiff = touchStart - touchEnd;
+    const yDiff = touchY - touchEndY;
+
+    // Ensure it's more of a horizontal swipe than vertical scroll
+    if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 70) {
+      if (xDiff > 0) {
+        // Swipe Left -> Next Day
+        const nextDay = addDays(selectedDate, 1);
+        const maxDate = addDays(new Date(), 6);
+        if (isBefore(selectedDate, maxDate)) {
+          setSelectedDate(nextDay);
+          setAnimationKey(prev => prev + 1);
+        }
+      } else {
+        // Swipe Right -> Prev Day
+        const prevDay = subDays(selectedDate, 1);
+        const minDate = new Date();
+        if (!isBefore(selectedDate, minDate) && !isSameDay(selectedDate, minDate)) {
+          setSelectedDate(prevDay);
+          setAnimationKey(prev => prev + 1);
+        }
+      }
+    }
+    
+    setTouchStart(null);
+    setTouchY(null);
   };
 
   const renderSection = (type: LocationType) => {
@@ -103,20 +146,40 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 select-none">
+      {/* Date Picker Row */}
       <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-3 pt-1 px-1">
         {dates.map((d, i) => (
-          <button key={i} onClick={() => setSelectedDate(d)} className={`flex flex-col items-center min-w-[72px] p-4 rounded-[28px] transition-all relative ${isSameDay(d, selectedDate) ? 'bg-pink-400 text-white shadow-xl scale-105 font-black' : 'bg-white text-gray-400 border-2 border-transparent shadow-sm'}`}>
+          <button 
+            key={i} 
+            onClick={() => { setSelectedDate(d); setAnimationKey(prev => prev + 1); }} 
+            className={`flex flex-col items-center min-w-[72px] p-4 rounded-[28px] transition-all relative ${isSameDay(d, selectedDate) ? 'bg-pink-400 text-white shadow-xl scale-105 font-black' : 'bg-white text-gray-400 border-2 border-transparent shadow-sm'}`}
+          >
             <span className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-80">{format(d, 'EEE', { locale: enUS })}</span>
             <span className="text-xl leading-none">{format(d, 'd')}</span>
           </button>
         ))}
       </div>
-      <div className="pb-24">
+
+      {/* Main Timeline Content with Swipe Handling */}
+      <div 
+        className="pb-24 transition-opacity duration-300" 
+        key={animationKey}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{ animation: 'day-slide 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
+      >
         {renderSection(LocationType.POOL)}
         {renderSection(LocationType.OUTDOOR)}
         {renderSection(LocationType.INDOOR)}
       </div>
+
+      <style>{`
+        @keyframes day-slide {
+          from { opacity: 0; transform: translateX(10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
     </div>
   );
 };
