@@ -1,4 +1,3 @@
-
 // キャッシュの名前
 const CACHE_NAME = 'tamarind-cache-v1';
 
@@ -32,20 +31,20 @@ self.addEventListener('fetch', (event) => {
 
 // プッシュ通知を受け取った時の処理
 self.addEventListener('push', (event) => {
-  let data = { title: 'Tamarind Connect', body: '新しいお誘いがあります！' };
+  let data = { title: 'The Tamarind Connect', body: 'New play invitation!' };
   
   if (event.data) {
     try {
       data = event.data.json();
     } catch (e) {
-      data = { title: 'Tamarind Connect', body: event.data.text() };
+      data = { title: 'The Tamarind Connect', body: event.data.text() };
     }
   }
   
   const options = {
     body: data.body,
-    icon: 'https://cdn-icons-png.flaticon.com/512/3661/3661448.png',
-    badge: 'https://cdn-icons-png.flaticon.com/512/3661/3661448.png',
+    icon: 'https://cdn-icons-png.flaticon.com/512/263/263115.png',
+    badge: 'https://cdn-icons-png.flaticon.com/512/263/263115.png',
     vibrate: [100, 50, 100],
     data: {
       url: '/'

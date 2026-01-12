@@ -1,7 +1,6 @@
-
 {
   "name": "The Tamarind Connect",
-  "short_name": "Tamarind",
+  "short_name": "Tamarind Connect",
   "description": "Condominium playground sharing app",
   "start_url": "/",
   "display": "standalone",
@@ -9,12 +8,12 @@
   "theme_color": "#f472b6",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3661/3661448.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/263/263115.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3661/3661448.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/263/263115.png",
       "sizes": "512x512",
       "type": "image/png"
     }

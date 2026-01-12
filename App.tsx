@@ -88,9 +88,9 @@ const App: React.FC = () => {
           const newActivity = data[data.length - 1];
           if (newActivity.isInvitation && newActivity.userId !== profile.uid) {
             if (Notification.permission === 'granted') {
-              new Notification('新しいお誘い！', {
-                body: `${newActivity.parentNickname}さんからお誘いがあります：${newActivity.message || '一緒に遊びませんか？'}`,
-                icon: 'https://cdn-icons-png.flaticon.com/512/3661/3661448.png'
+              new Notification('New Invitation!', {
+                body: `${newActivity.parentNickname} has invited you: ${newActivity.message || 'Shall we play together?'}`,
+                icon: 'https://cdn-icons-png.flaticon.com/512/263/263115.png'
               });
             }
           }
@@ -103,13 +103,24 @@ const App: React.FC = () => {
   }, [appState, profile, activities.length]);
 
   const unseenCount = useMemo(() => {
-    if (!profile || activeTab === 'HOME') return 0;
-    return activities.filter(a => {
+    if (!profile) return 0;
+    const count = activities.filter(a => {
       if (a.userId === profile.uid) return false;
       const lastSeenUpdate = acknowledgedMap[a.id];
       return !lastSeenUpdate || lastSeenUpdate !== (a.lastUpdated || 'initial');
     }).length;
-  }, [activities, acknowledgedMap, profile, activeTab]);
+    
+    // Update Home Screen Badge if supported
+    if ('setAppBadge' in navigator) {
+      if (count > 0) {
+        (navigator as any).setAppBadge(count).catch(console.error);
+      } else {
+        (navigator as any).clearAppBadge().catch(console.error);
+      }
+    }
+    
+    return count;
+  }, [activities, acknowledgedMap, profile]);
 
   useEffect(() => {
     if (activeTab === 'HOME' && profile && activities.length > 0) {
@@ -199,8 +210,10 @@ const App: React.FC = () => {
           <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 relative ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
             <Home size={22} />
             <span className="text-[9px] font-black uppercase">Home</span>
-            {unseenCount > 0 && (
-              <span className="absolute top-1/2 left-1/2 -translate-x-[-12px] -translate-y-[-10px] w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse shadow-sm"></span>
+            {(activeTab !== 'HOME' && unseenCount > 0) && (
+              <span className="absolute top-1/2 left-1/2 -translate-x-[-12px] -translate-y-[-10px] w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] text-white font-black shadow-sm animate-bounce">
+                {unseenCount}
+              </span>
             )}
           </button>
           <div className="w-1/3 flex justify-center"><button onClick={openCheckIn} className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"><PlusCircle size={20} /><span className="text-[10px] uppercase tracking-widest">Add Plans</span></button></div>

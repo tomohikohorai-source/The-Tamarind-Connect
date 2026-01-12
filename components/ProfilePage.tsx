@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Activity, Child } from '../types';
 import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
-import { Home, Baby, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Bell, BellOff, HelpCircle, Smartphone, Share2, MoreVertical, CheckCircle2 } from 'lucide-react';
+import { Home, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Bell, BellOff, Smartphone, Share2, MoreVertical, CheckCircle2, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
@@ -35,15 +35,15 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
-      alert('このブラウザは通知に対応していません。');
+      alert('This browser does not support notifications.');
       return;
     }
     const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
     if (permission === 'granted') {
-      new Notification('通知設定完了！', {
-        body: '新しいお誘いがあるとお知らせします。',
-        icon: 'https://cdn-icons-png.flaticon.com/512/3661/3661448.png'
+      new Notification('Notifications Active!', {
+        body: 'You will now receive play invitations from your neighbors.',
+        icon: 'https://cdn-icons-png.flaticon.com/512/263/263115.png'
       });
     }
   };
@@ -83,7 +83,7 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
 
   return (
     <div className="p-6 pb-32 space-y-6 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar">
-      {/* 1. Header Section */}
+      {/* 1. Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-white rounded-[24px] flex items-center justify-center text-4xl border-2 border-pink-100 shadow-sm shrink-0">{profile.avatarIcon}</div>
@@ -100,12 +100,12 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
         )}
       </div>
 
-      {/* 2. Pet Garden Section */}
+      {/* 2. Pet Garden */}
       <div className="-mx-4"><PetGarden profile={profile} /></div>
 
-      {/* 3. My Activity History Section (Moved up) */}
+      {/* 3. My Activity History (Directly below Pet Garden) */}
       <section className="space-y-4">
-        <h3 className="font-black text-gray-800 mb-2 flex items-center gap-2 uppercase text-[10px] tracking-widest"><Calendar className="text-pink-400" size={14}/> My Activity History</h3>
+        <h3 className="font-black text-gray-800 mb-2 flex items-center gap-2 uppercase text-[10px] tracking-widest"><Calendar className="text-pink-400" size={14}/> Activity History</h3>
         <div className="space-y-4">
           {myActivities.length > 0 ? (
             myActivities.map(a => (
@@ -129,39 +129,49 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
         </div>
       </section>
 
-      {/* 4. App Guide & Integrated Push Notifications */}
+      {/* 4. App Setup Guide */}
       <section className="bg-gradient-to-br from-pink-50/50 to-orange-50/30 p-6 rounded-[32px] border border-pink-100 shadow-sm space-y-5">
         <div className="flex items-center gap-2">
           <Smartphone size={18} className="text-pink-400" />
-          <h4 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">App Guide / アプリの使いかた</h4>
+          <h4 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">App Setup Guide</h4>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Step 1: Install */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-wider">
-              Step 1. ホーム画面に追加
+              Step 1. Add to Home Screen
             </div>
-            <div className="bg-white/70 p-4 rounded-2xl text-[9px] font-bold text-gray-500 leading-relaxed space-y-3">
-              <div className="flex items-start gap-2">
-                <span className="text-pink-400 font-black shrink-0">iPhone:</span>
-                <span>ブラウザ(Safari/Chrome)の<b>共有ボタン <Share2 size={10} className="inline mb-1"/></b> を押し、<b>「ホーム画面に追加」</b>を選択。</span>
+            <div className="bg-white/70 p-4 rounded-2xl text-[9px] font-bold text-gray-500 leading-relaxed space-y-4">
+              <div className="space-y-2">
+                <span className="text-pink-500 font-black block">iPhone (Safari):</span>
+                <ol className="list-decimal list-inside space-y-1 ml-1">
+                  <li>Tap the <b>Share</b> button <Share2 size={12} className="inline mb-1 mx-1"/> in the bottom bar.</li>
+                  <li>Scroll down and tap <b>"Add to Home Screen"</b>.</li>
+                </ol>
               </div>
-              <div className="flex items-start gap-2 border-t border-pink-50/50 pt-3">
-                <span className="text-pink-400 font-black shrink-0">Android:</span>
-                <span>Chromeのメニュー <MoreVertical size={10} className="inline mb-1"/> から<b>「アプリをインストール」</b>を選択。</span>
+              <div className="border-t border-pink-50/50 pt-3 space-y-2">
+                <span className="text-pink-500 font-black block">iPhone (Chrome):</span>
+                <ol className="list-decimal list-inside space-y-1 ml-1">
+                  <li>Tap the <b>Share</b> icon <Share2 size={12} className="inline mb-1 mx-1"/> next to the address bar.</li>
+                  <li>Scroll down and tap <b>"Add to Home Screen"</b>.</li>
+                </ol>
+              </div>
+              <div className="border-t border-pink-50/50 pt-3 space-y-2">
+                <span className="text-pink-500 font-black block">Android (Chrome):</span>
+                <p>Tap the menu <MoreVertical size={12} className="inline mb-1 mx-1"/> and select <b>"Install App"</b>.</p>
               </div>
             </div>
           </div>
 
           {/* Step 2: Push Notification */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-wider">
-              Step 2. 通知を有効にする
+              Step 2. Enable Notifications
             </div>
-            <div className="bg-white/70 p-4 rounded-2xl space-y-3">
+            <div className="bg-white/70 p-4 rounded-2xl space-y-4">
               <p className="text-[9px] font-bold text-gray-500 leading-relaxed">
-                ホーム画面のアイコンから起動した状態で、以下のボタンを押して通知を許可してください。お誘い（Invite）が届くようになります。
+                Open the app from your <b>Home Screen icon</b>, then tap the button below to enable play invitations.
               </p>
               
               <div className="flex items-center justify-between gap-3 pt-1">
@@ -186,6 +196,17 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
                   {notificationPermission === 'granted' ? <><CheckCircle2 size={12}/> Enabled</> : 'Enable Now'}
                 </button>
               </div>
+
+              {/* Tips for iPhone */}
+              <div className="mt-4 p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-2">
+                <Info size={14} className="text-blue-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">Important for iPhone Users</span>
+                  <p className="text-[8px] font-bold text-gray-500 leading-tight">
+                    For real-time notifications, <b>do not</b> "swipe away" the app from your task switcher. Keep it running in the background. A red badge will appear on your icon when you have new invites.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -194,7 +215,7 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
       {isEditingProfile && (
         <section className="bg-orange-50/50 p-6 rounded-[40px] border-2 border-orange-100 space-y-6 animate-slide-up">
           <div className="flex justify-between items-center">
-            <h3 className="font-black text-orange-600 uppercase text-[10px] tracking-widest flex items-center gap-2"><User size={14}/> Edit My Profile</h3>
+            <h3 className="font-black text-orange-600 uppercase text-[10px] tracking-widest flex items-center gap-2"><User size={14}/> Edit Profile</h3>
             <button onClick={() => setIsEditingProfile(false)} className="bg-white p-2 rounded-xl text-gray-400"><X size={18} /></button>
           </div>
           <div className="space-y-6">

@@ -1,7 +1,6 @@
-
 import React, { useMemo } from 'react';
 import { UserProfile } from '../types';
-import { Sparkles, ChevronRight, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock } from 'lucide-react';
+import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock } from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
@@ -183,7 +182,7 @@ export const PetGarden: React.FC<Props> = ({ profile }) => {
                   />
                 </div>
                 <span className={`text-[9px] font-black ${evolution.textColor} whitespace-nowrap`}>
-                  {evolution.next ? `${evolution.next.threshold - days}D LEFT` : 'MAX'}
+                  {evolution.next ? 'NEXT ???' : 'MAX'}
                 </span>
               </div>
             </div>
@@ -194,20 +193,22 @@ export const PetGarden: React.FC<Props> = ({ profile }) => {
               <Lock size={10} className={`${evolution.textColor} opacity-40`} />
               <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
                 {evolution.next ? (
-                  <>Next evolution in <span className={evolution.textColor}>{evolution.next.threshold - days} days</span></>
+                  <>Next evolution approaching...</>
                 ) : (
                   <>Ultimate Form Reached!</>
                 )}
               </span>
             </div>
             <div className="flex items-center gap-1 opacity-60">
-              <span className="text-[7px] font-black text-gray-300 uppercase tracking-tighter mr-1">{evolution.pathLabel}</span>
+              <span className="text-[7px] font-black text-gray-300 uppercase tracking-tighter mr-1">
+                 {days < 15 ? 'Mystery Soul' : 'Evolving...'}
+              </span>
               <div className="flex -space-x-1.5">
                 <div className={`w-4 h-4 bg-white/50 rounded flex items-center justify-center text-[10px] z-10 border border-white/20`}>
                   {evolution.current.icon}
                 </div>
                 <div className={`w-4 h-4 ${evolution.accentColor} rounded flex items-center justify-center text-[10px] border border-white/20`}>
-                  {days < 15 ? '❓' : (days < 100 ? '🧬' : '👑')}
+                  <Lock size={8} />
                 </div>
               </div>
             </div>
