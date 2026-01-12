@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppState, UserProfile, Activity } from './types';
 import { AuthScreen } from './components/AuthScreen';
@@ -8,11 +9,11 @@ import { ProfilePage } from './components/ProfilePage';
 import { PasscodeGate } from './components/PasscodeGate';
 import { PetGarden } from './components/PetGarden';
 import { store } from './services/store';
-import { Home, PlusCircle, UserCircle } from 'lucide-react';
+import { Home, PlusCircle, UserCircle, Wifi, WifiOff } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut 
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut
 } from './firebase';
 
 const App: React.FC = () => {
@@ -24,14 +25,24 @@ const App: React.FC = () => {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const lastActivityIdRef = useRef<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isLive, setIsLive] = useState(false);
 
-  // Notification state
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => {
     return store.getAcknowledgedActivities();
   });
 
-  // Sync state with URL hash
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
@@ -79,27 +90,19 @@ const App: React.FC = () => {
     if (appState === 'READY') {
       const qAct = query(collection(db, "activities"), orderBy("startTime", "asc"));
       const unsubAct = onSnapshot(qAct, (snapshot) => {
+        setIsLive(true);
         const data: Activity[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Activity));
-        
-        // Push notification logic for invitations
-        if (profile && data.length > activities.length && activities.length > 0) {
-          const newActivity = data[data.length - 1];
-          if (newActivity.isInvitation && newActivity.userId !== profile.uid) {
-            if (Notification.permission === 'granted') {
-              new Notification('New Invitation!', {
-                body: `${newActivity.parentNickname} has invited you: ${newActivity.message || 'Shall we play together?'}`,
-                icon: 'https://cdn-icons-png.flaticon.com/512/1018/1018573.png'
-              });
-            }
-          }
-        }
-        
         setActivities(data);
+      }, (error) => {
+        setIsLive(false);
       });
-      return () => unsubAct();
+      return () => {
+        unsubAct();
+        setIsLive(false);
+      };
     }
-  }, [appState, profile, activities.length]);
+  }, [appState]);
 
   const unseenCount = useMemo(() => {
     if (!profile) return 0;
@@ -109,7 +112,6 @@ const App: React.FC = () => {
       return !lastSeenUpdate || lastSeenUpdate !== (a.lastUpdated || 'initial');
     }).length;
     
-    // Update Home Screen Badge if supported
     if ('setAppBadge' in navigator) {
       if (count > 0) {
         (navigator as any).setAppBadge(count).catch(console.error);
@@ -179,6 +181,12 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden">
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md p-5 flex flex-col items-center border-b border-gray-100">
+        <div className="flex items-center gap-2 mb-1">
+          <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+          <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isLive && isOnline ? 'text-green-500' : 'text-red-400'}`}>
+            {isOnline ? (isLive ? 'Live Syncing' : 'Connecting...') : 'Offline'}
+          </span>
+        </div>
         <h1 className="text-xl font-black text-pink-500 tracking-tighter uppercase text-center">The Tamarind Connect</h1>
         {profile && <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">Block {profile.roomNumber}</div>}
       </header>

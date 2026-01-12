@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { UserProfile, Activity, Child } from '../types';
 import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
-import { Home, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Bell, BellOff, Smartphone, Share2, MoreVertical, CheckCircle2, Info } from 'lucide-react';
+import { Home, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Smartphone, Share2, MoreVertical, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
@@ -24,37 +25,6 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
   const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
-
-  useEffect(() => {
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
-    }
-  }, []);
-
-  const requestNotificationPermission = async () => {
-    // Check if app is in standalone mode (Home Screen)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-
-    if (!isStandalone) {
-      alert("Push notifications are not supported in a standard web browser on iPhone.\n\nPlease add this app to your Home Screen first to enable notifications.");
-      return;
-    }
-
-    if (!('Notification' in window)) {
-      alert('This browser does not support notifications.');
-      return;
-    }
-
-    const permission = await Notification.requestPermission();
-    setNotificationPermission(permission);
-    if (permission === 'granted') {
-      new Notification('Notifications Active!', {
-        body: 'You will now receive play invitations from your neighbors.',
-        icon: 'https://cdn-icons-png.flaticon.com/512/1018/1018573.png'
-      });
-    }
-  };
 
   const myActivities = activities
     .filter(a => a.userId === profile.uid)
@@ -111,7 +81,7 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
       {/* 2. Pet Garden */}
       <div className="-mx-4"><PetGarden profile={profile} /></div>
 
-      {/* 3. My Activity History (Directly below Pet Garden) */}
+      {/* 3. My Activity History */}
       <section className="space-y-4">
         <h3 className="font-black text-gray-800 mb-2 flex items-center gap-2 uppercase text-[10px] tracking-widest"><Calendar className="text-pink-400" size={14}/> Activity History</h3>
         <div className="space-y-4">
@@ -145,10 +115,9 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
         </div>
 
         <div className="space-y-6">
-          {/* Step 1: Install */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-wider">
-              Step 1. Add to Home Screen
+              How to add to Home Screen
             </div>
             <div className="bg-white/70 p-4 rounded-2xl text-[9px] font-bold text-gray-500 leading-relaxed space-y-4">
               <div className="space-y-2">
@@ -172,50 +141,14 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
             </div>
           </div>
 
-          {/* Step 2: Push Notification */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-wider">
-              Step 2. Enable Notifications
-            </div>
-            <div className="bg-white/70 p-4 rounded-2xl space-y-4">
-              <p className="text-[9px] font-bold text-gray-500 leading-relaxed">
-                Open the app from your <b>Home Screen icon</b>, then tap the button below to enable play invitations.
-              </p>
-              
-              <div className="flex items-center justify-between gap-3 pt-1">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg ${notificationPermission === 'granted' ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-300'}`}>
-                    {notificationPermission === 'granted' ? <Bell size={14} /> : <BellOff size={14} />}
-                  </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${notificationPermission === 'granted' ? 'text-green-500' : 'text-gray-400'}`}>
-                    {notificationPermission === 'granted' ? 'Active' : 'Disabled'}
-                  </span>
-                </div>
-                
-                <button 
-                  onClick={requestNotificationPermission}
-                  disabled={notificationPermission === 'granted'}
-                  className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                    notificationPermission === 'granted' 
-                      ? 'bg-green-100 text-green-600 border border-green-200 cursor-default' 
-                      : 'bg-pink-400 text-white shadow-lg shadow-pink-100 active:scale-95'
-                  }`}
-                >
-                  {notificationPermission === 'granted' ? <><CheckCircle2 size={12}/> Enabled</> : 'Enable Now'}
-                </button>
-              </div>
-
-              {/* Tips for iPhone */}
-              <div className="mt-4 p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex gap-2">
-                <Info size={14} className="text-blue-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">Important for iPhone Users</span>
-                  <p className="text-[8px] font-bold text-gray-500 leading-tight">
-                    For real-time notifications, <b>do not</b> "swipe away" the app from your task switcher. Keep it running in the background. A red badge will appear on your icon when you have new invites.
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-3">
+             <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
+             <div className="space-y-1">
+               <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Real-time updates</span>
+               <p className="text-[8px] font-bold text-gray-500 leading-relaxed">
+                 To receive the latest updates from your neighbors, please keep the app open or re-open it frequently. Real-time sync is active while you use the app.
+               </p>
+             </div>
           </div>
         </div>
       </section>

@@ -1,3 +1,4 @@
+
 // キャッシュの名前
 const CACHE_NAME = 'tamarind-cache-v1';
 
@@ -20,51 +21,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// ネットワークリクエスト時に実行（オフライン対応の基本）
+// ネットワークリクエスト時に実行
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request);
-    })
-  );
-});
-
-// プッシュ通知を受け取った時の処理
-self.addEventListener('push', (event) => {
-  let data = { title: 'The Tamarind Connect', body: 'New play invitation!' };
-  
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data = { title: 'The Tamarind Connect', body: event.data.text() };
-    }
-  }
-  
-  const options = {
-    body: data.body,
-    icon: 'https://cdn-icons-png.flaticon.com/512/1018/1018573.png',
-    badge: 'https://cdn-icons-png.flaticon.com/512/1018/1018573.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: '/'
-    }
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-// 通知をクリックした時の処理
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === '/' && 'focus' in client) return client.focus();
-      }
-      if (clients.openWindow) return clients.openWindow('/');
     })
   );
 });
