@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Notification state
+  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(store.getAcknowledgedActivities());
   const [unseenCount, setUnseenCount] = useState(0);
 
   // Sync state with URL hash
@@ -85,30 +86,30 @@ const App: React.FC = () => {
     }
   }, [appState]);
 
-  // Handle Notifications
+  // Handle Notifications calculation
   useEffect(() => {
     if (appState === 'READY' && profile) {
-      const acknowledged = store.getAcknowledgedActivities();
       const count = activities.filter(a => {
         if (a.userId === profile.uid) return false;
-        return !acknowledged[a.id] || acknowledged[a.id] !== a.lastUpdated;
+        return !acknowledgedMap[a.id] || acknowledgedMap[a.id] !== a.lastUpdated;
       }).length;
       setUnseenCount(count);
 
-      // If user is currently on HOME tab, auto-acknowledge after a small delay
-      if (activeTab === 'HOME') {
+      // If user is currently on HOME tab, auto-acknowledge after a brief delay
+      if (activeTab === 'HOME' && count > 0) {
         const timer = setTimeout(() => {
-          const newMapping: Record<string, string> = { ...acknowledged };
+          const newMapping: Record<string, string> = { ...acknowledgedMap };
           activities.forEach(a => {
             newMapping[a.id] = a.lastUpdated;
           });
           store.setAcknowledgedActivities(newMapping);
+          setAcknowledgedMap(newMapping);
           setUnseenCount(0);
-        }, 1500);
+        }, 500); // Shorter delay for better responsiveness
         return () => clearTimeout(timer);
       }
     }
-  }, [activities, activeTab, appState, profile]);
+  }, [activities, activeTab, appState, profile, acknowledgedMap]);
 
   const changeTab = (tab: 'HOME' | 'PROFILE') => {
     setActiveTab(tab);
@@ -172,6 +173,7 @@ const App: React.FC = () => {
             <Timeline 
               activities={activities} 
               profile={profile} 
+              acknowledgedMap={acknowledgedMap}
               onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} 
               onDelete={handleDeleteActivity}
               onUpdateProfile={setProfile}
@@ -198,7 +200,7 @@ const App: React.FC = () => {
             <Home size={22} />
             <span className="text-[9px] font-black uppercase">Home</span>
             {unseenCount > 0 && (
-              <span className="absolute top-0 right-1/3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse shadow-sm"></span>
+              <span className="absolute top-1/2 left-1/2 -translate-x-[-12px] -translate-y-[-10px] w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse shadow-sm"></span>
             )}
           </button>
           <div className="w-1/3 flex justify-center"><button onClick={openCheckIn} className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"><PlusCircle size={20} /><span className="text-[10px] uppercase tracking-widest">Add Plans</span></button></div>

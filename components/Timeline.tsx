@@ -5,17 +5,17 @@ import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles } from 'lucide-react';
-import { store } from '../services/store';
 
 interface Props {
   activities: Activity[];
   profile: UserProfile | null;
+  acknowledgedMap: Record<string, string>;
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
   onUpdateProfile: (profile: UserProfile) => void;
 }
 
-export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelete }) => {
+export const Timeline: React.FC<Props> = ({ activities, profile, acknowledgedMap, onEdit, onDelete }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchY, setTouchY] = useState<number | null>(null);
@@ -83,8 +83,6 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     setTouchY(null);
   };
 
-  const acknowledgedMap = useMemo(() => store.getAcknowledgedActivities(), [activities]);
-
   const renderSection = (type: LocationType) => {
     const meta = LOCATION_METADATA[type];
     const sectionActivities = filteredActivities.filter(a => a.location === type).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -107,7 +105,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
                 <div key={a.id} className={`p-5 rounded-[32px] bg-white border-2 ${isNow(a) ? meta.borderColor : 'border-gray-50'} shadow-sm relative transition-all active:scale-[0.98]`}>
                   {/* Notification Badges */}
                   {(isNew || isUpdated) && (
-                    <div className="absolute -top-1 -left-1 flex">
+                    <div className="absolute -top-1 -left-1 flex z-10">
                       <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter text-white shadow-lg animate-bounce flex items-center gap-1 ${isNew ? 'bg-pink-400' : 'bg-blue-400'}`}>
                         <Sparkles size={8} /> {isNew ? 'NEW' : 'UPDATED'}
                       </div>
@@ -199,7 +197,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
                 <>
                   <div className={`absolute -bottom-1.5 w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-pink-400'}`} />
                   <span className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/50 z-10 whitespace-nowrap transition-colors ${
-                    isSelected ? 'bg-white text-pink-500' : 'bg-pink-500 text-white'
+                    isSelected ? 'bg-white text-pink-500' : 'bg-pink-50 text-white'
                   }`}>
                     Today
                   </span>
