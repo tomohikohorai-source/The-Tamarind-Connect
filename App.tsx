@@ -26,8 +26,8 @@ const App: React.FC = () => {
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
-  // Notification state
-  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(store.getAcknowledgedActivities());
+  // Notification state - Initialize from store
+  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
   const [unseenCount, setUnseenCount] = useState(0);
 
   // Sync state with URL hash
@@ -86,30 +86,31 @@ const App: React.FC = () => {
     }
   }, [appState]);
 
-  // Handle Notifications calculation
-  useEffect(() => {
-    if (appState === 'READY' && profile) {
-      const count = activities.filter(a => {
-        if (a.userId === profile.uid) return false;
-        return !acknowledgedMap[a.id] || acknowledgedMap[a.id] !== a.lastUpdated;
-      }).length;
-      setUnseenCount(count);
+  // Handle Notifications calculation and automatic acknowledgement
+  const currentUnseenActivities = useMemo(() => {
+    if (!profile) return [];
+    return activities.filter(a => {
+      if (a.userId === profile.uid) return false;
+      const lastSeen = acknowledgedMap[a.id];
+      return !lastSeen || lastSeen !== a.lastUpdated;
+    });
+  }, [activities, acknowledgedMap, profile]);
 
-      // If user is currently on HOME tab, auto-acknowledge after a brief delay
-      if (activeTab === 'HOME' && count > 0) {
-        const timer = setTimeout(() => {
-          const newMapping: Record<string, string> = { ...acknowledgedMap };
-          activities.forEach(a => {
-            newMapping[a.id] = a.lastUpdated;
-          });
-          store.setAcknowledgedActivities(newMapping);
-          setAcknowledgedMap(newMapping);
-          setUnseenCount(0);
-        }, 500); // Shorter delay for better responsiveness
-        return () => clearTimeout(timer);
-      }
+  useEffect(() => {
+    setUnseenCount(currentUnseenActivities.length);
+  }, [currentUnseenActivities]);
+
+  useEffect(() => {
+    // If user is on HOME tab and there are unseen activities, mark them as seen immediately
+    if (activeTab === 'HOME' && currentUnseenActivities.length > 0) {
+      const newMapping = { ...acknowledgedMap };
+      activities.forEach(a => {
+        newMapping[a.id] = a.lastUpdated;
+      });
+      setAcknowledgedMap(newMapping);
+      store.setAcknowledgedActivities(newMapping);
     }
-  }, [activities, activeTab, appState, profile, acknowledgedMap]);
+  }, [activeTab, activities, profile]); // Removed acknowledgedMap from dependencies to avoid infinite loop
 
   const changeTab = (tab: 'HOME' | 'PROFILE') => {
     setActiveTab(tab);
