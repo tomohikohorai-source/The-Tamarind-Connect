@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
-import { format, addDays, isSameDay, parseISO, isWithinInterval, isAfter, isBefore, subDays } from 'date-fns';
+import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Clock, MessageCircle, Megaphone, Edit3, Trash2 } from 'lucide-react';
 
@@ -19,21 +19,34 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchY, setTouchY] = useState<number | null>(null);
   const [animationKey, setAnimationKey] = useState(0);
+  
+  const dateButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   const dates = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
+    // Yesterday (-1) to 6 days in the future (+6). Total 8 days.
+    return Array.from({ length: 8 }, (_, i) => addDays(new Date(), i - 1));
   }, []);
 
+  useEffect(() => {
+    const activeIndex = dates.findIndex(d => isSameDay(d, selectedDate));
+    if (activeIndex !== -1 && dateButtonsRef.current[activeIndex]) {
+      dateButtonsRef.current[activeIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [selectedDate, dates]);
+
   const filteredActivities = useMemo(() => {
-    return activities.filter(a => isSameDay(parseISO(a.startTime), selectedDate));
+    return activities.filter(a => isSameDay(new Date(a.startTime), selectedDate));
   }, [activities, selectedDate]);
 
   const isNow = (activity: Activity) => {
     const now = new Date();
-    return isWithinInterval(now, { start: parseISO(activity.startTime), end: parseISO(activity.endTime) });
+    return isWithinInterval(now, { start: new Date(activity.startTime), end: new Date(activity.endTime) });
   };
 
-  // Swipe logic
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
     setTouchY(e.targetTouches[0].clientY);
@@ -48,21 +61,18 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     const xDiff = touchStart - touchEnd;
     const yDiff = touchY - touchEndY;
 
-    // Ensure it's more of a horizontal swipe than vertical scroll
     if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 70) {
       if (xDiff > 0) {
-        // Swipe Left -> Next Day
         const nextDay = addDays(selectedDate, 1);
-        const maxDate = addDays(new Date(), 6);
+        const maxDate = dates[dates.length - 1];
         if (isBefore(selectedDate, maxDate)) {
           setSelectedDate(nextDay);
           setAnimationKey(prev => prev + 1);
         }
       } else {
-        // Swipe Right -> Prev Day
-        const prevDay = subDays(selectedDate, 1);
-        const minDate = new Date();
-        if (!isBefore(selectedDate, minDate) && !isSameDay(selectedDate, minDate)) {
+        const prevDay = addDays(selectedDate, -1);
+        const minDate = dates[0];
+        if (isAfter(selectedDate, minDate)) {
           setSelectedDate(prevDay);
           setAnimationKey(prev => prev + 1);
         }
@@ -102,7 +112,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
                   <div className="flex justify-between items-center mb-5">
                     <div className="flex items-center gap-2 text-gray-800 font-black">
                       <Clock size={16} className="text-pink-300" />
-                      <span className="text-sm tracking-tight">{format(parseISO(a.startTime), 'HH:mm')} - {format(parseISO(a.endTime), 'HH:mm')}</span>
+                      <span className="text-sm tracking-tight">{format(new Date(a.startTime), 'HH:mm')} - {format(new Date(a.endTime), 'HH:mm')}</span>
                     </div>
                     {isMine && (
                       <div className="flex gap-2 mr-10">
@@ -147,21 +157,48 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
   return (
     <div className="p-4 space-y-6 select-none">
-      {/* Date Picker Row */}
-      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-3 pt-1 px-1">
-        {dates.map((d, i) => (
-          <button 
-            key={i} 
-            onClick={() => { setSelectedDate(d); setAnimationKey(prev => prev + 1); }} 
-            className={`flex flex-col items-center min-w-[72px] p-4 rounded-[28px] transition-all relative ${isSameDay(d, selectedDate) ? 'bg-pink-400 text-white shadow-xl scale-105 font-black' : 'bg-white text-gray-400 border-2 border-transparent shadow-sm'}`}
-          >
-            <span className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-80">{format(d, 'EEE', { locale: enUS })}</span>
-            <span className="text-xl leading-none">{format(d, 'd')}</span>
-          </button>
-        ))}
+      {/* Date Picker Row - Added pb-10 and larger buttons to prevent label clipping on mobile */}
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-10 pt-2 px-2 items-start">
+        {dates.map((d, i) => {
+          const isToday = isSameDay(d, new Date());
+          const isSelected = isSameDay(d, selectedDate);
+          
+          return (
+            <button 
+              key={i} 
+              ref={el => { dateButtonsRef.current[i] = el; }}
+              onClick={() => { setSelectedDate(d); setAnimationKey(prev => prev + 1); }} 
+              className={`flex flex-col items-center min-w-[72px] p-4 rounded-[28px] transition-all relative ${
+                isSelected 
+                  ? 'bg-pink-400 text-white shadow-xl scale-105 font-black' 
+                  : isToday
+                    ? 'bg-white text-pink-400 border-2 border-pink-100 shadow-sm' 
+                    : 'bg-white text-gray-400 border-2 border-transparent shadow-sm'
+              }`}
+            >
+              <span className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isSelected ? 'opacity-80' : 'opacity-60'}`}>
+                {format(d, 'EEE', { locale: enUS })}
+              </span>
+              <span className="text-xl leading-none">{format(d, 'd')}</span>
+              
+              {isToday && (
+                <>
+                  {/* Visual dot to ensure "Today" is marked even if text clips */}
+                  <div className={`absolute -bottom-1.5 w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-pink-400'}`} />
+                  
+                  {/* Today Label - Adjusted position and z-index */}
+                  <span className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/50 z-10 whitespace-nowrap transition-colors ${
+                    isSelected ? 'bg-white text-pink-500' : 'bg-pink-500 text-white'
+                  }`}>
+                    Today
+                  </span>
+                </>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Main Timeline Content with Swipe Handling */}
       <div 
         className="pb-24 transition-opacity duration-300" 
         key={animationKey}

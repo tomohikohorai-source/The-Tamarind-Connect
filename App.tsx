@@ -10,7 +10,8 @@ import { PasscodeGate } from './components/PasscodeGate';
 import { PetGarden } from './components/PetGarden';
 import { store } from './services/store';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
-import { format, isSameDay, parseISO } from 'date-fns';
+// Fix: Removed parseISO as it is missing in the current date-fns environment
+import { format, isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
   onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut 
@@ -33,11 +34,17 @@ const App: React.FC = () => {
       if (hash === '#profile') {
         setActiveTab('PROFILE');
         setShowCheckIn(false);
+        setEditingActivity(undefined);
       } else if (hash === '#home' || hash === '') {
         setActiveTab('HOME');
         setShowCheckIn(false);
+        setEditingActivity(undefined);
       } else if (hash === '#checkin') {
         setShowCheckIn(true);
+      } else {
+        // Handle cases where user might manually change hash or hit back
+        setShowCheckIn(false);
+        setEditingActivity(undefined);
       }
     };
 
@@ -58,7 +65,8 @@ const App: React.FC = () => {
           
           const today = new Date();
           const todayStr = today.toISOString();
-          const lastLogin = userData.lastLoginDate ? parseISO(userData.lastLoginDate) : null;
+          // Fix: Replaced parseISO with native Date constructor
+          const lastLogin = userData.lastLoginDate ? new Date(userData.lastLoginDate) : null;
           
           if (!lastLogin || !isSameDay(lastLogin, today)) {
             const newTotalDays = (userData.totalLoginDays || 0) + 1;

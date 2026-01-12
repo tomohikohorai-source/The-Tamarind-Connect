@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, LocationType, Activity, Child } from '../types';
 import { LOCATION_METADATA } from '../constants';
-import { addDays, format, setHours, setMinutes, parseISO, isAfter } from 'date-fns';
+// Fix: Removed setHours, setMinutes, and parseISO as they are missing in the current date-fns environment
+import { addDays, format, isAfter } from 'date-fns';
 import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
 
 interface Props {
@@ -16,11 +17,13 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
   const [location, setLocation] = useState<LocationType>(initialActivity?.location || LocationType.POOL);
   const [type, setType] = useState<'NOW' | 'FUTURE'>(initialActivity ? 'FUTURE' : 'NOW');
   const [selectedChildren, setSelectedChildren] = useState<string[]>(initialActivity?.childNicknames || profile.children.map(c => c.nickname));
-  const [date, setDate] = useState(initialActivity ? parseISO(initialActivity.startTime) : new Date());
+  // Fix: Replaced parseISO with native Date constructor
+  const [date, setDate] = useState(initialActivity ? new Date(initialActivity.startTime) : new Date());
   
   const now = new Date();
-  const [startTime, setStartTime] = useState(initialActivity ? format(parseISO(initialActivity.startTime), 'HH:mm') : format(now, 'HH:mm'));
-  const [endTime, setEndTime] = useState(initialActivity ? format(parseISO(initialActivity.endTime), 'HH:mm') : format(new Date(now.getTime() + 60 * 60000), 'HH:mm'));
+  // Fix: Replaced parseISO with native Date constructor
+  const [startTime, setStartTime] = useState(initialActivity ? format(new Date(initialActivity.startTime), 'HH:mm') : format(now, 'HH:mm'));
+  const [endTime, setEndTime] = useState(initialActivity ? format(new Date(initialActivity.endTime), 'HH:mm') : format(new Date(now.getTime() + 60 * 60000), 'HH:mm'));
   
   const [message, setMessage] = useState(initialActivity?.message || '');
   const [isInvitation, setIsInvitation] = useState(initialActivity?.isInvitation || false);
@@ -35,12 +38,14 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
     e.preventDefault();
     setError('');
 
-    // Use manually set or default startTime for both NOW and FUTURE types
+    // Fix: Replaced setHours and setMinutes with native Date mutation
     const [sh, sm] = startTime.split(':').map(Number);
-    const start = setMinutes(setHours(date, sh), sm);
+    const start = new Date(date);
+    start.setHours(sh, sm, 0, 0);
     
     const [eh, em] = endTime.split(':').map(Number);
-    const end = setMinutes(setHours(date, eh), em);
+    const end = new Date(date);
+    end.setHours(eh, em, 0, 0);
 
     if (isAfter(start, end)) {
       setError('End time must be after start time');

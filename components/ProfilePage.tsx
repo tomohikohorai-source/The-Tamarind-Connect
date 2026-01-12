@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { UserProfile, Activity, Child } from '../types';
 import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
 import { Home, Baby, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Fingerprint } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+// Fix: Removed parseISO as it is missing in the current date-fns environment
+import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 
 interface Props {
@@ -256,7 +257,8 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
                       {LOCATION_METADATA[a.location].label}
                     </div>
                     <div className="font-black text-gray-800 text-sm">
-                      {format(parseISO(a.startTime), 'MMM d')} | {format(parseISO(a.startTime), 'HH:mm')}
+                      {/* Fix: Replaced parseISO with native Date constructor */}
+                      {format(new Date(a.startTime), 'MMM d')} | {format(new Date(a.startTime), 'HH:mm')}
                     </div>
                   </div>
                 </div>
