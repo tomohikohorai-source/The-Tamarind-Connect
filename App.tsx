@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppState, UserProfile, Activity } from './types';
 import { AuthScreen } from './components/AuthScreen';
@@ -90,7 +89,7 @@ const App: React.FC = () => {
             if (Notification.permission === 'granted') {
               new Notification('New Invitation!', {
                 body: `${newActivity.parentNickname} has invited you: ${newActivity.message || 'Shall we play together?'}`,
-                icon: 'https://cdn-icons-png.flaticon.com/512/263/263115.png'
+                icon: 'https://cdn-icons-png.flaticon.com/512/1018/1018573.png'
               });
             }
           }

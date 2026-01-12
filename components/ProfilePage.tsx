@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Activity, Child } from '../types';
 import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
@@ -34,16 +33,25 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
   }, []);
 
   const requestNotificationPermission = async () => {
+    // Check if app is in standalone mode (Home Screen)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+
+    if (!isStandalone) {
+      alert("Push notifications are not supported in a standard web browser on iPhone.\n\nPlease add this app to your Home Screen first to enable notifications.");
+      return;
+    }
+
     if (!('Notification' in window)) {
       alert('This browser does not support notifications.');
       return;
     }
+
     const permission = await Notification.requestPermission();
     setNotificationPermission(permission);
     if (permission === 'granted') {
       new Notification('Notifications Active!', {
         body: 'You will now receive play invitations from your neighbors.',
-        icon: 'https://cdn-icons-png.flaticon.com/512/263/263115.png'
+        icon: 'https://cdn-icons-png.flaticon.com/512/1018/1018573.png'
       });
     }
   };
