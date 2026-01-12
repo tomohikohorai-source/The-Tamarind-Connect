@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppState, UserProfile, Activity } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
@@ -26,9 +26,10 @@ const App: React.FC = () => {
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
-  // Notification state - Initialize from store
-  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
-  const [unseenCount, setUnseenCount] = useState(0);
+  // Notification state - Initialize directly from storage to ensure consistency on reload
+  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => {
+    return store.getAcknowledgedActivities();
+  });
 
   // Sync state with URL hash
   useEffect(() => {
@@ -86,31 +87,42 @@ const App: React.FC = () => {
     }
   }, [appState]);
 
-  // Handle Notifications calculation and automatic acknowledgement
-  const currentUnseenActivities = useMemo(() => {
-    if (!profile) return [];
+  // Notification calculation
+  const unseenCount = useMemo(() => {
+    // If the user is currently looking at the HOME tab, the dot should not be visible.
+    if (!profile || activeTab === 'HOME') return 0;
+    
     return activities.filter(a => {
+      // Don't notify for own activities
       if (a.userId === profile.uid) return false;
-      const lastSeen = acknowledgedMap[a.id];
-      return !lastSeen || lastSeen !== a.lastUpdated;
-    });
-  }, [activities, acknowledgedMap, profile]);
+      
+      const lastSeenUpdate = acknowledgedMap[a.id];
+      // If never seen OR the content was updated since last seen
+      return !lastSeenUpdate || lastSeenUpdate !== (a.lastUpdated || 'initial');
+    }).length;
+  }, [activities, acknowledgedMap, profile, activeTab]);
 
+  // Handle automatic acknowledgement when on HOME tab
   useEffect(() => {
-    setUnseenCount(currentUnseenActivities.length);
-  }, [currentUnseenActivities]);
-
-  useEffect(() => {
-    // If user is on HOME tab and there are unseen activities, mark them as seen immediately
-    if (activeTab === 'HOME' && currentUnseenActivities.length > 0) {
-      const newMapping = { ...acknowledgedMap };
-      activities.forEach(a => {
-        newMapping[a.id] = a.lastUpdated;
+    if (activeTab === 'HOME' && profile && activities.length > 0) {
+      // Check if there are actually any items that need marking as seen
+      const itemsToAcknowledge = activities.filter(a => {
+        if (a.userId === profile.uid) return false;
+        return acknowledgedMap[a.id] !== (a.lastUpdated || 'initial');
       });
-      setAcknowledgedMap(newMapping);
-      store.setAcknowledgedActivities(newMapping);
+
+      if (itemsToAcknowledge.length > 0) {
+        const newMapping = { ...acknowledgedMap };
+        activities.forEach(a => {
+          newMapping[a.id] = a.lastUpdated || 'initial';
+        });
+        
+        // Update both state and localStorage
+        setAcknowledgedMap(newMapping);
+        store.setAcknowledgedActivities(newMapping);
+      }
     }
-  }, [activeTab, activities, profile]); // Removed acknowledgedMap from dependencies to avoid infinite loop
+  }, [activeTab, activities, profile, acknowledgedMap]);
 
   const changeTab = (tab: 'HOME' | 'PROFILE') => {
     setActiveTab(tab);
