@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, LocationType, Activity, Child } from '../types';
 import { LOCATION_METADATA } from '../constants';
-// Fix: Removed setHours, setMinutes, and parseISO as they are missing in the current date-fns environment
 import { addDays, format, isAfter } from 'date-fns';
 import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
 
@@ -17,11 +16,9 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
   const [location, setLocation] = useState<LocationType>(initialActivity?.location || LocationType.POOL);
   const [type, setType] = useState<'NOW' | 'FUTURE'>(initialActivity ? 'FUTURE' : 'NOW');
   const [selectedChildren, setSelectedChildren] = useState<string[]>(initialActivity?.childNicknames || profile.children.map(c => c.nickname));
-  // Fix: Replaced parseISO with native Date constructor
   const [date, setDate] = useState(initialActivity ? new Date(initialActivity.startTime) : new Date());
   
   const now = new Date();
-  // Fix: Replaced parseISO with native Date constructor
   const [startTime, setStartTime] = useState(initialActivity ? format(new Date(initialActivity.startTime), 'HH:mm') : format(now, 'HH:mm'));
   const [endTime, setEndTime] = useState(initialActivity ? format(new Date(initialActivity.endTime), 'HH:mm') : format(new Date(now.getTime() + 60 * 60000), 'HH:mm'));
   
@@ -38,7 +35,6 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
     e.preventDefault();
     setError('');
 
-    // Fix: Replaced setHours and setMinutes with native Date mutation
     const [sh, sm] = startTime.split(':').map(Number);
     const start = new Date(date);
     start.setHours(sh, sm, 0, 0);
@@ -68,7 +64,8 @@ export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmi
       childNicknames: selectedChildren,
       childAvatars: selectedAvatars,
       isInvitation,
-      parentAvatarIcon: profile.avatarIcon
+      parentAvatarIcon: profile.avatarIcon,
+      lastUpdated: new Date().toISOString() // Tracking for notifications
     };
 
     onSubmit(activity);

@@ -39,6 +39,7 @@ export interface Activity {
   childNicknames: string[];
   childAvatars: string[]; 
   isInvitation: boolean;
+  lastUpdated: string; // ISO String for tracking notifications
 }
 
 export type AppState = 'AUTH' | 'SETUP' | 'READY';

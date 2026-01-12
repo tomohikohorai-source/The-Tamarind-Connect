@@ -4,7 +4,8 @@ import { Activity, LocationType, UserProfile } from '../types';
 import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { Clock, MessageCircle, Megaphone, Edit3, Trash2 } from 'lucide-react';
+import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles } from 'lucide-react';
+import { store } from '../services/store';
 
 interface Props {
   activities: Activity[];
@@ -23,7 +24,6 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
   const dateButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   const dates = useMemo(() => {
-    // Yesterday (-1) to 6 days in the future (+6). Total 8 days.
     return Array.from({ length: 8 }, (_, i) => addDays(new Date(), i - 1));
   }, []);
 
@@ -83,6 +83,8 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
     setTouchY(null);
   };
 
+  const acknowledgedMap = useMemo(() => store.getAcknowledgedActivities(), [activities]);
+
   const renderSection = (type: LocationType) => {
     const meta = LOCATION_METADATA[type];
     const sectionActivities = filteredActivities.filter(a => a.location === type).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -97,8 +99,21 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
           <div className="space-y-5">
             {sectionActivities.map(a => {
               const isMine = profile && a.userId === profile.uid;
+              const prevSeenUpdated = acknowledgedMap[a.id];
+              const isNew = !prevSeenUpdated && !isMine;
+              const isUpdated = prevSeenUpdated && prevSeenUpdated !== a.lastUpdated && !isMine;
+
               return (
                 <div key={a.id} className={`p-5 rounded-[32px] bg-white border-2 ${isNow(a) ? meta.borderColor : 'border-gray-50'} shadow-sm relative transition-all active:scale-[0.98]`}>
+                  {/* Notification Badges */}
+                  {(isNew || isUpdated) && (
+                    <div className="absolute -top-1 -left-1 flex">
+                      <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter text-white shadow-lg animate-bounce flex items-center gap-1 ${isNew ? 'bg-pink-400' : 'bg-blue-400'}`}>
+                        <Sparkles size={8} /> {isNew ? 'NEW' : 'UPDATED'}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="absolute top-0 right-0 flex items-center">
                     {a.isInvitation && (
                       <div className="bg-orange-400 text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 rounded-bl-xl shadow-sm animate-pulse">
@@ -157,7 +172,6 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
 
   return (
     <div className="p-4 space-y-6 select-none">
-      {/* Date Picker Row - Added pb-10 and larger buttons to prevent label clipping on mobile */}
       <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-10 pt-2 px-2 items-start">
         {dates.map((d, i) => {
           const isToday = isSameDay(d, new Date());
@@ -183,10 +197,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, onEdit, onDelet
               
               {isToday && (
                 <>
-                  {/* Visual dot to ensure "Today" is marked even if text clips */}
                   <div className={`absolute -bottom-1.5 w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-pink-400'}`} />
-                  
-                  {/* Today Label - Adjusted position and z-index */}
                   <span className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/50 z-10 whitespace-nowrap transition-colors ${
                     isSelected ? 'bg-white text-pink-500' : 'bg-pink-500 text-white'
                   }`}>

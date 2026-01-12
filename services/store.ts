@@ -3,7 +3,8 @@ import { UserProfile } from '../types';
 
 const STORAGE_KEYS = {
   PASSCODE_VERIFIED: 'play_share_verified',
-  USER_PROFILE: 'play_share_user_profile'
+  USER_PROFILE: 'play_share_user_profile',
+  ACKNOWLEDGED_ACTIVITIES: 'play_share_seen_activities'
 };
 
 export const store = {
@@ -19,6 +20,13 @@ export const store = {
   },
   setUserProfile: (profile: UserProfile) => {
     localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+  },
+  getAcknowledgedActivities: (): Record<string, string> => {
+    const data = localStorage.getItem(STORAGE_KEYS.ACKNOWLEDGED_ACTIVITIES);
+    return data ? JSON.parse(data) : {};
+  },
+  setAcknowledgedActivities: (mapping: Record<string, string>) => {
+    localStorage.setItem(STORAGE_KEYS.ACKNOWLEDGED_ACTIVITIES, JSON.stringify(mapping));
   },
   clearAll: () => {
     localStorage.clear();

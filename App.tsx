@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppState, UserProfile, Activity } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
@@ -10,7 +10,6 @@ import { PasscodeGate } from './components/PasscodeGate';
 import { PetGarden } from './components/PetGarden';
 import { store } from './services/store';
 import { Home, PlusCircle, UserCircle } from 'lucide-react';
-// Fix: Removed parseISO as it is missing in the current date-fns environment
 import { format, isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -27,31 +26,20 @@ const App: React.FC = () => {
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
-  // Sync state with URL hash for browser back/forward support
+  // Notification state
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  // Sync state with URL hash
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash === '#profile') {
-        setActiveTab('PROFILE');
-        setShowCheckIn(false);
-        setEditingActivity(undefined);
-      } else if (hash === '#home' || hash === '') {
-        setActiveTab('HOME');
-        setShowCheckIn(false);
-        setEditingActivity(undefined);
-      } else if (hash === '#checkin') {
-        setShowCheckIn(true);
-      } else {
-        // Handle cases where user might manually change hash or hit back
-        setShowCheckIn(false);
-        setEditingActivity(undefined);
-      }
+      if (hash === '#profile') setActiveTab('PROFILE');
+      else if (hash === '#home' || hash === '') setActiveTab('HOME');
+      else if (hash === '#checkin') setShowCheckIn(true);
+      else { setShowCheckIn(false); setEditingActivity(undefined); }
     };
-
     window.addEventListener('hashchange', handleHashChange);
-    // Handle initial load
     handleHashChange();
-    
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
@@ -62,25 +50,15 @@ const App: React.FC = () => {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           let userData = userDoc.data() as UserProfile;
-          
           const today = new Date();
           const todayStr = today.toISOString();
-          // Fix: Replaced parseISO with native Date constructor
           const lastLogin = userData.lastLoginDate ? new Date(userData.lastLoginDate) : null;
           
           if (!lastLogin || !isSameDay(lastLogin, today)) {
             const newTotalDays = (userData.totalLoginDays || 0) + 1;
             userData = { ...userData, totalLoginDays: newTotalDays, lastLoginDate: todayStr };
-            try {
-              await updateDoc(doc(db, "users", user.uid), { totalLoginDays: newTotalDays, lastLoginDate: todayStr });
-            } catch (e) { console.error(e); }
+            try { await updateDoc(doc(db, "users", user.uid), { totalLoginDays: newTotalDays, lastLoginDate: todayStr }); } catch (e) { console.error(e); }
           }
-
-          if (!userData.customUserId && user.displayName) {
-            userData.customUserId = user.displayName;
-            try { await updateDoc(doc(db, "users", user.uid), { customUserId: user.displayName }); } catch (e) { console.error(e); }
-          }
-          
           setProfile(userData);
           setAppState('READY');
         } else {
@@ -107,6 +85,31 @@ const App: React.FC = () => {
     }
   }, [appState]);
 
+  // Handle Notifications
+  useEffect(() => {
+    if (appState === 'READY' && profile) {
+      const acknowledged = store.getAcknowledgedActivities();
+      const count = activities.filter(a => {
+        if (a.userId === profile.uid) return false;
+        return !acknowledged[a.id] || acknowledged[a.id] !== a.lastUpdated;
+      }).length;
+      setUnseenCount(count);
+
+      // If user is currently on HOME tab, auto-acknowledge after a small delay
+      if (activeTab === 'HOME') {
+        const timer = setTimeout(() => {
+          const newMapping: Record<string, string> = { ...acknowledged };
+          activities.forEach(a => {
+            newMapping[a.id] = a.lastUpdated;
+          });
+          store.setAcknowledgedActivities(newMapping);
+          setUnseenCount(0);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [activities, activeTab, appState, profile]);
+
   const changeTab = (tab: 'HOME' | 'PROFILE') => {
     setActiveTab(tab);
     window.location.hash = tab.toLowerCase();
@@ -125,8 +128,7 @@ const App: React.FC = () => {
 
   const handlePasscodeSuccess = () => { store.setVerified(true); setIsVerified(true); };
   const handleProfileComplete = (newProfile: UserProfile) => {
-    const profileWithLogin = { ...newProfile, totalLoginDays: 1, lastLoginDate: new Date().toISOString() };
-    setProfile(profileWithLogin);
+    setProfile({ ...newProfile, totalLoginDays: 1, lastLoginDate: new Date().toISOString() });
     setAppState('READY'); 
   };
 
@@ -192,7 +194,13 @@ const App: React.FC = () => {
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4 relative">
-          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}><Home size={22} /><span className="text-[9px] font-black uppercase">Home</span></button>
+          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/3 relative ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <Home size={22} />
+            <span className="text-[9px] font-black uppercase">Home</span>
+            {unseenCount > 0 && (
+              <span className="absolute top-0 right-1/3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse shadow-sm"></span>
+            )}
+          </button>
           <div className="w-1/3 flex justify-center"><button onClick={openCheckIn} className="flex items-center gap-2 bg-pink-400 text-white px-6 py-3.5 rounded-[32px] font-black shadow-2xl shadow-pink-100 border-4 border-white -translate-y-6 active:scale-95 transition-all"><PlusCircle size={20} /><span className="text-[10px] uppercase tracking-widest">Add Plans</span></button></div>
           <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/3 ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}><UserCircle size={22} /><span className="text-[9px] font-black uppercase">Profile</span></button>
         </div>

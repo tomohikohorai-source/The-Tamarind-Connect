@@ -6,6 +6,7 @@ import { Home, Baby, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User,
 // Fix: Removed parseISO as it is missing in the current date-fns environment
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
+import { PetGarden } from './PetGarden';
 
 interface Props {
   profile: UserProfile;
@@ -77,7 +78,7 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
   };
 
   return (
-    <div className="p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar">
+    <div className="p-6 pb-32 space-y-6 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar">
       {/* Header Section */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-4">
@@ -92,7 +93,6 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
               <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider">
                 <Home size={12} className="text-pink-300" /> Block {profile.roomNumber}
               </p>
-              {/* REMOVED 'uppercase' class below to preserve ID casing */}
               <p className="text-pink-400 flex items-center gap-1 font-black text-[9px] tracking-widest bg-pink-50 px-2 py-0.5 rounded-full w-fit">
                 <User size={10} /> {profile.customUserId || 'Unknown ID'}
               </p>
@@ -112,6 +112,11 @@ export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, on
             <Edit3 size={18} />
           </button>
         )}
+      </div>
+
+      {/* Pet Section */}
+      <div className="-mx-4">
+        <PetGarden profile={profile} />
       </div>
 
       {/* Edit Profile Section (Modal-like Inline) */}
