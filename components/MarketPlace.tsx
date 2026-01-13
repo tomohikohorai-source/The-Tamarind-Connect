@@ -123,6 +123,18 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
     }
   };
 
+  // Helper to determine counterparty in the chat
+  const counterparty = useMemo(() => {
+    if (!activeTransaction) return null;
+    const isSeller = profile.uid === activeTransaction.userId;
+    return {
+      uid: isSeller ? activeTransaction.buyerId : activeTransaction.userId,
+      nickname: isSeller ? (activeTransaction.buyerNickname || 'Applicant') : activeTransaction.parentNickname,
+      avatar: isSeller ? (activeTransaction.buyerAvatarIcon || '👤') : activeTransaction.parentAvatarIcon,
+      role: isSeller ? 'Buyer' : 'Seller'
+    };
+  }, [activeTransaction, profile.uid]);
+
   return (
     <div className="p-4 pb-32 space-y-4 relative">
       <div className="space-y-3 sticky top-0 bg-[#fdfbf7] z-30 pt-2 pb-4">
@@ -221,15 +233,21 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                           {hasPendingRequest && (
                             <div className="flex flex-col gap-2 items-end">
                               <div className="flex gap-2">
-                                <button onClick={() => onViewProfile && item.buyerId && onViewProfile(item.buyerId)} className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-teal-50 hover:text-teal-500 transition-all border border-gray-200"><UserCircle size={20}/></button>
-                                <button onClick={() => onStatusChange(item.id, 'RESERVED')} className="px-4 py-2 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1"><CheckCircle size={12}/> Approve</button>
-                                <button onClick={() => setRejectRequestItem(item)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1"><X size={12}/> Deny</button>
+                                <button 
+                                  onClick={() => onViewProfile && item.buyerId && onViewProfile(item.buyerId)} 
+                                  title="Check Buyer's ME Profile"
+                                  className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-teal-50 hover:text-teal-500 transition-all border border-gray-200 shadow-sm"
+                                >
+                                  {item.buyerAvatarIcon ? <span className="text-xl">{item.buyerAvatarIcon}</span> : <UserCircle size={20}/>}
+                                </button>
+                                <button onClick={() => onStatusChange(item.id, 'RESERVED')} className="px-4 py-2 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1 active:scale-95"><CheckCircle size={12}/> Approve</button>
+                                <button onClick={() => setRejectRequestItem(item)} className="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase shadow-sm flex items-center gap-1 active:scale-95 border border-red-100"><X size={12}/> Deny</button>
                               </div>
                               <div className="text-[8px] font-black text-pink-500 uppercase tracking-widest">Check buyer profile before approving!</div>
                             </div>
                           )}
                           {isReserved && (
-                            <button onClick={() => setActiveTransaction(item)} className="px-5 py-2.5 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
+                            <button onClick={() => setActiveTransaction(item)} className="px-5 py-2.5 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all">
                               <MessageCircle size={14} /> Chat Room
                             </button>
                           )}
@@ -240,7 +258,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                             <button onClick={() => setConfirmRequestItem(item)} className="px-6 py-3 bg-teal-400 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95">Apply to Buy</button>
                           )}
                           {hasPendingRequest && isBuyer && (
-                            <div className="px-5 py-3 bg-teal-50 text-teal-600 rounded-2xl text-[10px] font-black uppercase border border-teal-200">Awaiting...</div>
+                            <div className="px-5 py-3 bg-teal-50 text-teal-600 rounded-2xl text-[10px] font-black uppercase border border-teal-200">Awaiting Approval...</div>
                           )}
                           {isReserved && isBuyer && (
                             <button onClick={() => setActiveTransaction(item)} className="px-6 py-3 bg-orange-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl active:scale-95">
@@ -263,15 +281,25 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
         )}
       </div>
 
-      {activeTransaction && (
+      {activeTransaction && counterparty && (
         <div className="fixed inset-0 z-[200] bg-white animate-slide-up flex flex-col h-[100dvh] overflow-hidden">
           <header className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-            <button onClick={() => { setActiveTransaction(null); if(onChatClose) onChatClose(); }} className="p-2 text-gray-400"><X size={24} /></button>
-            <div className="text-center">
-              <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Transaction Room</h2>
-              <div className="text-[9px] font-bold text-teal-500 truncate max-w-[180px]">{activeTransaction.title}</div>
-            </div>
-            <div className="w-10"></div>
+            <button onClick={() => { setActiveTransaction(null); if(onChatClose) onChatClose(); }} className="p-2 text-gray-400 active:scale-90"><X size={24} /></button>
+            
+            <button 
+              onClick={() => onViewProfile && onViewProfile(counterparty.uid)}
+              className="flex flex-col items-center gap-0.5 active:scale-95 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-lg border border-orange-100 shadow-sm">{counterparty.avatar}</div>
+                <div className="text-left">
+                  <div className="text-xs font-black text-gray-800 line-clamp-1 uppercase tracking-tighter">{counterparty.nickname}</div>
+                  <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{counterparty.role} Profile</div>
+                </div>
+              </div>
+            </button>
+
+            <div className="w-10"></div> {/* Spacer */}
           </header>
 
           <div className="bg-orange-50/50 p-4 border-b border-orange-100 shrink-0">
@@ -292,20 +320,30 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
              </div>
              {profile.uid === activeTransaction.buyerId ? (
                 !activeTransaction.buyerConfirmedCompletion && (
-                  <button onClick={() => handleBuyerCompletion(activeTransaction)} className="w-full py-3 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Confirm Item Received</button>
+                  <button onClick={() => handleBuyerCompletion(activeTransaction)} className="w-full py-3 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95">Confirm Item Received</button>
                 )
              ) : (
                 activeTransaction.buyerConfirmedCompletion && (
-                  <button onClick={() => handleSellerCompletion(activeTransaction)} className="w-full py-3 bg-green-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Complete & Mark Sold</button>
+                  <button onClick={() => handleSellerCompletion(activeTransaction)} className="w-full py-3 bg-green-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95">Complete & Mark Sold</button>
                 )
              )}
           </div>
 
-          <div ref={chatScrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50/30">
+          <div ref={chatScrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50/30 hide-scrollbar">
+            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-2xl border border-orange-100 mb-2 shadow-sm text-center">
+               <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Trading Item</div>
+               <div className="text-[11px] font-bold text-gray-700 line-clamp-1">{activeTransaction.title}</div>
+            </div>
+
             {activeTransaction.comments.map(c => (
               <div key={c.id} className={`flex gap-3 ${c.userId === profile.uid ? 'flex-row-reverse' : ''}`}>
-                <div className="w-9 h-9 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-xl shrink-0">{c.userAvatar}</div>
-                <div className={`p-4 rounded-3xl text-sm shadow-sm max-w-[80%] ${c.userId === profile.uid ? 'bg-orange-500 text-white' : 'bg-white text-gray-700'}`}>
+                <button 
+                  onClick={() => onViewProfile && onViewProfile(c.userId)}
+                  className="w-9 h-9 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-xl shrink-0 shadow-sm active:scale-90"
+                >
+                  {c.userAvatar}
+                </button>
+                <div className={`p-4 rounded-3xl text-[13px] shadow-sm max-w-[80%] ${c.userId === profile.uid ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                   <div className={`text-[8px] font-black uppercase mb-1 opacity-70 ${c.userId === profile.uid ? 'text-orange-50' : 'text-gray-400'}`}>
                     {c.userId === activeTransaction.userId ? 'Seller' : 'Buyer'} • {format(new Date(c.createdAt), 'HH:mm')}
                   </div>
@@ -315,8 +353,9 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             ))}
           </div>
 
-          <div className="p-4 bg-white border-t border-gray-100 shrink-0 safe-area-bottom">
-            <div className="flex gap-2 max-w-md mx-auto items-center bg-gray-50 p-2 rounded-[28px] border border-gray-200">
+          {/* Fixed Input Area with safe padding */}
+          <div className="p-4 pt-2 bg-white border-t border-gray-100 shrink-0 pb-12 sm:pb-8">
+            <div className="flex gap-2 max-w-md mx-auto items-center bg-gray-50 p-2 rounded-[28px] border border-gray-200 focus-within:ring-2 ring-orange-100 transition-all">
               <input 
                 type="text" 
                 value={commentInputs[activeTransaction.id] || ''}
@@ -325,9 +364,14 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 className="flex-grow bg-transparent border-none rounded-xl px-4 py-3 text-sm font-bold outline-none"
                 onKeyDown={e => e.key === 'Enter' && handleSendComment(activeTransaction.id)}
               />
-              <button onClick={() => handleSendComment(activeTransaction.id)} className="p-3 bg-orange-500 text-white rounded-full shadow-lg active:scale-95 transition-all"><Send size={18} /></button>
+              <button 
+                onClick={() => handleSendComment(activeTransaction.id)} 
+                disabled={!(commentInputs[activeTransaction.id] || '').trim()}
+                className={`p-3 rounded-full shadow-lg active:scale-95 transition-all ${ (commentInputs[activeTransaction.id] || '').trim() ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-400'}`}
+              >
+                <Send size={18} />
+              </button>
             </div>
-            <div className="h-6 w-full"></div> {/* Bottom spacer to ensure the bar is above system UI */}
           </div>
         </div>
       )}
@@ -342,7 +386,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
               <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">This will notify the neighbor of your interest in "{confirmRequestItem.title}".</p>
               <div className="flex gap-4 pt-6">
                 <button onClick={() => setConfirmRequestItem(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
-                <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-teal-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-teal-100">Send</button>
+                <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-teal-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-teal-100 active:scale-95">Send</button>
               </div>
             </div>
           </div>
@@ -363,7 +407,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
               />
               <div className="flex gap-4 pt-4">
                 <button onClick={() => { setRejectRequestItem(null); setRejectionReason(''); }} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
-                <button onClick={handleConfirmReject} disabled={!rejectionReason.trim()} className={`flex-1 py-5 rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl transition-all ${rejectionReason.trim() ? 'bg-red-500 text-white shadow-red-100' : 'bg-gray-100 text-gray-300 opacity-50'}`}>Deny</button>
+                <button onClick={handleConfirmReject} disabled={!rejectionReason.trim()} className={`flex-1 py-5 rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl transition-all ${rejectionReason.trim() ? 'bg-red-500 text-white shadow-red-100 active:scale-95' : 'bg-gray-100 text-gray-300 opacity-50 cursor-not-allowed'}`}>Deny</button>
               </div>
             </div>
           </div>

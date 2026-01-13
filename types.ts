@@ -78,7 +78,9 @@ export interface MarketItem {
   pickupDateTime: string; 
   condition: 'S' | 'A' | 'B' | 'C'; 
   comments: MarketComment[];
-  buyerId?: string; 
+  buyerId?: string;
+  buyerNickname?: string;
+  buyerAvatarIcon?: string;
   images: string[]; 
   createdAt: string;
   lastUpdated: string;

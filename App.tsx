@@ -263,11 +263,15 @@ const App: React.FC = () => {
     try {
       const updates: any = { status, lastUpdated: new Date().toISOString(), ...extraFlags };
       
-      if (buyerId) {
+      if (buyerId && profile) {
         updates.buyerId = buyerId;
+        updates.buyerNickname = profile.parentNickname;
+        updates.buyerAvatarIcon = profile.avatarIcon;
         updates.requestStatus = 'PENDING';
       } else if (rejectionReason) {
         updates.buyerId = ''; 
+        updates.buyerNickname = '';
+        updates.buyerAvatarIcon = '';
         updates.requestStatus = 'REJECTED';
         updates.rejectionReason = rejectionReason;
         updates.status = 'AVAILABLE';
