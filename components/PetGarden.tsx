@@ -1,6 +1,7 @@
+
 import React, { useMemo } from 'react';
 import { UserProfile } from '../types';
-import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock } from 'lucide-react';
+import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock, TrendingUp } from 'lucide-react';
 
 interface Props {
   profile: UserProfile;
@@ -44,7 +45,7 @@ export const PetGarden: React.FC<Props> = ({ profile }) => {
       { // Forest Path
         id: 'forest', label: 'Forest Soul', gradient: 'from-green-50 to-emerald-50/40', text: 'text-emerald-600', accent: 'bg-emerald-100',
         stages: [
-          { icon: '🦊', name: 'Forest Fox', level: 'Ranger', threshold: 15 },
+          { icon: ' foxes', name: 'Forest Fox', level: 'Ranger', threshold: 15 },
           { icon: '🦌', name: 'Glade Deer', level: 'Scout', threshold: 30 },
           { icon: '🐅', name: 'Jade Tiger', level: 'Warrior', threshold: 60 },
         ],
@@ -139,10 +140,11 @@ export const PetGarden: React.FC<Props> = ({ profile }) => {
   const prevThreshold = evolution.current.threshold;
   const nextThreshold = evolution.next ? evolution.next.threshold : prevThreshold + 100;
   const progress = Math.min(100, ((days - prevThreshold) / (nextThreshold - prevThreshold)) * 100);
+  const remainingDays = evolution.next ? (evolution.next.threshold - days) : 0;
 
   return (
     <div className="mx-4 mt-1 mb-4">
-      <div className={`bg-gradient-to-br ${evolution.gradient} rounded-[32px] border-2 border-white shadow-lg p-3.5 relative overflow-hidden group`}>
+      <div className={`bg-gradient-to-br ${evolution.gradient} rounded-[32px] border-2 border-white shadow-lg p-4 relative overflow-hidden group`}>
         
         {/* Branch-specific background icons */}
         <div className={`absolute -right-4 -top-4 ${evolution.textColor} opacity-10 rotate-12 pointer-events-none`}>
@@ -152,66 +154,63 @@ export const PetGarden: React.FC<Props> = ({ profile }) => {
            <Zap size={100} fill="currentColor" />}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-inner border border-white flex items-center justify-center text-3xl animate-float-mini">
+              <div className="w-16 h-16 bg-white rounded-[24px] shadow-inner border border-white flex items-center justify-center text-4xl animate-float-mini">
                 {evolution.current.icon}
               </div>
-              <div className={`absolute -bottom-1 -right-1 ${evolution.textColor.replace('text', 'bg')} text-[8px] font-black text-white px-1.5 py-0.5 rounded-full border border-white shadow-sm`}>
+              <div className={`absolute -bottom-1 -right-1 ${evolution.textColor.replace('text', 'bg')} text-[8px] font-black text-white px-2 py-0.5 rounded-full border border-white shadow-sm`}>
                 Lv.{days}
               </div>
             </div>
 
             <div className="flex-grow min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
+              <div className="flex items-center gap-2 mb-1.5">
                 <span className={`${evolution.accentColor} ${evolution.textColor} text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest whitespace-nowrap flex items-center gap-1`}>
                   {days < 15 ? <HelpCircle size={10}/> : (days >= 100 ? (subBranchIndex === 0 ? <Shield size={10}/> : <Sword size={10}/>) : <Zap size={10}/>)}
                   {evolution.current.level}
                 </span>
-                <span className="text-[14px] font-black text-gray-800 tracking-tight flex items-center gap-1 truncate">
+                <span className="text-[15px] font-black text-gray-800 tracking-tight flex items-center gap-1 truncate">
                   {evolution.current.name} <Sparkles size={12} className="text-yellow-400 shrink-0" />
                 </span>
               </div>
               
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex-grow h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50/50">
-                  <div 
-                    className={`h-full bg-gradient-to-r ${evolution.textColor.replace('text', 'from').replace('-600', '-300')} ${evolution.textColor.replace('text', 'to').replace('-600', '-500')} rounded-full transition-all duration-1000`}
-                    style={{ width: `${progress}%` }}
-                  />
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${evolution.textColor} opacity-60`}>Growth Progress</span>
+                  <span className={`text-[9px] font-black ${evolution.textColor}`}>{Math.round(progress)}%</span>
                 </div>
-                <span className={`text-[9px] font-black ${evolution.textColor} whitespace-nowrap`}>
-                  {evolution.next ? 'NEXT ???' : 'MAX'}
-                </span>
+                <div className="flex-grow h-3 bg-white/60 rounded-full overflow-hidden border border-white p-0.5 shadow-inner">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${evolution.textColor.replace('text', 'from').replace('-600', '-300')} ${evolution.textColor.replace('text', 'to').replace('-600', '-500')} rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden`}
+                    style={{ width: `${progress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-white/50 pt-2 px-1">
-            <div className="flex items-center gap-1.5">
-              <Lock size={10} className={`${evolution.textColor} opacity-40`} />
-              <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+          <div className="flex items-center justify-between border-t border-white/50 pt-3 px-1">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={12} className={`${evolution.textColor} opacity-60`} />
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">
                 {evolution.next ? (
-                  <>Next evolution approaching...</>
+                  <><span className={evolution.textColor}>{remainingDays} days</span> to next evolution</>
                 ) : (
                   <>Ultimate Form Reached!</>
                 )}
               </span>
             </div>
-            <div className="flex items-center gap-1 opacity-60">
-              <span className="text-[7px] font-black text-gray-300 uppercase tracking-tighter mr-1">
-                 {days < 15 ? 'Mystery Soul' : 'Evolving...'}
-              </span>
-              <div className="flex -space-x-1.5">
-                <div className={`w-4 h-4 bg-white/50 rounded flex items-center justify-center text-[10px] z-10 border border-white/20`}>
-                  {evolution.current.icon}
-                </div>
-                <div className={`w-4 h-4 ${evolution.accentColor} rounded flex items-center justify-center text-[10px] border border-white/20`}>
-                  <Lock size={8} />
-                </div>
+            
+            {evolution.next && (
+              <div className="flex items-center gap-2 bg-white/40 px-2 py-1 rounded-xl border border-white/20">
+                <Lock size={10} className={`${evolution.textColor} opacity-40`} />
+                <span className={`text-[10px] grayscale opacity-30`}>{evolution.next.icon}</span>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

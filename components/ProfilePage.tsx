@@ -1,212 +1,410 @@
 
-import React, { useState } from 'react';
-import { UserProfile, Activity, Child } from '../types';
-import { AVATAR_ICONS, LOCATION_METADATA } from '../constants';
-import { Home, LogOut, Calendar, Edit3, Trash2, Save, X, PlusCircle, User, Smartphone, Share2, MoreVertical, Info } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { UserProfile, Activity, Child, MarketItem, PrivacySettings } from '../types';
+import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS } from '../constants';
+import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
 
 interface Props {
-  profile: UserProfile;
+  profile: UserProfile; 
+  currentUser: UserProfile; 
   activities: Activity[];
+  marketItems: MarketItem[];
   onLogout: () => void;
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
   onUpdateProfile: (profile: UserProfile) => void;
+  onEditMarket: (item: MarketItem) => void;
+  onDeleteMarket: (id: string) => void;
+  onMarketStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
+  onClearMarketData: () => void; // Added for release prep
+  onAddPlay: () => void;
+  onAddMarket: () => void;
+  onAddMarketComment: (itemId: string, text: string) => void;
+  onClose?: () => void; 
 }
 
-const AGE_OPTIONS = [
-  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16+"
-];
+const CollapsibleHeader: React.FC<{ title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void }> = ({ title, icon, count, isOpen, onToggle }) => (
+  <button onClick={onToggle} className="flex items-center justify-between w-full py-3.5 px-2 group transition-all">
+    <div className="flex items-center gap-3">
+      <div className={`p-2 rounded-xl transition-colors ${isOpen ? 'bg-pink-100 text-pink-500' : 'bg-gray-50 text-gray-400 group-hover:text-pink-400'}`}>
+        {icon}
+      </div>
+      <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{title} {count > 0 && <span className="text-pink-400 ml-1.5 opacity-60">({count})</span>}</h3>
+    </div>
+    <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+      <ChevronDown size={18} className="text-gray-300" />
+    </div>
+  </button>
+);
 
-export const ProfilePage: React.FC<Props> = ({ profile, activities, onLogout, onEdit, onDelete, onUpdateProfile }) => {
+export const ProfilePage: React.FC<Props> = ({ 
+  profile, currentUser, activities, marketItems, onLogout, onEdit, onDelete, onUpdateProfile, 
+  onEditMarket, onDeleteMarket, onMarketStatusChange, onClearMarketData, onAddPlay, onAddMarket, onAddMarketComment, onClose
+}) => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  const [rejectItem, setRejectItem] = useState<MarketItem | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    listings: true,
+    buying: true,
+    history: false,
+    play: false
+  });
+
+  const toggleSection = (key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // Profile Edit State
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
   const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
+  const [editBlock, setEditBlock] = useState(profile.roomNumber);
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
-  const myActivities = activities
+  const isOwnProfile = profile.uid === currentUser.uid;
+
+  const myActivities = useMemo(() => activities
     .filter(a => a.userId === profile.uid)
-    .sort((a, b) => b.startTime.localeCompare(a.startTime));
+    .sort((a, b) => b.startTime.localeCompare(a.startTime)), [activities, profile.uid]);
+
+  const mySales = useMemo(() => marketItems.filter(item => item.userId === profile.uid), [marketItems, profile.uid]);
+  const myPurchases = useMemo(() => marketItems.filter(item => item.buyerId === profile.uid), [marketItems, profile.uid]);
+
+  // Tasks needing attention (Action Items)
+  const actionItems = useMemo(() => {
+    if (!isOwnProfile) return [];
+    return mySales.filter(item => {
+      // 1. New application received
+      if (item.requestStatus === 'PENDING') return true;
+      // 2. Reserved item has new message not from owner
+      if (item.status === 'RESERVED' && item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid) return true;
+      // 3. Buyer has confirmed completion and seller needs to end deal
+      if (item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion) return true;
+      return false;
+    });
+  }, [mySales, isOwnProfile, profile.uid]);
 
   const handleSaveProfile = async () => {
-    if (!editNickname.trim() || editChildren.length === 0 || editChildren.some(c => !c.nickname.trim())) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-    const updatedProfile: UserProfile = { ...profile, parentNickname: editNickname, avatarIcon: editAvatar, children: editChildren };
+    if (!editNickname.trim()) return;
+    const updatedProfile: UserProfile = { 
+      ...profile, 
+      parentNickname: editNickname,
+      avatarIcon: editAvatar,
+      roomNumber: editBlock,
+      children: editChildren
+    };
     try {
       await setDoc(doc(db, "users", profile.uid), updatedProfile);
       onUpdateProfile(updatedProfile);
       setIsEditingProfile(false);
-    } catch (e: any) {
-      alert("Error saving profile: " + e.message);
+    } catch (e: any) { alert("Error saving profile: " + e.message); }
+  };
+
+  const handleRejectAction = () => {
+    if (rejectItem && rejectionReason.trim()) {
+      onMarketStatusChange(rejectItem.id, 'AVAILABLE', '', rejectionReason);
+      setRejectItem(null);
+      setRejectionReason('');
     }
   };
 
-  const addChild = () => {
-    if (editChildren.length >= 10) return;
-    setEditChildren([...editChildren, { id: crypto.randomUUID(), nickname: '', age: '3', gender: 'boy', intro: '', avatarIcon: AVATAR_ICONS.CHILDREN[0] }]);
+  const togglePrivacy = async (key: keyof PrivacySettings) => {
+    if (!isOwnProfile) return;
+    const settings = profile.privacySettings || { showChildren: true, showListings: true, showReservations: false, showPlayHistory: true };
+    const updatedSettings = { ...settings, [key]: !settings[key] };
+    const updatedProfile = { ...profile, privacySettings: updatedSettings };
+    try {
+      await setDoc(doc(db, "users", profile.uid), updatedProfile);
+      onUpdateProfile(updatedProfile);
+    } catch (e: any) { alert("Error updating settings: " + e.message); }
   };
 
-  const removeChild = (id: string) => {
-    if (editChildren.length <= 1) { alert("You must have at least one child registered."); return; }
-    setEditChildren(editChildren.filter(c => c.id !== id));
-  };
-
-  const updateChild = (id: string, updates: Partial<Child>) => {
-    setEditChildren(editChildren.map(c => c.id === id ? { ...c, ...updates } : c));
-  };
+  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showReservations: false, showPlayHistory: true };
 
   return (
-    <div className="p-6 pb-32 space-y-6 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar">
-      {/* 1. Header */}
+    <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
+      {onClose && (
+        <button onClick={onClose} className="flex items-center gap-2 text-gray-400 font-black text-[11px] uppercase tracking-widest bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm mb-6 active:scale-95 transition-all">
+          <ChevronLeft size={16} /> Community Hub
+        </button>
+      )}
+
+      {/* Header */}
       <div className="flex justify-between items-start">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white rounded-[24px] flex items-center justify-center text-4xl border-2 border-pink-100 shadow-sm shrink-0">{profile.avatarIcon}</div>
+        <div className="flex items-center gap-5">
+          <div className="w-18 h-18 bg-white rounded-[28px] flex items-center justify-center text-4xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
           <div className="min-w-0">
             <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate">{profile.parentNickname}</h2>
-            <div className="space-y-1">
-              <p className="text-gray-400 flex items-center gap-1 font-black text-[10px] uppercase tracking-wider"><Home size={12} className="text-pink-300" /> Block {profile.roomNumber}</p>
-              <p className="text-pink-400 flex items-center gap-1 font-black text-[9px] tracking-widest bg-pink-50 px-2 py-0.5 rounded-full w-fit"><User size={10} /> {profile.customUserId || 'Unknown ID'}</p>
-            </div>
+            <p className="text-gray-400 flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest mt-1"><Home size={13} className="text-pink-300" /> Unit {profile.roomNumber}</p>
           </div>
         </div>
-        {!isEditingProfile && (
-          <button onClick={() => { setEditNickname(profile.parentNickname); setEditAvatar(profile.avatarIcon); setEditChildren([...profile.children]); setIsEditingProfile(true); }} className="p-3 bg-pink-50 text-pink-500 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 border border-pink-100 shadow-sm"><Edit3 size={18} /></button>
+        {isOwnProfile && (
+          <div className="flex gap-2">
+            <button onClick={() => setShowSettings(!showSettings)} className={`p-3.5 rounded-2xl border transition-all ${showSettings ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-400 border-gray-100 shadow-sm'}`}><Settings size={20} /></button>
+            <button onClick={() => setIsEditingProfile(true)} className="p-3.5 bg-pink-50 text-pink-500 rounded-2xl border border-pink-100 shadow-sm active:scale-95 transition-all"><Edit3 size={20} /></button>
+          </div>
         )}
       </div>
 
-      {/* 2. Pet Garden */}
-      <div className="-mx-4"><PetGarden profile={profile} /></div>
-
-      {/* 3. My Activity History */}
-      <section className="space-y-4">
-        <h3 className="font-black text-gray-800 mb-2 flex items-center gap-2 uppercase text-[10px] tracking-widest"><Calendar className="text-pink-400" size={14}/> Activity History</h3>
-        <div className="space-y-4">
-          {myActivities.length > 0 ? (
-            myActivities.map(a => (
-              <div key={a.id} className="bg-white p-5 rounded-[32px] shadow-sm border border-gray-100 flex justify-between items-center group transition-all hover:border-pink-100">
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl ${LOCATION_METADATA[a.location].bgColor} flex items-center justify-center text-2xl`}>{LOCATION_METADATA[a.location].icon}</div>
-                  <div>
-                    <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{LOCATION_METADATA[a.location].label}</div>
-                    <div className="font-black text-gray-800 text-sm">{format(new Date(a.startTime), 'MMM d')} | {format(new Date(a.startTime), 'HH:mm')}</div>
-                  </div>
+      {/* Settings Modal Content - Inlined logic for simplicity when triggered */}
+      {showSettings && isOwnProfile && (
+        <div className="bg-white p-6 rounded-[32px] border-2 border-gray-800 shadow-xl space-y-4 animate-slide-up">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldAlert size={18} className="text-gray-800" />
+            <h3 className="font-black text-gray-800 uppercase text-[10px] tracking-widest">Settings & Privacy</h3>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { key: 'showChildren', label: 'Show Children Info', icon: <User size={14}/> },
+              { key: 'showListings', label: 'Show My Listings', icon: <ShoppingBag size={14}/> },
+              { key: 'showReservations', label: 'Show My Reservations', icon: <PackageCheck size={14}/> },
+              { key: 'showPlayHistory', label: 'Show Play History', icon: <Calendar size={14}/> }
+            ].map(item => (
+              <button 
+                key={item.key} 
+                onClick={() => togglePrivacy(item.key as any)}
+                className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${privacy[item.key as keyof PrivacySettings] ? 'border-pink-400 bg-pink-50 text-pink-600' : 'border-gray-100 bg-gray-50 text-gray-400'}`}
+              >
+                <div className="flex items-center gap-3">
+                  {item.icon}
+                  <span className="text-[11px] font-black uppercase tracking-tight">{item.label}</span>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => onEdit(a)} className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-pink-50 hover:text-pink-400 transition-all active:scale-90"><Edit3 size={16}/></button>
-                  <button onClick={() => onDelete(a.id)} className="p-3 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all active:scale-90"><Trash2 size={16}/></button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-12 bg-white border-2 border-dashed border-gray-100 rounded-[40px] text-gray-300 text-[10px] font-black uppercase tracking-widest">No History Yet</div>
-          )}
-        </div>
-      </section>
-
-      {/* 4. App Setup Guide */}
-      <section className="bg-gradient-to-br from-pink-50/50 to-orange-50/30 p-6 rounded-[32px] border border-pink-100 shadow-sm space-y-5">
-        <div className="flex items-center gap-2">
-          <Smartphone size={18} className="text-pink-400" />
-          <h4 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">App Setup Guide</h4>
-        </div>
-
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-[10px] font-black text-pink-500 uppercase tracking-wider">
-              How to add to Home Screen
-            </div>
-            <div className="bg-white/70 p-4 rounded-2xl text-[9px] font-bold text-gray-500 leading-relaxed space-y-4">
-              <div className="space-y-2">
-                <span className="text-pink-500 font-black block">iPhone (Safari):</span>
-                <ol className="list-decimal list-inside space-y-1 ml-1">
-                  <li>Tap the <b>Share</b> button <Share2 size={12} className="inline mb-1 mx-1"/> in the bottom bar.</li>
-                  <li>Scroll down and tap <b>"Add to Home Screen"</b>.</li>
-                </ol>
-              </div>
-              <div className="border-t border-pink-50/50 pt-3 space-y-2">
-                <span className="text-pink-500 font-black block">iPhone (Chrome):</span>
-                <ol className="list-decimal list-inside space-y-1 ml-1">
-                  <li>Tap the <b>Share</b> icon <Share2 size={12} className="inline mb-1 mx-1"/> next to the address bar.</li>
-                  <li>Scroll down and tap <b>"Add to Home Screen"</b>.</li>
-                </ol>
-              </div>
-              <div className="border-t border-pink-50/50 pt-3 space-y-2">
-                <span className="text-pink-500 font-black block">Android (Chrome):</span>
-                <p>Tap the menu <MoreVertical size={12} className="inline mb-1 mx-1"/> and select <b>"Install App"</b>.</p>
-              </div>
-            </div>
+                {privacy[item.key as keyof PrivacySettings] ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+            ))}
           </div>
 
-          <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-3">
-             <Info size={16} className="text-blue-400 shrink-0 mt-0.5" />
-             <div className="space-y-1">
-               <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Real-time updates</span>
-               <p className="text-[8px] font-bold text-gray-500 leading-relaxed">
-                 To receive the latest updates from your neighbors, please keep the app open or re-open it frequently. Real-time sync is active while you use the app.
-               </p>
-             </div>
+          <div className="pt-4 border-t border-gray-100">
+            <h4 className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-3 ml-1">Danger Zone (Release Prep)</h4>
+            <button 
+              onClick={onClearMarketData}
+              className="w-full py-4 bg-red-50 text-red-500 border-2 border-red-100 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:bg-red-100 transition-colors"
+            >
+              <Trash size={14}/> Clear Marketplace Data
+            </button>
+            <p className="text-[8px] text-gray-300 font-bold text-center mt-2 uppercase">Deletes all items in Market Place permanently.</p>
           </div>
-        </div>
-      </section>
 
-      {isEditingProfile && (
-        <section className="bg-orange-50/50 p-6 rounded-[40px] border-2 border-orange-100 space-y-6 animate-slide-up">
-          <div className="flex justify-between items-center">
-            <h3 className="font-black text-orange-600 uppercase text-[10px] tracking-widest flex items-center gap-2"><User size={14}/> Edit Profile</h3>
-            <button onClick={() => setIsEditingProfile(false)} className="bg-white p-2 rounded-xl text-gray-400"><X size={18} /></button>
+          <button onClick={() => setShowSettings(false)} className="w-full mt-4 py-4 bg-gray-800 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"><CheckCircle size={14}/> Close Settings</button>
+        </div>
+      )}
+
+      {/* Tasks Needing Attention */}
+      {isOwnProfile && actionItems.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-orange-500 text-white p-2 rounded-xl shadow-xl shadow-orange-100"><Bell size={16} className="animate-pulse" /></div>
+            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">To-Do List</h3>
           </div>
-          <div className="space-y-6">
-            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-orange-50">
-               <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Parent Identity</label>
-               <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                  {AVATAR_ICONS.PARENTS.map(icon => (
-                    <button key={icon} onClick={() => setEditAvatar(icon)} className={`shrink-0 w-12 h-12 text-2xl rounded-xl flex items-center justify-center border-2 transition-all ${editAvatar === icon ? 'border-orange-400 bg-orange-50 scale-105' : 'border-gray-50'}`}>{icon}</button>
-                  ))}
-               </div>
-               <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} placeholder="Parent Nickname" className="w-full p-4 rounded-2xl bg-gray-50 border-none font-bold text-sm outline-none focus:ring-2 ring-orange-200" />
-            </div>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">My Children</label>
-                <button onClick={addChild} className="text-[9px] font-black text-orange-600 bg-orange-100 px-3 py-1.5 rounded-full flex items-center gap-1 uppercase tracking-widest"><PlusCircle size={12} /> Add</button>
-              </div>
-              <div className="space-y-3">
-                {editChildren.map((child) => (
-                  <div key={child.id} className="bg-white p-4 rounded-3xl shadow-sm border border-orange-50 relative space-y-3">
-                    <button onClick={() => removeChild(child.id)} className="absolute top-3 right-3 text-red-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                    <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                      {AVATAR_ICONS.CHILDREN.map(icon => (
-                        <button key={icon} onClick={() => updateChild(child.id, { avatarIcon: icon })} className={`shrink-0 w-10 h-10 text-xl rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-orange-400 bg-orange-50' : 'border-gray-50'}`}>{icon}</button>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input type="text" value={child.nickname} onChange={e => updateChild(child.id, { nickname: e.target.value })} placeholder="Name" className="flex-grow p-3 rounded-xl bg-gray-50 border-none text-xs font-bold outline-none" />
-                      <div className="relative">
-                        <select value={child.age} onChange={e => updateChild(child.id, { age: e.target.value })} className="w-20 p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none appearance-none">
-                          {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">YRS</div>
+          <div className="grid gap-4">
+            {actionItems.map(item => {
+              const hasPendingApp = item.requestStatus === 'PENDING';
+              const latestComment = item.comments.length > 0 ? item.comments[item.comments.length - 1] : null;
+              const isNewMessage = latestComment && latestComment.userId !== profile.uid;
+
+              return (
+                <div key={item.id} className="bg-white p-6 rounded-[36px] border-2 border-orange-100 shadow-xl space-y-4 animate-slide-up">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl border border-orange-100">{GENRE_ICONS[item.genre] || '📦'}</div>
+                    <div className="flex-grow">
+                      <div className="text-[10px] font-black text-orange-500 uppercase tracking-widest leading-none mb-1.5">
+                        {hasPendingApp ? 'Approval Required' : (item.buyerConfirmedCompletion ? 'Completion Needed' : 'New Message')}
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {[{ id: 'boy', label: 'Boy', color: 'blue' }, { id: 'girl', label: 'Girl', color: 'pink' }, { id: 'other', label: 'Other', color: 'purple' }].map(g => (
-                        <button key={g.id} type="button" onClick={() => updateChild(child.id, { gender: g.id as any })} className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${child.gender === g.id ? `bg-${g.color}-50 border-${g.color}-400 text-${g.color}-500` : 'bg-white border-gray-50 text-gray-300'}`}>{g.label}</button>
-                      ))}
+                      <div className="text-[14px] font-black text-gray-800 line-clamp-1">{item.title}</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-            <button onClick={handleSaveProfile} className="w-full py-4 rounded-2xl font-black bg-orange-400 text-white shadow-xl shadow-orange-100 uppercase tracking-widest text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"><Save size={18} /> Update Profile</button>
+
+                  {hasPendingApp && (
+                    <div className="flex gap-3 pt-1">
+                      <button onClick={() => onMarketStatusChange(item.id, 'RESERVED')} className="flex-1 py-3 bg-green-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg flex items-center justify-center gap-2"><CheckCircle size={15}/> Approve</button>
+                      <button onClick={() => setRejectItem(item)} className="flex-1 py-3 bg-red-50 text-red-500 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-red-100 flex items-center justify-center gap-2"><X size={15}/> Reject</button>
+                    </div>
+                  )}
+
+                  {(isNewMessage || item.buyerConfirmedCompletion) && !hasPendingApp && (
+                    <div className="space-y-3 pt-1">
+                      <p className="text-[11px] font-bold text-gray-500 italic">"{latestComment?.text || 'Buyer confirmed receipt'}"</p>
+                      <button 
+                        onClick={() => window.location.hash = 'market'} // Direct back to marketplace to trigger Transaction Room
+                        className="w-full py-3 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-orange-100"
+                      >
+                        <MessageSquare size={16}/> Go to Transaction Room
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
 
-      <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 py-5 text-red-400 font-black uppercase text-[10px] tracking-widest bg-red-50/50 rounded-3xl border-2 border-red-50 hover:bg-red-50 transition-colors"><LogOut size={16}/> Logout Account</button>
+      <PetGarden profile={profile} />
+
+      {/* Global Actions */}
+      {isOwnProfile && (
+        <div className="grid grid-cols-2 gap-4">
+          <button onClick={onAddPlay} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-pink-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
+            <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-400 mb-3 group-hover:bg-pink-400 group-hover:text-white transition-all"><Plus size={28} /></div>
+            <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Play Plan</span>
+          </button>
+          <button onClick={onAddMarket} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-teal-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
+            <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-400 mb-3 group-hover:bg-teal-400 group-hover:text-white transition-all"><ShoppingCart size={28} /></div>
+            <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Sale Item</span>
+          </button>
+        </div>
+      )}
+
+      {/* History Sections */}
+      <div className="space-y-4">
+        {(isOwnProfile || privacy.showListings) && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Items for Sale" icon={<ShoppingBag size={18}/>} count={mySales.filter(i => i.status !== 'SOLD').length} isOpen={openSections.listings} onToggle={() => toggleSection('listings')} />
+            {openSections.listings && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {mySales.filter(i => i.status !== 'SOLD').map(item => (
+                  <div key={item.id} className={`p-4 rounded-3xl border flex items-center justify-between bg-white ${item.status === 'RESERVED' ? 'border-orange-200' : 'border-gray-50'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border ${item.status === 'RESERVED' ? 'bg-orange-50 border-orange-100' : 'bg-teal-50 border-teal-100'}`}>{GENRE_ICONS[item.genre] || '📦'}</div>
+                      <div>
+                        <div className="text-[12px] font-black text-gray-800 line-clamp-1">{item.title}</div>
+                        <div className={`text-[9px] font-black uppercase tracking-widest ${item.status === 'AVAILABLE' ? 'text-green-500' : 'text-orange-500'}`}>{item.status}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {mySales.filter(i => i.status !== 'SOLD').length === 0 && <p className="text-[10px] font-black text-gray-300 text-center py-6 bg-gray-50/50 rounded-2xl uppercase tracking-widest">No active listings</p>}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(isOwnProfile || privacy.showReservations) && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Items I'm Buying" icon={<PackageCheck size={18}/>} count={myPurchases.filter(i => i.status !== 'SOLD').length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} />
+            {openSections.buying && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {myPurchases.filter(i => i.status !== 'SOLD').map(item => (
+                  <div key={item.id} className="bg-white p-4 rounded-3xl border border-orange-100 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-orange-50 rounded-xl flex items-center justify-center text-2xl border border-orange-100">{item.parentAvatarIcon}</div>
+                      <div>
+                        <div className="text-[12px] font-black text-gray-800 line-clamp-1">{item.title}</div>
+                        <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest">Contact Unit {item.roomNumber}</div>
+                      </div>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl text-[8px] font-black uppercase bg-orange-100 text-orange-600">{item.status}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isOwnProfile && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Transaction History" icon={<History size={18}/>} count={marketItems.filter(i => i.status === 'SOLD' && (i.userId === profile.uid || i.buyerId === profile.uid)).length} isOpen={openSections.history} onToggle={() => toggleSection('history')} />
+            {openSections.history && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {marketItems.filter(i => i.status === 'SOLD' && (i.userId === profile.uid || i.buyerId === profile.uid)).map(item => (
+                  <div key={item.id} className="bg-gray-50/50 p-4 rounded-3xl border border-gray-100 flex items-center justify-between opacity-80">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-2xl border border-gray-200">{GENRE_ICONS[item.genre] || '📦'}</div>
+                      <div>
+                        <div className="text-[12px] font-black text-gray-800 line-clamp-1">{item.title}</div>
+                        <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{item.userId === profile.uid ? 'Sold to Neighbor' : 'Bought from Neighbor'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {(isOwnProfile || privacy.showPlayHistory) && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Play Schedule History" icon={<Calendar size={18}/>} count={myActivities.length} isOpen={openSections.play} onToggle={() => toggleSection('play')} />
+            {openSections.play && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {myActivities.map(a => (
+                  <div key={a.id} className="bg-white p-4 rounded-3xl border border-gray-100 flex justify-between items-center shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl ${LOCATION_METADATA[a.location].bgColor} flex items-center justify-center text-xl`}>{LOCATION_METADATA[a.location].icon}</div>
+                      <div>
+                        <div className="text-[11px] font-black text-gray-700">{format(new Date(a.startTime), 'MMM d, yyyy')}</div>
+                        <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{format(new Date(a.startTime), 'HH:mm')} - {format(new Date(a.endTime), 'HH:mm')}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Profile Overlay */}
+      {isEditingProfile && isOwnProfile && (
+        <div className="fixed inset-0 z-[120] bg-black/60 flex items-end justify-center p-0 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg bg-white rounded-t-[48px] shadow-2xl flex flex-col max-h-[92vh] border-t-4 border-pink-400">
+             <div className="flex justify-between items-center p-8 border-b border-gray-50 shrink-0">
+               <h3 className="font-black text-gray-800 uppercase text-[15px] tracking-[0.1em]">Modify Resident Profile</h3>
+               <button onClick={() => setIsEditingProfile(false)}><X size={28} className="text-gray-300"/></button>
+             </div>
+             
+             <div className="flex-grow overflow-y-auto p-10 pt-4 space-y-10 hide-scrollbar">
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Identity Icon</label>
+                  <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+                    {AVATAR_ICONS.PARENTS.map(icon => (
+                      <button key={icon} onClick={() => setEditAvatar(icon)} className={`shrink-0 w-14 h-14 text-3xl rounded-2xl flex items-center justify-center border-2 transition-all ${editAvatar === icon ? 'border-pink-400 bg-pink-50' : 'border-gray-100 opacity-60'}`}>{icon}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} className="w-full p-4.5 bg-gray-50 border-none rounded-2xl font-black text-[14px] outline-none" placeholder="Nickname" />
+                  <div className="flex gap-3">
+                    {['3A', '3B'].map(b => (
+                      <button key={b} onClick={() => setEditBlock(b as any)} className={`flex-1 py-4 rounded-2xl font-black text-[11px] uppercase transition-all ${editBlock === b ? 'bg-pink-400 text-white shadow-xl' : 'bg-gray-50 text-gray-400'}`}>Block {b}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-8 border-t border-gray-50 shrink-0 bg-white">
+                  <button onClick={handleSaveProfile} className="w-full py-5.5 bg-pink-400 text-white rounded-[28px] font-black shadow-2xl shadow-pink-100 active:scale-95 transition-all uppercase tracking-[0.25em] text-[13px]">Update Community Info</button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Confirmation Overlay */}
+      {rejectItem && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-red-400">
+            <div className="space-y-6">
+              <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">Deny Sale Request</h3>
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center leading-loose">State a reason for the neighbor</p>
+              <textarea 
+                value={rejectionReason} 
+                onChange={e => setRejectionReason(e.target.value)}
+                placeholder="e.g. Someone else just picked it up!"
+                className="w-full p-5 bg-gray-50 border-none rounded-3xl font-bold text-sm h-32 resize-none outline-none focus:ring-4 ring-red-50"
+              />
+              <div className="flex gap-4 pt-2">
+                <button onClick={() => setRejectItem(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
+                <button onClick={handleRejectAction} disabled={!rejectionReason.trim()} className="flex-1 py-5 bg-red-500 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-red-100 active:scale-95">Deny Neighbor</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

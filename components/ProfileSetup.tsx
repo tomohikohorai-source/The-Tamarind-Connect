@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { UserProfile, Child } from '../types';
-import { AVATAR_ICONS } from '../constants';
+import { AVATAR_ICONS, AGE_OPTIONS } from '../constants';
 import { auth, db, doc, setDoc } from '../firebase';
 import { Trash2, PlusCircle } from 'lucide-react';
 
@@ -9,18 +9,14 @@ interface Props {
   onComplete: (profile: UserProfile) => void;
 }
 
-const AGE_OPTIONS = [
-  "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16+"
-];
-
 export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
   const [parentNickname, setParentNickname] = useState('');
   const [parentAvatar, setParentAvatar] = useState(AVATAR_ICONS.PARENTS[0]);
   const [block, setBlock] = useState<'3A' | '3B'>('3A');
   const [children, setChildren] = useState<Child[]>([]);
 
+  // Add child helper function
   const addChild = () => {
-    if (children.length >= 10) return;
     setChildren([...children, {
       id: crypto.randomUUID(),
       nickname: '',
@@ -31,7 +27,8 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
     }]);
   };
 
-  const isFormValid = parentNickname.trim().length > 0 && children.length > 0 && children.every(c => c.nickname.trim().length > 0);
+  // Children is now optional: length > 0 check removed
+  const isFormValid = parentNickname.trim().length > 0 && children.every(c => c.nickname.trim().length > 0);
 
   const handleSubmit = async () => {
     if (isFormValid && auth.currentUser) {
@@ -43,7 +40,13 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
         children,
         avatarIcon: parentAvatar,
         totalLoginDays: 1,
-        lastLoginDate: new Date().toISOString()
+        lastLoginDate: new Date().toISOString(),
+        privacySettings: {
+          showChildren: true,
+          showListings: true,
+          showReservations: false,
+          showPlayHistory: true
+        }
       };
       await setDoc(doc(db, "users", auth.currentUser.uid), profile);
       onComplete(profile);
@@ -84,7 +87,10 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
           </section>
 
           <section className="space-y-4">
-            <div className="flex items-center justify-between"><h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">Children</h3><button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest"><PlusCircle size={14} className="inline mr-1"/> Add</button></div>
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">Children (Optional)</h3>
+              <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest"><PlusCircle size={14} className="inline mr-1"/> Add</button>
+            </div>
             {children.map((child) => (
               <div key={child.id} className="p-5 bg-white border-2 border-pink-50 rounded-[32px] relative space-y-4 shadow-sm">
                 <button onClick={() => setChildren(children.filter(c => c.id !== child.id))} className="absolute top-3 right-3 text-red-300 hover:text-red-500"><Trash2 size={16} /></button>

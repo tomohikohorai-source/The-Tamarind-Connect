@@ -13,9 +13,10 @@ interface Props {
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
   onUpdateProfile: (profile: UserProfile) => void;
+  onViewProfile?: (userId: string) => void;
 }
 
-export const Timeline: React.FC<Props> = ({ activities, profile, acknowledgedMap, onEdit, onDelete }) => {
+export const Timeline: React.FC<Props> = ({ activities, profile, acknowledgedMap, onEdit, onDelete, onViewProfile }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchY, setTouchY] = useState<number | null>(null);
@@ -146,10 +147,13 @@ export const Timeline: React.FC<Props> = ({ activities, profile, acknowledgedMap
                     </div>
                   </div>
                   <div className="flex items-center gap-3 border-t border-gray-50 pt-4 mt-2">
-                    <div className="flex items-center gap-2 bg-gray-50/80 px-3 py-1.5 rounded-full shrink-0">
+                    <button 
+                      onClick={() => onViewProfile && onViewProfile(a.userId)}
+                      className="flex items-center gap-2 bg-gray-50/80 px-3 py-1.5 rounded-full shrink-0 hover:bg-pink-50 transition-colors"
+                    >
                       <div className="text-lg leading-none">{a.parentAvatarIcon}</div>
                       <div className="text-[9px] font-black text-gray-400 uppercase">Unit {a.roomNumber}</div>
-                    </div>
+                    </button>
                     {a.message && (
                       <div className="flex gap-2 items-start min-w-0">
                         <MessageCircle size={12} className="text-pink-300 mt-1 shrink-0" />
