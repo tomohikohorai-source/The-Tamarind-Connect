@@ -1,8 +1,8 @@
 
-// キャッシュの名前
+// Cache name
 const CACHE_NAME = 'tamarind-cache-v1';
 
-// インストール時に実行
+// Execute on install
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -16,12 +16,12 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// 有効化された時に実行
+// Execute on activate
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// ネットワークリクエスト時に実行
+// Execute on fetch
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).catch(() => {

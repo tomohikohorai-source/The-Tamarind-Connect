@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -54,16 +54,18 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
   }, [activeTransaction?.comments]);
 
   const filteredItems = useMemo(() => {
+    // FIX: Declare 'f' at the top of useMemo to avoid "used before its declaration" error.
+    const f = filterStatus;
     let result = items.filter(item => {
-      if (filterStatus === 'RESERVED') {
+      if (f === 'RESERVED') {
         if (item.requestStatus !== 'PENDING' && item.status !== 'RESERVED') return false;
-      } else if (filterStatus === 'AVAILABLE') {
+      } else if (f === 'AVAILABLE') {
         if (item.status !== 'AVAILABLE' || item.requestStatus === 'PENDING') return false;
-      } else if (filterStatus !== 'ALL' && item.status !== filterStatus) {
+      } else if (f !== 'ALL' && item.status !== f) {
         return false;
       }
 
-      if (filterStatus === 'ALL' && item.status === 'SOLD') return false;
+      if (f === 'ALL' && item.status === 'SOLD') return false;
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedGenre !== 'All Genres' && item.genre !== selectedGenre) return false;
       if (selectedCondition !== 'Any Condition' && item.condition !== selectedCondition) return false;
@@ -94,21 +96,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
     setSortBy('newest');
   };
 
-  const handleConfirmRequest = () => {
-    if (confirmRequestItem) {
-      onStatusChange(confirmRequestItem.id, 'AVAILABLE', profile.uid);
-      setConfirmRequestItem(null);
-    }
-  };
-
-  const handleConfirmReject = () => {
-    if (rejectRequestItem && rejectionReason.trim()) {
-      onStatusChange(rejectRequestItem.id, 'AVAILABLE', '', rejectionReason);
-      setRejectRequestItem(null);
-      setRejectionReason('');
-    }
-  };
-
   const handleBuyerCompletion = (item: MarketItem) => {
     if (confirm("Confirm that you have received the item?")) {
       onStatusChange(item.id, 'RESERVED', undefined, undefined, { buyerConfirmedCompletion: true });
@@ -123,6 +110,23 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
     }
   };
 
+  // FIX: Implemented missing handleConfirmRequest function.
+  const handleConfirmRequest = () => {
+    if (confirmRequestItem) {
+      onStatusChange(confirmRequestItem.id, 'AVAILABLE', profile.uid);
+      setConfirmRequestItem(null);
+    }
+  };
+
+  // FIX: Implemented missing handleConfirmReject function.
+  const handleConfirmReject = () => {
+    if (rejectRequestItem && rejectionReason.trim()) {
+      onStatusChange(rejectRequestItem.id, 'AVAILABLE', undefined, rejectionReason);
+      setRejectRequestItem(null);
+      setRejectionReason('');
+    }
+  };
+
   // Helper to determine counterparty in the chat
   const counterparty = useMemo(() => {
     if (!activeTransaction) return null;
@@ -131,9 +135,10 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       uid: isSeller ? activeTransaction.buyerId : activeTransaction.userId,
       nickname: isSeller ? (activeTransaction.buyerNickname || 'Applicant') : activeTransaction.parentNickname,
       avatar: isSeller ? (activeTransaction.buyerAvatarIcon || '👤') : activeTransaction.parentAvatarIcon,
-      role: isSeller ? 'Buyer' : 'Seller'
+      role: isSeller ? 'Buyer' : 'Seller',
+      unit: isSeller ? (items.find(i => i.buyerId === activeTransaction.buyerId)?.roomNumber || 'Unknown') : activeTransaction.roomNumber
     };
-  }, [activeTransaction, profile.uid]);
+  }, [activeTransaction, profile.uid, items]);
 
   return (
     <div className="p-4 pb-32 space-y-4 relative">
@@ -236,7 +241,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                                 <button 
                                   onClick={() => onViewProfile && item.buyerId && onViewProfile(item.buyerId)} 
                                   title="Check Buyer's ME Profile"
-                                  className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-teal-50 hover:text-teal-500 transition-all border border-gray-200 shadow-sm"
+                                  className="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-teal-50 hover:text-teal-500 transition-all border border-gray-100 shadow-sm"
                                 >
                                   {item.buyerAvatarIcon ? <span className="text-xl">{item.buyerAvatarIcon}</span> : <UserCircle size={20}/>}
                                 </button>
@@ -283,23 +288,21 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
       {activeTransaction && counterparty && (
         <div className="fixed inset-0 z-[200] bg-white animate-slide-up flex flex-col h-[100dvh] overflow-hidden">
-          <header className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+          <header className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 shadow-sm">
             <button onClick={() => { setActiveTransaction(null); if(onChatClose) onChatClose(); }} className="p-2 text-gray-400 active:scale-90"><X size={24} /></button>
             
             <button 
-              onClick={() => onViewProfile && onViewProfile(counterparty.uid)}
-              className="flex flex-col items-center gap-0.5 active:scale-95 transition-all"
+              onClick={() => onViewProfile && onViewProfile(counterparty.uid as string)}
+              className="flex items-center gap-3 bg-gray-50 px-4 py-1.5 rounded-2xl border border-gray-100 active:scale-95 transition-all max-w-[200px]"
             >
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-lg border border-orange-100 shadow-sm">{counterparty.avatar}</div>
-                <div className="text-left">
-                  <div className="text-xs font-black text-gray-800 line-clamp-1 uppercase tracking-tighter">{counterparty.nickname}</div>
-                  <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{counterparty.role} Profile</div>
-                </div>
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg border border-orange-100 shadow-sm shrink-0">{counterparty.avatar}</div>
+              <div className="text-left min-w-0">
+                <div className="text-[11px] font-black text-gray-800 truncate uppercase tracking-tight">{counterparty.nickname}</div>
+                <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Unit {counterparty.unit} • {counterparty.role}</div>
               </div>
             </button>
 
-            <div className="w-10"></div> {/* Spacer */}
+            <button onClick={() => onViewProfile && onViewProfile(counterparty.uid as string)} className="text-teal-500"><UserCircle size={28} /></button>
           </header>
 
           <div className="bg-orange-50/50 p-4 border-b border-orange-100 shrink-0">
@@ -329,12 +332,17 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
              )}
           </div>
 
-          <div ref={chatScrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50/30 hide-scrollbar">
-            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-2xl border border-orange-100 mb-2 shadow-sm text-center">
-               <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">Trading Item</div>
-               <div className="text-[11px] font-bold text-gray-700 line-clamp-1">{activeTransaction.title}</div>
+          <div className="bg-white/95 p-3 border-b border-gray-100 shrink-0">
+            <div className="flex gap-3 bg-teal-50/50 p-3 rounded-2xl border border-teal-100">
+              <div className="bg-teal-400 text-white p-2 rounded-xl h-fit shrink-0"><Info size={16} /></div>
+              <p className="text-[9px] font-bold text-teal-700 leading-relaxed uppercase tracking-wider">
+                Trading: <span className="font-black">"{activeTransaction.title}"</span><br/>
+                Coordinate pickup location and time here to ensure a safe in-person hand-off.
+              </p>
             </div>
+          </div>
 
+          <div ref={chatScrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50/30 hide-scrollbar pb-48">
             {activeTransaction.comments.map(c => (
               <div key={c.id} className={`flex gap-3 ${c.userId === profile.uid ? 'flex-row-reverse' : ''}`}>
                 <button 
@@ -353,8 +361,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             ))}
           </div>
 
-          {/* Fixed Input Area with safe padding */}
-          <div className="p-4 pt-2 bg-white border-t border-gray-100 shrink-0 pb-12 sm:pb-8">
+          {/* Chat Input Field moved significantly higher to avoid overlap with keyboards and system bars */}
+          <div className="fixed bottom-12 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border border-gray-100 z-[210] pb-16 sm:pb-12 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] rounded-t-[32px]">
             <div className="flex gap-2 max-w-md mx-auto items-center bg-gray-50 p-2 rounded-[28px] border border-gray-200 focus-within:ring-2 ring-orange-100 transition-all">
               <input 
                 type="text" 

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
-import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info } from 'lucide-react';
 
 type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
 
@@ -65,12 +65,22 @@ export const AuthScreen: React.FC = () => {
   };
 
   const Disclaimer = () => (
-    <div className="mt-8 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-      <div className="flex items-start gap-2">
-        <ShieldAlert size={14} className="text-gray-300 shrink-0 mt-0.5" />
-        <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest text-left leading-relaxed">
-          <span className="text-gray-400">Notice:</span> This community platform is for internal resident communication only. Developers and condominium management are not liable for any transaction disputes, items sold, or accidents occurring during playground play. Use at your own responsibility.
-        </p>
+    <div className="mt-8 space-y-4">
+      <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
+        <div className="flex items-start gap-2">
+          <Info size={14} className="text-orange-400 shrink-0 mt-0.5" />
+          <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest text-left leading-relaxed">
+            <span className="text-orange-700">Warning:</span> If you forget your User ID or Password, you cannot recover your account. You will need to create a new one. Please keep your credentials safe.
+          </p>
+        </div>
+      </div>
+      <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+        <div className="flex items-start gap-2">
+          <ShieldAlert size={14} className="text-gray-300 shrink-0 mt-0.5" />
+          <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest text-left leading-relaxed">
+            <span className="text-gray-400">Notice:</span> This community platform is for internal resident communication only. Developers and condominium management are not liable for any transaction disputes, items sold, or accidents occurring during playground play. Use at your own responsibility.
+          </p>
+        </div>
       </div>
     </div>
   );
