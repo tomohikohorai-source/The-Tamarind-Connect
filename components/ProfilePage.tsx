@@ -66,6 +66,7 @@ export const ProfilePage: React.FC<Props> = ({
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
   const isOwnProfile = profile.uid === currentUser.uid;
+  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true };
 
   const myActivities = useMemo(() => activities
     .filter(a => a.userId === profile.uid)
@@ -125,16 +126,14 @@ export const ProfilePage: React.FC<Props> = ({
 
   const togglePrivacy = async (key: keyof PrivacySettings) => {
     if (!isOwnProfile) return;
-    const settings = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true };
-    const updatedSettings = { ...settings, [key]: !settings[key] };
+    const currentSettings = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true };
+    const updatedSettings = { ...currentSettings, [key]: !currentSettings[key] };
     const updatedProfile = { ...profile, privacySettings: updatedSettings };
     try {
       await setDoc(doc(db, "users", profile.uid), updatedProfile);
       onUpdateProfile(updatedProfile);
     } catch (e: any) { alert("Error: " + e.message); }
   };
-
-  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true };
 
   return (
     <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
@@ -192,6 +191,27 @@ export const ProfilePage: React.FC<Props> = ({
         </div>
       )}
 
+      {/* Children Section */}
+      {(isOwnProfile || privacy.showChildren) && profile.children.length > 0 && (
+        <section className="space-y-4 animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-pink-100 text-pink-500 p-2 rounded-xl"><User size={16} /></div>
+            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">Children Info</h3>
+          </div>
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+            {profile.children.map(child => (
+              <div key={child.id} className="bg-white p-4 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3 shrink-0">
+                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl">{child.avatarIcon}</div>
+                <div>
+                  <div className="text-[11px] font-black text-gray-800 uppercase">{child.nickname}</div>
+                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} yrs • {child.gender}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {isOwnProfile && actionItems.length > 0 && (
         <section className="space-y-4 animate-fade-in">
           <div className="flex items-center gap-2.5">
@@ -245,18 +265,20 @@ export const ProfilePage: React.FC<Props> = ({
         </section>
       )}
 
-      <PetGarden profile={profile} />
+      {isOwnProfile && <PetGarden profile={profile} />}
 
-      <div className="grid grid-cols-2 gap-4">
-        <button onClick={onAddPlay} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-pink-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
-          <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-400 mb-3 group-hover:bg-pink-400 group-hover:text-white transition-all"><Plus size={28} /></div>
-          <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Play Plan</span>
-        </button>
-        <button onClick={onAddMarket} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-teal-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
-          <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-400 mb-3 group-hover:bg-teal-400 group-hover:text-white transition-all"><ShoppingCart size={28} /></div>
-          <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Sale Item</span>
-        </button>
-      </div>
+      {isOwnProfile && (
+        <div className="grid grid-cols-2 gap-4">
+          <button onClick={onAddPlay} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-pink-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
+            <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-400 mb-3 group-hover:bg-pink-400 group-hover:text-white transition-all"><Plus size={28} /></div>
+            <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Play Plan</span>
+          </button>
+          <button onClick={onAddMarket} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-teal-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
+            <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-400 mb-3 group-hover:bg-teal-400 group-hover:text-white transition-all"><ShoppingCart size={28} /></div>
+            <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Sale Item</span>
+          </button>
+        </div>
+      )}
 
       <div className="space-y-4">
         {/* ITEMS FOR SALE - Active */}
