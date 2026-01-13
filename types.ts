@@ -17,7 +17,8 @@ export interface Child {
 export interface PrivacySettings {
   showChildren: boolean;
   showListings: boolean;
-  showReservations: boolean;
+  showPastSales: boolean;
+  showBuying: boolean;
   showPlayHistory: boolean;
 }
 

@@ -32,6 +32,7 @@ const App: React.FC = () => {
   
   const [showMarketForm, setShowMarketForm] = useState(false);
   const [editingMarketItem, setEditingMarketItem] = useState<MarketItem | undefined>(undefined);
+  const [targetMarketId, setTargetMarketId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -163,11 +164,20 @@ const App: React.FC = () => {
   const marketActionsCount = useMemo(() => {
     if (!profile) return 0;
     return marketItems.filter(item => {
-      if (item.userId !== profile.uid) return false;
-      const hasPendingApp = item.requestStatus === 'PENDING';
-      const hasNewMessage = item.status === 'RESERVED' && item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
-      const needsCompletion = item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion;
-      return hasPendingApp || hasNewMessage || needsCompletion;
+      // Seller actions
+      if (item.userId === profile.uid) {
+        const hasPendingApp = item.requestStatus === 'PENDING';
+        const hasNewMessage = item.status === 'RESERVED' && item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+        const needsCompletion = item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion;
+        return hasPendingApp || hasNewMessage || needsCompletion;
+      }
+      // Buyer actions
+      if (item.buyerId === profile.uid && item.status === 'RESERVED') {
+        const hasNewMessage = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+        const needsReception = !item.buyerConfirmedCompletion;
+        return hasNewMessage || needsReception;
+      }
+      return false;
     }).length;
   }, [marketItems, profile]);
 
@@ -270,33 +280,6 @@ const App: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
-  const handleClearMarketData = async () => {
-    if (confirm("【警告】コミュニティ内のすべてのマーケットデータを強制削除します。元に戻せません。よろしいですか？")) {
-      setLoading(true);
-      try {
-        const snapshot = await getDocs(collection(db, "marketItems"));
-        if (snapshot.empty) {
-          alert("削除対象のデータはありません。");
-          setLoading(false);
-          return;
-        }
-
-        const batch = writeBatch(db);
-        snapshot.docs.forEach((d) => {
-          batch.delete(d.ref);
-        });
-        
-        await batch.commit();
-        alert("マーケットプレイスのデータをすべて削除しました。");
-        window.location.reload(); // 確実に反映させるためにリロード
-      } catch (e: any) {
-        alert("エラーが発生しました。Firebaseコンソールから直接削除することをお勧めします: " + e.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
   const handleMarketComment = async (itemId: string, text: string) => {
     if (!profile) return;
     const comment: MarketComment = {
@@ -337,6 +320,12 @@ const App: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDirectToTransaction = (itemId: string) => {
+    setTargetMarketId(itemId);
+    setActiveTab('MARKET');
+    window.location.hash = 'market';
   };
 
   const handleLogout = async () => { 
@@ -388,15 +377,15 @@ const App: React.FC = () => {
           </div>
         )}
         {activeTab === 'MARKET' && profile && (
-          <MarketPlace items={marketItems} profile={profile} onEdit={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} />
+          <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onClearMarketData={handleClearMarketData} onAddPlay={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} onAddMarket={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} onAddMarketComment={handleMarketComment} />
+          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} onAddMarket={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} onAddMarketComment={handleMarketComment} onGoToTransaction={handleDirectToTransaction} />
         )}
       </main>
 
       {viewingProfile && profile && (
-        <ProfilePage profile={viewingProfile} currentUser={profile} activities={activities} marketItems={marketItems} onLogout={() => {}} onEdit={() => {}} onDelete={() => {}} onUpdateProfile={() => {}} onEditMarket={() => {}} onDeleteMarket={() => {}} onMarketStatusChange={() => {}} onClearMarketData={() => {}} onAddPlay={() => {}} onAddMarket={() => {}} onAddMarketComment={() => {}} onClose={() => setViewingProfile(null)} />
+        <ProfilePage profile={viewingProfile} currentUser={profile} activities={activities} marketItems={marketItems} onLogout={() => {}} onEdit={() => {}} onDelete={() => {}} onUpdateProfile={() => {}} onEditMarket={() => {}} onDeleteMarket={() => {}} onMarketStatusChange={() => {}} onAddPlay={() => {}} onAddMarket={() => {}} onAddMarketComment={() => {}} onGoToTransaction={() => {}} onClose={() => setViewingProfile(null)} />
       )}
 
       {(showCheckIn || editingActivity) && profile && (

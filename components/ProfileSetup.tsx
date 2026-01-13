@@ -41,10 +41,12 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete }) => {
         avatarIcon: parentAvatar,
         totalLoginDays: 1,
         lastLoginDate: new Date().toISOString(),
+        // Fix: Added missing properties showPastSales and showBuying to satisfy PrivacySettings interface
         privacySettings: {
           showChildren: true,
           showListings: true,
-          showReservations: false,
+          showPastSales: true,
+          showBuying: true,
           showPlayHistory: true
         }
       };

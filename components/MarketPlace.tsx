@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
 import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check } from 'lucide-react';
@@ -8,16 +8,18 @@ import { format } from 'date-fns';
 interface Props {
   items: MarketItem[];
   profile: UserProfile;
+  initialActiveItemId?: string | null;
   onEdit: (item: MarketItem) => void;
   onStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
   onDelete: (id: string) => void;
   onAddComment: (itemId: string, text: string) => void;
   onViewProfile?: (userId: string) => void;
+  onChatClose?: () => void;
 }
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusChange, onDelete, onAddComment, onViewProfile }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onViewProfile, onChatClose }) => {
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('All Genres');
@@ -29,17 +31,32 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusC
   // States for Transaction Room
   const [activeTransaction, setActiveTransaction] = useState<MarketItem | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Modals
   const [confirmRequestItem, setConfirmRequestItem] = useState<MarketItem | null>(null);
   const [rejectRequestItem, setRejectRequestItem] = useState<MarketItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  // Handle deep linking to chat
+  useEffect(() => {
+    if (initialActiveItemId) {
+      const item = items.find(i => i.id === initialActiveItemId);
+      if (item) setActiveTransaction(item);
+    }
+  }, [initialActiveItemId, items]);
+
+  // Scroll to bottom when new comments arrive
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [activeTransaction?.comments]);
+
   const filteredItems = useMemo(() => {
     let result = items.filter(item => {
-      // CUSTOM LOGIC: 'RESERVED' tab in filter shows items in PENDING state
       if (filterStatus === 'RESERVED') {
-        if (item.requestStatus !== 'PENDING') return false;
+        if (item.requestStatus !== 'PENDING' && item.status !== 'RESERVED') return false;
       } else if (filterStatus === 'AVAILABLE') {
         if (item.status !== 'AVAILABLE' || item.requestStatus === 'PENDING') return false;
       } else if (filterStatus !== 'ALL' && item.status !== filterStatus) {
@@ -102,12 +119,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusC
     if (confirm("Buyer has confirmed receipt. End this transaction and mark as SOLD?")) {
       onStatusChange(item.id, 'SOLD', undefined, undefined, { sellerConfirmedCompletion: true });
       setActiveTransaction(null);
+      if (onChatClose) onChatClose();
     }
   };
 
   return (
     <div className="p-4 pb-32 space-y-4 relative">
-      {/* Search & Tabs */}
       <div className="space-y-3 sticky top-0 bg-[#fdfbf7] z-30 pt-2 pb-4">
         <div className="flex gap-2">
           <div className="relative flex-grow">
@@ -154,7 +171,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusC
         <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
           {['ALL', 'AVAILABLE', 'RESERVED', 'SOLD'].map((f) => (
             <button key={f} onClick={() => setFilterStatus(f as any)} className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterStatus === f ? 'bg-teal-400 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
-              {f === 'RESERVED' ? 'RESERVE' : f === 'ALL' ? 'EVERYTHING' : f}
+              {f === 'RESERVED' ? 'TRADE' : f === 'ALL' ? 'EVERYTHING' : f}
             </button>
           ))}
         </div>
@@ -166,12 +183,10 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusC
             const isOwner = item.userId === profile.uid;
             const isBuyer = item.buyerId === profile.uid;
             const isReserved = item.status === 'RESERVED';
-            const isSold = item.status === 'SOLD';
             const hasPendingRequest = item.requestStatus === 'PENDING';
             
             return (
               <div key={item.id} className={`bg-white rounded-[32px] overflow-hidden border shadow-sm relative animate-fade-in transition-all ${isReserved || hasPendingRequest ? 'border-orange-200 shadow-orange-50/50' : 'border-gray-100'}`}>
-                
                 <div className="relative">
                   {item.images && item.images.length > 0 ? (
                     <img src={item.images[0]} alt={item.title} className="w-full aspect-[4/3] object-cover" />
@@ -200,35 +215,37 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusC
                       <div className="text-left"><div className="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Unit</div><div className="text-[10px] font-black text-gray-600">{item.roomNumber}</div></div>
                     </button>
                     
-                    {isOwner ? (
-                      <div className="flex gap-2">
-                        {hasPendingRequest && (
-                          <>
-                            <button onClick={() => onStatusChange(item.id, 'RESERVED')} className="px-4 py-2 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1"><CheckCircle size={12}/> Approve</button>
-                            <button onClick={() => setRejectRequestItem(item)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1"><X size={12}/> Deny</button>
-                          </>
-                        )}
-                        {isReserved && (
-                          <button onClick={() => setActiveTransaction(item)} className="px-5 py-2.5 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
-                            <MessageCircle size={14} /> Transaction Chat
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        {item.status === 'AVAILABLE' && !hasPendingRequest && (
-                          <button onClick={() => setConfirmRequestItem(item)} className="px-6 py-3 bg-teal-400 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95">Apply to Buy</button>
-                        )}
-                        {hasPendingRequest && isBuyer && (
-                          <div className="px-5 py-3 bg-teal-50 text-teal-600 rounded-2xl text-[10px] font-black uppercase border border-teal-200">Awaiting Response...</div>
-                        )}
-                        {isReserved && isBuyer && (
-                          <button onClick={() => setActiveTransaction(item)} className="px-6 py-3 bg-orange-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl active:scale-95">
-                            <MessageCircle size={16} /> Transaction Room
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      {isOwner ? (
+                        <>
+                          {hasPendingRequest && (
+                            <>
+                              <button onClick={() => onStatusChange(item.id, 'RESERVED')} className="px-4 py-2 bg-green-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1"><CheckCircle size={12}/> Approve</button>
+                              <button onClick={() => setRejectRequestItem(item)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase shadow-lg flex items-center gap-1"><X size={12}/> Deny</button>
+                            </>
+                          )}
+                          {isReserved && (
+                            <button onClick={() => setActiveTransaction(item)} className="px-5 py-2.5 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg">
+                              <MessageCircle size={14} /> Chat Room
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {item.status === 'AVAILABLE' && !hasPendingRequest && (
+                            <button onClick={() => setConfirmRequestItem(item)} className="px-6 py-3 bg-teal-400 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl active:scale-95">Apply to Buy</button>
+                          )}
+                          {hasPendingRequest && isBuyer && (
+                            <div className="px-5 py-3 bg-teal-50 text-teal-600 rounded-2xl text-[10px] font-black uppercase border border-teal-200">Awaiting...</div>
+                          )}
+                          {isReserved && isBuyer && (
+                            <button onClick={() => setActiveTransaction(item)} className="px-6 py-3 bg-orange-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl active:scale-95">
+                              <MessageCircle size={16} /> Transaction
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -242,67 +259,59 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, onEdit, onStatusC
         )}
       </div>
 
-      {/* Transaction Room */}
       {activeTransaction && (
-        <div className="fixed inset-0 z-[200] bg-white animate-slide-up flex flex-col">
-          <header className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-lg">
-            <button onClick={() => setActiveTransaction(null)} className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-xl border border-gray-100"><X size={16} /> Close</button>
+        <div className="fixed inset-0 z-[200] bg-white animate-slide-up flex flex-col h-screen overflow-hidden">
+          <header className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+            <button onClick={() => { setActiveTransaction(null); if(onChatClose) onChatClose(); }} className="p-2 text-gray-400"><X size={24} /></button>
             <div className="text-center">
-              <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Transaction</h2>
-              <div className="text-[9px] font-bold text-gray-400 line-clamp-1 max-w-[150px] mx-auto">{activeTransaction.title}</div>
+              <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Transaction Room</h2>
+              <div className="text-[9px] font-bold text-teal-500 truncate max-w-[180px]">{activeTransaction.title}</div>
             </div>
             <div className="w-10"></div>
           </header>
 
-          <div className="p-4 bg-orange-50/50 border-b border-orange-100">
-             <div className="max-w-md mx-auto space-y-4">
-                <div className="flex items-center justify-around">
-                  <div className={`flex flex-col items-center gap-1 ${activeTransaction.buyerConfirmedCompletion ? 'text-green-500' : 'text-orange-500'}`}>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${activeTransaction.buyerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-orange-200'}`}>
-                      {activeTransaction.buyerConfirmedCompletion ? <Check size={16}/> : '1'}
-                    </div>
-                    <span className="text-[8px] font-black uppercase">Received</span>
+          <div className="bg-orange-50/50 p-4 border-b border-orange-100 shrink-0">
+             <div className="flex items-center justify-center gap-4 mb-3">
+                <div className={`flex flex-col items-center gap-1 ${activeTransaction.buyerConfirmedCompletion ? 'text-green-500' : 'text-orange-500'}`}>
+                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${activeTransaction.buyerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-orange-200'}`}>
+                    {activeTransaction.buyerConfirmedCompletion ? <Check size={16}/> : '1'}
                   </div>
-                  <div className="w-8 h-px bg-orange-200"></div>
-                  <div className={`flex flex-col items-center gap-1 ${activeTransaction.sellerConfirmedCompletion ? 'text-green-500' : 'text-gray-300'}`}>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${activeTransaction.sellerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-gray-100'}`}>
-                      {activeTransaction.sellerConfirmedCompletion ? <Check size={16}/> : '2'}
-                    </div>
-                    <span className="text-[8px] font-black uppercase">Sold</span>
-                  </div>
+                  <span className="text-[8px] font-black uppercase">Received</span>
                 </div>
-
-                <div className="bg-white p-4 rounded-3xl border border-orange-100 shadow-sm text-center">
-                  {profile.uid === activeTransaction.buyerId ? (
-                    !activeTransaction.buyerConfirmedCompletion ? (
-                      <button onClick={() => handleBuyerCompletion(activeTransaction)} className="w-full py-3 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg animate-pulse">Confirm Received</button>
-                    ) : (
-                      <p className="text-[10px] font-black text-green-500 uppercase tracking-widest">Transaction ending soon...</p>
-                    )
-                  ) : (
-                    activeTransaction.buyerConfirmedCompletion ? (
-                      <button onClick={() => handleSellerCompletion(activeTransaction)} className="w-full py-3 bg-green-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Confirm & Mark Sold</button>
-                    ) : (
-                      <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Chat with buyer to arrange pickup</p>
-                    )
-                  )}
+                <div className="w-10 h-px bg-orange-200"></div>
+                <div className={`flex flex-col items-center gap-1 ${activeTransaction.sellerConfirmedCompletion ? 'text-green-500' : 'text-gray-300'}`}>
+                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${activeTransaction.sellerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-gray-100'}`}>
+                    {activeTransaction.sellerConfirmedCompletion ? <Check size={16}/> : '2'}
+                  </div>
+                  <span className="text-[8px] font-black uppercase">Complete</span>
                 </div>
              </div>
+             {profile.uid === activeTransaction.buyerId ? (
+                !activeTransaction.buyerConfirmedCompletion && (
+                  <button onClick={() => handleBuyerCompletion(activeTransaction)} className="w-full py-3 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Confirm Item Received</button>
+                )
+             ) : (
+                activeTransaction.buyerConfirmedCompletion && (
+                  <button onClick={() => handleSellerCompletion(activeTransaction)} className="w-full py-3 bg-green-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Complete & Mark Sold</button>
+                )
+             )}
           </div>
 
-          <div className="flex-grow overflow-y-auto p-6 space-y-4 hide-scrollbar">
-            {activeTransaction.comments.filter(c => c.userId === activeTransaction.userId || c.userId === activeTransaction.buyerId).map(c => (
+          <div ref={chatScrollRef} className="flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50/30 hide-scrollbar">
+            {activeTransaction.comments.map(c => (
               <div key={c.id} className={`flex gap-3 ${c.userId === profile.uid ? 'flex-row-reverse' : ''}`}>
-                <div className="w-9 h-9 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-xl shadow-sm">{c.userAvatar}</div>
-                <div className={`p-4 rounded-3xl text-sm shadow-sm max-w-[80%] ${c.userId === profile.uid ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                  <div className={`text-[8px] font-black uppercase mb-1 opacity-70 ${c.userId === profile.uid ? 'text-orange-50' : ''}`}>{c.userId === activeTransaction.userId ? 'Seller' : 'Buyer'}</div>
-                  <div className="font-bold leading-relaxed">{c.text}</div>
+                <div className="w-10 h-10 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">{c.userAvatar}</div>
+                <div className={`p-4 rounded-3xl text-sm shadow-sm max-w-[75%] ${c.userId === profile.uid ? 'bg-orange-500 text-white' : 'bg-white text-gray-700'}`}>
+                  <div className={`text-[8px] font-black uppercase mb-1 opacity-70 ${c.userId === profile.uid ? 'text-orange-50' : 'text-gray-400'}`}>
+                    {c.userId === activeTransaction.userId ? 'Seller' : 'Buyer'} • {format(new Date(c.createdAt), 'HH:mm')}
+                  </div>
+                  <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="p-6 border-t border-gray-100 bg-white/80 backdrop-blur-lg">
+          <div className="p-4 pb-10 bg-white border-t border-gray-100 shrink-0">
             <div className="flex gap-2 max-w-md mx-auto items-center bg-gray-50 p-2 rounded-[28px] border border-gray-200">
               <input 
                 type="text" 

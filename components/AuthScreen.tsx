@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
-import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 
 type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
 
@@ -64,6 +64,17 @@ export const AuthScreen: React.FC = () => {
     }
   };
 
+  const Disclaimer = () => (
+    <div className="mt-8 p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
+      <div className="flex items-start gap-2">
+        <ShieldAlert size={14} className="text-gray-300 shrink-0 mt-0.5" />
+        <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest text-left leading-relaxed">
+          <span className="text-gray-400">Notice:</span> This community platform is for internal resident communication only. Developers and condominium management are not liable for any transaction disputes, items sold, or accidents occurring during playground play. Use at your own responsibility.
+        </p>
+      </div>
+    </div>
+  );
+
   if (mode === 'CHOICE') {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50 text-center">
@@ -91,6 +102,7 @@ export const AuthScreen: React.FC = () => {
               <LogIn size={20} /> Already a member?
             </button>
           </div>
+          <Disclaimer />
         </div>
       </div>
     );
@@ -165,6 +177,7 @@ export const AuthScreen: React.FC = () => {
             {loading ? 'Processing...' : mode === 'LOGIN' ? <><LogIn size={18}/> Login</> : <><UserPlus size={18}/> Sign Up</>}
           </button>
         </form>
+        <Disclaimer />
       </div>
     </div>
   );

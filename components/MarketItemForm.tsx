@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { UserProfile, MarketItem } from '../types';
 import { MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES } from '../constants';
-import { ChevronLeft, X, Package, Tag, Info, MapPin, CreditCard, Clock, Calendar, MessageSquare, Camera, Trash2, Coins, Layers } from 'lucide-react';
+import { ChevronLeft, X, Package, Tag, Info, MapPin, CreditCard, Clock, Calendar, MessageSquare, Camera, Trash2, Coins, Layers, ShieldAlert } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
 interface Props {
@@ -67,7 +67,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
   const [pickupLocation, setPickupLocation] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? 'Other (Specify)' : initialItem?.pickupLocation || MARKET_LOCATIONS[0]);
   const [otherLocationText, setOtherLocationText] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? initialItem.pickupLocation.replace('Other: ', '') : '');
 
-  const [pickupMode, setPickupMode] = useState<PickupMode>(initialItem ? 'DATETIME' : 'NONE');
+  const [pickupMode, setPickupMode] = useState<PickupMode>(initialItem?.pickupDateTime?.includes('Between') ? 'PERIOD' : initialItem?.pickupDateTime?.includes('On') ? (initialItem.pickupDateTime.split(' ').length > 2 ? 'DATETIME' : 'DATE') : 'NONE');
   const [pDate, setPDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [pTime, setPTime] = useState('14:00');
   const [pDateEnd, setPDateEnd] = useState(format(addDays(new Date(), 3), 'yyyy-MM-dd'));
@@ -157,7 +157,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       <form onSubmit={handleSubmit} className="space-y-8 pb-12">
         <div>
           <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest ml-1">Images (Max 3)</label>
-          <div className="flex gap-3">
+          <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
             {images.map((img, idx) => (
               <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-teal-100 shadow-sm shrink-0">
                 <img src={img} className="w-full h-full object-cover" alt="Preview" />
@@ -217,44 +217,23 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
         </div>
 
         {type === 'SALE' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-            <div className="bg-teal-50/50 p-6 rounded-[32px] border border-teal-100 shadow-sm space-y-4">
-              <label className="text-[11px] font-black text-teal-600 block uppercase tracking-widest ml-1 flex items-center gap-2">
-                <Coins size={14} /> Desired Price (RM)
-              </label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-teal-300 group-focus-within:text-teal-500 transition-colors">RM</span>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={price} 
-                  onChange={e => setPrice(Math.max(0, Number(e.target.value)).toString())} 
-                  placeholder="0.00"
-                  className="w-full pl-16 pr-6 py-5 bg-white border-2 border-teal-100 rounded-2xl outline-none font-black text-2xl text-teal-600 focus:border-teal-400 focus:ring-4 ring-teal-400/10 transition-all placeholder:text-teal-100" 
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+            <div className="bg-teal-50/50 p-6 rounded-[32px] border border-teal-100 space-y-3">
+              <label className="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">Price (RM)</label>
+              <input type="number" min="0" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-white border-2 border-teal-100 rounded-2xl outline-none font-black text-xl text-teal-600" />
             </div>
-            
-            <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 space-y-4">
-              <label className="text-[11px] font-black text-gray-400 block uppercase tracking-widest ml-1 flex items-center gap-2">
-                <CreditCard size={14} /> Payment Method
-              </label>
-              <div className="relative">
-                <select 
-                  value={paymentMethod} 
-                  onChange={e => setPaymentMethod(e.target.value as any)} 
-                  className="w-full p-5 bg-white border-2 border-gray-100 rounded-2xl outline-none font-black text-sm appearance-none focus:border-teal-400 transition-all text-gray-700"
-                >
-                  {PAYMENT_METHODS.filter(m => m.id !== 'FREE').map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-                </select>
-              </div>
+            <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">Payment</label>
+              <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as any)} className="w-full p-4 bg-white border-2 border-gray-100 rounded-2xl outline-none font-black text-xs appearance-none">
+                {PAYMENT_METHODS.filter(m => m.id !== 'FREE').map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
             </div>
           </div>
         )}
 
         <div className="space-y-4">
           <label className="text-[11px] font-black text-gray-400 block uppercase tracking-widest flex items-center gap-2"><Clock size={14} className="text-teal-400"/> Preferred Pickup Time</label>
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="grid grid-cols-2 gap-2">
             {[
               { id: 'DATETIME', label: 'Specific Time' },
               { id: 'DATE', label: 'Specific Date' },
@@ -266,16 +245,53 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
               </button>
             ))}
           </div>
+
+          {pickupMode !== 'NONE' && (
+            <div className="p-4 bg-teal-50/30 rounded-3xl border border-teal-50 space-y-4 animate-fade-in">
+              {(pickupMode === 'DATETIME' || pickupMode === 'DATE' || pickupMode === 'PERIOD') && (
+                <div>
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">{pickupMode === 'PERIOD' ? 'Start Date' : 'Target Date'}</label>
+                  <input type="date" min={minDate} value={pDate} onChange={e => setPDate(e.target.value)} className="w-full p-3.5 bg-white border border-teal-100 rounded-xl outline-none font-bold text-sm" />
+                </div>
+              )}
+              {pickupMode === 'DATETIME' && (
+                <div>
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Target Time</label>
+                  <input type="time" value={pTime} onChange={e => setPTime(e.target.value)} className="w-full p-3.5 bg-white border border-teal-100 rounded-xl outline-none font-bold text-sm" />
+                </div>
+              )}
+              {pickupMode === 'PERIOD' && (
+                <div>
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">End Date</label>
+                  <input type="date" min={pDate} value={pDateEnd} onChange={e => setPDateEnd(e.target.value)} className="w-full p-3.5 bg-white border border-teal-100 rounded-xl outline-none font-bold text-sm" />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest flex items-center gap-2"><MapPin size={14} className="text-teal-400"/> Pickup Location</label>
-          <div className="space-y-2">
+        <div className="space-y-4">
+          <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest flex items-center gap-2"><MapPin size={14} className="text-teal-400"/> Pickup Location</label>
+          <div className="grid grid-cols-1 gap-2">
             {MARKET_LOCATIONS.map(loc => (
               <button key={loc} type="button" onClick={() => setPickupLocation(loc)} className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-3 ${pickupLocation === loc ? 'border-teal-400 bg-teal-50 shadow-sm' : 'border-gray-50 bg-white text-gray-400'}`}>
                 <span className="text-[10px] font-black uppercase tracking-tight">{loc}</span>
               </button>
             ))}
+          </div>
+          {pickupLocation === 'Other (Specify)' && (
+            <div className="relative animate-fade-in mt-2">
+              <input type="text" value={otherLocationText} onChange={e => setOtherLocationText(e.target.value)} placeholder="e.g. Near the 3A Lift Lobby" className="w-full p-4 bg-gray-50 border-2 border-teal-100 rounded-2xl outline-none font-bold text-sm text-gray-700" />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-gray-50 p-5 rounded-[32px] border border-gray-100">
+          <div className="flex items-start gap-3">
+            <ShieldAlert size={18} className="text-pink-400 shrink-0 mt-0.5" />
+            <p className="text-[9px] font-bold text-gray-400 leading-relaxed uppercase tracking-widest">
+              By posting, you agree that transactions are made at your own risk. The app is not responsible for disputes.
+            </p>
           </div>
         </div>
 
