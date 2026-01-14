@@ -430,8 +430,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             </div>
           </div>
 
-          {/* FIXED BOTTOM ACTION BAR */}
-          <div className="fixed bottom-[76px] left-0 right-0 z-[210] px-4 pointer-events-none">
+          {/* FIXED BOTTOM ACTION BAR: Updated bottom-6 to ensure visibility on mobile screens */}
+          <div className="fixed bottom-6 left-0 right-0 z-[210] px-4 pointer-events-none">
              <div className="max-w-md mx-auto bg-white/90 backdrop-blur-md border border-gray-100 shadow-[0_-15px_50px_rgba(0,0,0,0.15)] p-4 rounded-[40px] pointer-events-auto">
                 {viewingItem.status !== 'SOLD' ? (
                   <div className="space-y-3">
