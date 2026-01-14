@@ -236,7 +236,7 @@ export const ProfilePage: React.FC<Props> = ({
               }
 
               return (
-                <div key={item.id} className="bg-white p-6 rounded-[36px] border-2 border-orange-100 shadow-xl space-y-4 animate-slide-up">
+                <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full text-left bg-white p-6 rounded-[36px] border-2 border-orange-100 shadow-xl space-y-4 animate-slide-up active:scale-[0.98] transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl border border-orange-100">{GENRE_ICONS[item.genre] || '📦'}</div>
                     <div className="flex-grow">
@@ -247,18 +247,15 @@ export const ProfilePage: React.FC<Props> = ({
 
                   {hasPendingApp && isSeller ? (
                     <div className="flex gap-2">
-                      <button onClick={() => onMarketStatusChange(item.id, 'RESERVED')} className="flex-1 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[9px] tracking-widest shadow-lg">Approve</button>
-                      <button onClick={() => setRejectItem(item)} className="flex-1 py-3 bg-red-50 text-red-500 rounded-xl font-black uppercase text-[9px] tracking-widest border border-red-100">Deny</button>
+                      <button onClick={(e) => { e.stopPropagation(); onMarketStatusChange(item.id, 'RESERVED'); }} className="flex-1 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[9px] tracking-widest shadow-lg">Approve</button>
+                      <button onClick={(e) => { e.stopPropagation(); setRejectItem(item); }} className="flex-1 py-3 bg-red-50 text-red-500 rounded-xl font-black uppercase text-[9px] tracking-widest border border-red-100">Deny</button>
                     </div>
                   ) : (
-                    <button 
-                      onClick={() => onGoToTransaction(item.id)}
-                      className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-orange-100 active:scale-95"
-                    >
-                      <MessageSquare size={16}/> Go to Chat Room
-                    </button>
+                    <div className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-orange-100">
+                      <MessageSquare size={16}/> View Transaction Chat
+                    </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -289,29 +286,27 @@ export const ProfilePage: React.FC<Props> = ({
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myActiveSales.length > 0 ? (
                   myActiveSales.map(item => (
-                    <div key={item.id} className={`p-4 rounded-[28px] border flex items-center justify-between bg-white ${item.status === 'RESERVED' ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'border-gray-50'}`}>
-                      <div className="flex items-center gap-4 min-w-0">
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all ${item.status === 'RESERVED' ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'border-gray-50 shadow-sm'}`}>
+                      <div className="flex items-center gap-4 min-w-0 flex-grow">
                         <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border shrink-0 ${item.status === 'RESERVED' ? 'bg-orange-50 border-orange-100' : 'bg-teal-50 border-teal-100'}`}>{GENRE_ICONS[item.genre] || '📦'}</div>
                         <div className="min-w-0">
-                          <div className="text-[12px] font-black text-gray-800 truncate">{item.title}</div>
+                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
                           <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${item.status === 'AVAILABLE' ? 'text-teal-500' : 'text-orange-500'}`}>
                             {item.status}
                             {item.requestStatus === 'PENDING' && <span className="text-pink-500 animate-pulse">● REQ</span>}
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1.5 shrink-0">
-                        {isOwnProfile && (
+                      <div className="flex gap-1.5 shrink-0 pl-2">
+                        {isOwnProfile && item.status === 'AVAILABLE' && (
                           <>
-                            <button onClick={() => onEditMarket(item)} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-teal-50 hover:text-teal-400 transition-all border border-gray-100 shadow-sm"><Edit2 size={14}/></button>
-                            <button onClick={() => onDeleteMarket(item.id)} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all border border-gray-100 shadow-sm"><Trash2 size={14}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); onEditMarket(item); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-teal-50 hover:text-teal-400 transition-all border border-gray-100 shadow-sm"><Edit2 size={14}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); onDeleteMarket(item.id); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all border border-gray-100 shadow-sm"><Trash2 size={14}/></button>
                           </>
                         )}
-                        {item.status === 'RESERVED' && (
-                          <button onClick={() => onGoToTransaction(item.id)} className="p-2.5 bg-orange-500 text-white rounded-xl shadow-lg active:scale-95 transition-all"><MessageSquare size={14}/></button>
-                        )}
+                        <div className={`p-2.5 rounded-xl shadow-lg transition-all ${item.status === 'RESERVED' ? 'bg-orange-500 text-white' : 'bg-teal-500 text-white'}`}><MessageSquare size={14}/></div>
                       </div>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No active listings</div>
@@ -329,16 +324,19 @@ export const ProfilePage: React.FC<Props> = ({
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myPastSales.length > 0 ? (
                   myPastSales.map(item => (
-                    <div key={item.id} className="p-4 rounded-[28px] border border-gray-50 flex items-center justify-between bg-gray-50/50 opacity-70">
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-gray-50 flex items-center justify-between bg-gray-50/50 opacity-70 active:scale-[0.98] transition-all text-left">
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{GENRE_ICONS[item.genre] || '📦'}</div>
                         <div className="min-w-0">
-                          <div className="text-[12px] font-black text-gray-400 line-through truncate">{item.title}</div>
+                          <div className="text-[12px] font-black text-gray-400 line-through truncate uppercase tracking-tight">{item.title}</div>
                           <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Sold for {item.type === 'FREE' ? 'FREE' : `RM ${item.price}`}</div>
                         </div>
                       </div>
-                      <div className="p-2 bg-gray-100 text-gray-400 rounded-xl"><CheckCircle size={14}/></div>
-                    </div>
+                      <div className="flex gap-2 items-center">
+                        <div className="p-2 bg-gray-100 text-gray-400 rounded-xl"><CheckCircle size={14}/></div>
+                        <div className="p-2.5 bg-teal-500 text-white rounded-xl shadow-sm"><MessageSquare size={14}/></div>
+                      </div>
+                    </button>
                   ))
                 ) : (
                   <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No past sales</div>
@@ -356,20 +354,18 @@ export const ProfilePage: React.FC<Props> = ({
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myPurchases.length > 0 ? (
                   myPurchases.map(item => (
-                    <div key={item.id} className={`p-4 rounded-[28px] border flex items-center justify-between bg-white ${item.status === 'SOLD' ? 'opacity-60 border-gray-100 grayscale' : 'border-orange-100 bg-orange-50/20 shadow-sm'}`}>
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white active:scale-[0.98] transition-all text-left ${item.status === 'SOLD' ? 'opacity-60 border-gray-100 grayscale' : 'border-orange-100 bg-orange-50/20 shadow-sm'}`}>
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{item.parentAvatarIcon}</div>
                         <div className="min-w-0">
-                          <div className="text-[12px] font-black text-gray-800 truncate">{item.title}</div>
+                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
                           <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                             {item.status === 'SOLD' ? 'Received' : (item.status === 'RESERVED' ? 'Reserved' : 'Requested')} • Unit {item.roomNumber}
                           </div>
                         </div>
                       </div>
-                      {item.status === 'RESERVED' && (
-                        <button onClick={() => onGoToTransaction(item.id)} className="p-2.5 bg-orange-500 text-white rounded-xl shadow-lg active:scale-95 transition-all"><MessageSquare size={14}/></button>
-                      )}
-                    </div>
+                      <div className={`p-2.5 rounded-xl shadow-lg transition-all ${item.status === 'SOLD' ? 'bg-gray-100 text-gray-400' : 'bg-orange-500 text-white'}`}><MessageSquare size={14}/></div>
+                    </button>
                   ))
                 ) : (
                   <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No items currently buying</div>

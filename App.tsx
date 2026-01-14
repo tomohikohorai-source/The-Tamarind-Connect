@@ -389,7 +389,27 @@ const App: React.FC = () => {
       </main>
 
       {viewingProfile && profile && (
-        <ProfilePage profile={viewingProfile} currentUser={profile} activities={activities} marketItems={marketItems} onLogout={() => {}} onEdit={() => {}} onDelete={() => {}} onUpdateProfile={() => {}} onEditMarket={() => {}} onDeleteMarket={() => {}} onMarketStatusChange={() => {}} onAddPlay={() => {}} onAddMarket={() => {}} onAddMarketComment={() => {}} onGoToTransaction={() => {}} onClose={() => setViewingProfile(null)} />
+        <ProfilePage 
+          profile={viewingProfile} 
+          currentUser={profile} 
+          activities={activities} 
+          marketItems={marketItems} 
+          onLogout={() => {}} 
+          onEdit={() => {}} 
+          onDelete={() => {}} 
+          onUpdateProfile={() => {}} 
+          onEditMarket={() => {}} 
+          onDeleteMarket={() => {}} 
+          onMarketStatusChange={() => {}} 
+          onAddPlay={() => {}} 
+          onAddMarket={() => {}} 
+          onAddMarketComment={() => {}} 
+          onGoToTransaction={(itemId) => {
+            handleDirectToTransaction(itemId);
+            setViewingProfile(null); // Close the neighbor's profile when navigating to the item detail
+          }} 
+          onClose={() => setViewingProfile(null)} 
+        />
       )}
 
       {(showCheckIn || editingActivity) && profile && (
