@@ -43,23 +43,20 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
     }
   }, [initialActiveItemId, items]);
 
-  // Ensure view starts at the top when an item is opened
+  // Force scroll to top when an item is first opened
   useEffect(() => {
-    if (viewingItem) {
-      if (detailScrollRef.current) {
-        detailScrollRef.current.scrollTop = 0;
-      }
+    if (viewingItem && detailScrollRef.current) {
+      detailScrollRef.current.scrollTop = 0;
       prevCommentCount.current = viewingItem.comments.length;
     }
   }, [viewingItem?.id]);
 
-  // Update viewing item if items list updates (e.g. comments added)
+  // Handle auto-scrolling to bottom ONLY when a new message is added
   useEffect(() => {
     if (viewingItem) {
       const updated = items.find(i => i.id === viewingItem.id);
       if (updated) {
         setViewingItem(updated);
-        // Only scroll to bottom if a NEW message was added (not on initial load)
         if (updated.comments.length > prevCommentCount.current) {
           setTimeout(() => {
             if (detailScrollRef.current) {
@@ -116,11 +113,23 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const scrollGallery = (direction: 'prev' | 'next') => {
     if (!galleryRef.current) return;
-    const width = galleryRef.current.clientWidth;
-    galleryRef.current.scrollBy({ 
-      left: direction === 'next' ? width : -width, 
-      behavior: 'smooth' 
-    });
+    const { scrollLeft, clientWidth, scrollWidth } = galleryRef.current;
+    
+    if (direction === 'next') {
+      // Loop back to start if at the end
+      if (scrollLeft + clientWidth >= scrollWidth - 5) {
+        galleryRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        galleryRef.current.scrollBy({ left: clientWidth, behavior: 'smooth' });
+      }
+    } else {
+      // Loop to end if at the beginning
+      if (scrollLeft <= 5) {
+        galleryRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
+      } else {
+        galleryRef.current.scrollBy({ left: -clientWidth, behavior: 'smooth' });
+      }
+    }
   };
 
   const handleConfirmRequest = () => {
@@ -313,7 +322,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 <ChevronRight size={20} className="text-teal-300" />
               </button>
 
-              {/* Transaction specific banners */}
+              {/* Transaction Status Area */}
               {viewingItem.status !== 'AVAILABLE' && (
                 <div className={`border p-6 rounded-[32px] space-y-5 shadow-sm ${viewingItem.status === 'SOLD' ? 'bg-gray-50 border-gray-100' : 'bg-orange-50 border-orange-100'}`}>
                    <div className="flex items-center justify-center gap-4">
@@ -351,8 +360,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </div>
               )}
 
-              {/* Q&A Section */}
-              <div className="space-y-4 pb-72">
+              {/* Q&A Section with Integrated Input (Physically distant from Request Button) */}
+              <div className="space-y-4 pb-80">
                 <div className="flex items-center gap-2 px-1">
                   <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
                   <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
@@ -360,6 +369,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   </h3>
                 </div>
 
+                {/* Info Bar within Q&A */}
                 <div className={`p-4 rounded-3xl border shadow-inner ${viewingItem.status === 'SOLD' ? 'bg-gray-50 border-gray-100' : 'bg-teal-50/50 border-teal-100'}`}>
                   <p className={`text-[10px] font-bold leading-relaxed uppercase tracking-wider ${viewingItem.status === 'SOLD' ? 'text-gray-400' : 'text-teal-700'}`}>
                     {viewingItem.status === 'RESERVED' 
@@ -370,6 +380,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   </p>
                 </div>
 
+                {/* Chat Message List */}
                 {viewingItem.comments.length > 0 ? (
                   <div className="space-y-4 pt-2">
                     {viewingItem.comments.map(c => {
@@ -389,65 +400,69 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                     })}
                   </div>
                 ) : (
-                  <div className="py-16 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">No Messages Yet</div>
+                  <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">No Messages Yet</div>
                 )}
-              </div>
-            </div>
-          </div>
 
-          {/* Bottom Area: Slimmer and higher positioning. Read-only for SOLD items. */}
-          <div className="fixed bottom-[84px] left-0 right-0 z-[210] px-4">
-             <div className="max-w-md mx-auto bg-white/95 backdrop-blur-md border border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.12)] p-4 rounded-[40px] space-y-3">
-                {viewingItem.status !== 'SOLD' ? (
-                  <>
-                    {/* Status Badge */}
-                    {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && viewingItem.userId !== profile.uid && (
-                       <div className="bg-teal-50 text-teal-600 px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest text-center border border-teal-100">Application Sent - Awaiting Approval</div>
-                    )}
-
-                    {/* Chat Input Field */}
-                    <div className="flex gap-2 items-center bg-gray-50 p-1.5 rounded-full border border-gray-100 focus-within:border-teal-400 focus-within:ring-2 ring-teal-50 transition-all">
+                {/* Chat Input Field inside Q&A Section */}
+                {viewingItem.status !== 'SOLD' && (
+                  <div className="pt-4 animate-fade-in">
+                    <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 shadow-sm focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all">
                       <input 
                         type="text" 
                         value={commentInputs[viewingItem.id] || ''}
                         onChange={e => setCommentInputs(prev => ({ ...prev, [viewingItem.id]: e.target.value }))}
-                        placeholder={viewingItem.status === 'RESERVED' ? "Message..." : "Ask a question..."}
-                        className="flex-grow bg-transparent border-none px-4 py-2 text-sm font-bold outline-none placeholder:text-gray-300"
+                        placeholder={viewingItem.status === 'RESERVED' ? "Message neighbor..." : "Ask a question..."}
+                        className="flex-grow bg-transparent border-none px-4 py-3 text-sm font-bold outline-none placeholder:text-gray-300"
                         onKeyDown={e => e.key === 'Enter' && handleSendComment(viewingItem.id)}
                       />
                       <button 
                         onClick={() => handleSendComment(viewingItem.id)} 
                         disabled={!(commentInputs[viewingItem.id] || '').trim()}
-                        className={`p-2.5 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingItem.id] || '').trim() ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-400'}`}
+                        className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingItem.id] || '').trim() ? 'bg-teal-500 text-white' : 'bg-gray-200 text-gray-400'}`}
                       >
                         <Send size={18} />
                       </button>
                     </div>
+                    <div className="px-5 mt-2 text-[8px] font-black text-gray-300 uppercase tracking-widest text-center">Messaging neighbors is encouraged!</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-                    {/* Main Action Buttons */}
+          {/* FIXED BOTTOM ACTION BAR */}
+          <div className="fixed bottom-[76px] left-0 right-0 z-[210] px-4 pointer-events-none">
+             <div className="max-w-md mx-auto bg-white/90 backdrop-blur-md border border-gray-100 shadow-[0_-15px_50px_rgba(0,0,0,0.15)] p-4 rounded-[40px] pointer-events-auto">
+                {viewingItem.status !== 'SOLD' ? (
+                  <div className="space-y-3">
+                    {/* Status Badge */}
+                    {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && viewingItem.userId !== profile.uid && (
+                       <div className="bg-teal-50 text-teal-600 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-center border border-teal-100">Application Sent - Awaiting Approval</div>
+                    )}
+
+                    {/* Transaction Action Buttons */}
                     {viewingItem.userId !== profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
-                      <button onClick={() => setConfirmRequestItem(viewingItem)} className="w-full py-3.5 bg-teal-400 text-white rounded-full font-black uppercase tracking-widest text-xs shadow-xl active:scale-[0.98] transition-all">Request to Buy</button>
+                      <button onClick={() => setConfirmRequestItem(viewingItem)} className="w-full py-4.5 bg-teal-400 text-white rounded-full font-black uppercase tracking-[0.2em] text-[13px] shadow-2xl shadow-teal-100 active:scale-[0.98] transition-all">Request to Buy</button>
                     )}
                     
                     {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
-                       <div className="flex gap-2">
-                          <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-3 bg-green-500 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-lg">Approve Sale</button>
-                          <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-3 bg-red-50 text-red-500 rounded-full font-black uppercase text-[10px] tracking-widest border border-red-100">Decline</button>
+                       <div className="flex gap-3">
+                          <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-4 bg-green-500 text-white rounded-full font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95">Approve Sale</button>
+                          <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-4 bg-red-50 text-red-500 rounded-full font-black uppercase text-[11px] tracking-widest border border-red-100 active:scale-95">Decline</button>
                        </div>
                     )}
 
                     {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
-                      <div className="flex gap-2">
-                        <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3 bg-gray-50 text-gray-400 rounded-full font-black uppercase text-[9px] tracking-widest border border-gray-100">Edit</button>
-                        <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingItem.id); setViewingItem(null); } }} className="flex-1 py-3 bg-red-50 text-red-300 rounded-full font-black uppercase text-[9px] tracking-widest border border-red-50">Delete</button>
+                      <div className="flex gap-3">
+                        <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-full font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95">Edit</button>
+                        <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingItem.id); setViewingItem(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-full font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95">Delete</button>
                       </div>
                     )}
-                  </>
+                  </div>
                 ) : (
-                  /* Notice for SOLD items */
-                  <div className="flex items-center justify-center gap-3 py-3 bg-gray-50 rounded-full border border-gray-100">
+                  <div className="flex items-center justify-center gap-3 py-4 bg-gray-50 rounded-full border border-gray-100">
                     <Lock size={14} className="text-gray-300" />
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">This Transaction is Closed</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Transaction Closed</span>
                   </div>
                 )}
              </div>

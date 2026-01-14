@@ -135,6 +135,25 @@ export const ProfilePage: React.FC<Props> = ({
     } catch (e: any) { alert("Error: " + e.message); }
   };
 
+  const addChild = () => {
+    setEditChildren([...editChildren, {
+      id: crypto.randomUUID(),
+      nickname: '',
+      age: '3',
+      gender: 'boy',
+      intro: '',
+      avatarIcon: AVATAR_ICONS.CHILDREN[0]
+    }]);
+  };
+
+  const removeChild = (id: string) => {
+    setEditChildren(editChildren.filter(c => c.id !== id));
+  };
+
+  const updateChild = (id: string, field: keyof Child, value: any) => {
+    setEditChildren(editChildren.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+
   return (
     <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
       {onClose && (
@@ -425,13 +444,13 @@ export const ProfilePage: React.FC<Props> = ({
 
       {isEditingProfile && isOwnProfile && (
         <div className="fixed inset-0 z-[120] bg-black/60 flex items-end justify-center p-0 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-white rounded-t-[48px] shadow-2xl flex flex-col max-h-[92vh] border-t-4 border-pink-400">
+          <div className="w-full max-w-lg bg-white rounded-t-[48px] shadow-2xl flex flex-col max-h-[92vh] border-t-4 border-pink-400 overflow-hidden">
              <div className="flex justify-between items-center p-8 border-b border-gray-50 shrink-0">
                <h3 className="font-black text-gray-800 uppercase text-[15px] tracking-[0.1em]">Resident Profile</h3>
                <button onClick={() => setIsEditingProfile(false)}><X size={28} className="text-gray-300"/></button>
              </div>
              
-             <div className="flex-grow overflow-y-auto p-10 pt-4 space-y-10 hide-scrollbar pb-20">
+             <div className="flex-grow overflow-y-auto p-8 pt-4 space-y-10 hide-scrollbar">
                 <div className="space-y-4">
                   <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Identity Icon</label>
                   <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
@@ -456,9 +475,87 @@ export const ProfilePage: React.FC<Props> = ({
                   </div>
                 </div>
 
-                <div className="p-8 border-t border-gray-50 shrink-0 bg-white">
-                  <button onClick={handleSaveProfile} className="w-full py-5.5 bg-pink-400 text-white rounded-[28px] font-black shadow-2xl shadow-pink-100 active:scale-95 transition-all uppercase tracking-[0.25em] text-[13px]">Apply Updates</button>
+                {/* Children Management Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Children Info</label>
+                    <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest flex items-center gap-1">
+                      <PlusCircle size={14}/> Add
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {editChildren.map((child) => (
+                      <div key={child.id} className="p-5 bg-gray-50/50 border-2 border-pink-50 rounded-[32px] relative space-y-4 shadow-sm animate-fade-in">
+                        <button onClick={() => removeChild(child.id)} className="absolute top-3 right-3 text-red-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                        
+                        <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                          {AVATAR_ICONS.CHILDREN.map(icon => (
+                            <button 
+                              key={icon} 
+                              onClick={() => updateChild(child.id, 'avatarIcon', icon)}
+                              className={`shrink-0 w-10 h-10 text-xl rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-pink-400 bg-pink-50' : 'border-white bg-white shadow-sm'}`}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            value={child.nickname} 
+                            onChange={e => updateChild(child.id, 'nickname', e.target.value)} 
+                            placeholder="Name" 
+                            className="flex-grow p-3 rounded-xl bg-white border border-pink-50 text-xs font-bold outline-none" 
+                          />
+                          <div className="relative">
+                            <select 
+                              value={child.age} 
+                              onChange={e => updateChild(child.id, 'age', e.target.value)}
+                              className="w-20 p-3 rounded-xl bg-white border border-pink-50 text-xs font-bold outline-none appearance-none"
+                            >
+                              {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                            <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">YRS</div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {[
+                            { id: 'boy', label: 'Boy', color: 'blue' },
+                            { id: 'girl', label: 'Girl', color: 'pink' },
+                            { id: 'other', label: 'Other', color: 'purple' }
+                          ].map(g => (
+                            <button
+                              key={g.id}
+                              type="button"
+                              onClick={() => updateChild(child.id, 'gender', g.id as any)}
+                              className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${
+                                child.gender === g.id 
+                                  ? `bg-${g.color}-50 border-${g.color}-400 text-${g.color}-500` 
+                                  : 'bg-white border-white text-gray-300 shadow-sm'
+                              }`}
+                            >
+                              {g.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    {editChildren.length === 0 && (
+                      <div className="py-10 text-center bg-gray-50 border-2 border-dashed border-gray-100 rounded-[32px]">
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">No children added</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+             </div>
+
+             <div className="p-8 border-t border-gray-50 shrink-0 bg-white">
+                <button onClick={handleSaveProfile} className="w-full py-5.5 bg-pink-400 text-white rounded-[28px] font-black shadow-2xl shadow-pink-100 active:scale-95 transition-all uppercase tracking-[0.25em] text-[13px]">Apply Updates</button>
              </div>
           </div>
         </div>
