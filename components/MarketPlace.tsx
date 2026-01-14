@@ -232,9 +232,9 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       </div>
 
       {viewingItem && (
-        <div className="fixed inset-0 z-[200] bg-white animate-slide-up flex flex-col h-screen overflow-hidden">
+        <div className="fixed inset-0 z-[500] bg-white animate-slide-up flex flex-col h-[100dvh] overflow-hidden shadow-2xl">
           {/* PERSISTENT HEADER */}
-          <header className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 shadow-sm z-[220]">
+          <header className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0 shadow-sm z-[520]">
             <button onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} className="p-2 text-gray-400 active:scale-90"><ChevronLeft size={24} /></button>
             <div className="flex flex-col items-center">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{viewingItem.genre}</span>
@@ -399,7 +399,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 )}
 
                 {viewingItem.status !== 'SOLD' && (
-                  <div className="pt-4 animate-fade-in mb-64">
+                  <div className="pt-4 animate-fade-in mb-80">
                     <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 shadow-sm focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all">
                       <input 
                         type="text" 
@@ -423,39 +423,41 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             </div>
           </div>
 
-          {/* REDESIGNED PERSISTENT FOOTER: Elevated to prevent overlap with app/system navigation */}
-          <footer className="shrink-0 bg-white border-t border-gray-100 px-6 pt-6 pb-20 z-[230] shadow-[0_-30px_70px_rgba(0,0,0,0.2)]">
-             <div className="max-w-md mx-auto">
+          {/* HIGH-VISIBILITY PERSISTENT FOOTER: Elevated significantly for mobile devices */}
+          <footer className="shrink-0 bg-white border-t border-gray-100 px-6 pt-6 pb-28 z-[530] shadow-[0_-30px_70px_rgba(0,0,0,0.2)]">
+             <div className="max-w-md mx-auto relative">
                 {viewingItem.status !== 'SOLD' ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {/* Status Badge */}
                     {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && viewingItem.userId !== profile.uid && (
-                       <div className="bg-teal-50 text-teal-600 px-4 py-3 rounded-full text-[10px] font-black uppercase tracking-widest text-center border border-teal-100 shadow-inner">Application Sent - Awaiting Approval</div>
+                       <div className="bg-teal-50 text-teal-600 px-4 py-3 rounded-full text-[11px] font-black uppercase tracking-widest text-center border border-teal-100 shadow-inner">Application Sent - Awaiting Approval</div>
                     )}
 
-                    {/* Primary Action Buttons */}
-                    {viewingItem.userId !== profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
-                      <button 
-                        onClick={() => setConfirmRequestItem(viewingItem)} 
-                        className="w-full py-6 bg-teal-400 text-white rounded-[32px] font-black uppercase tracking-[0.25em] text-[15px] shadow-2xl shadow-teal-100 active:scale-[0.97] transition-all hover:bg-teal-500 border-4 border-white"
-                      >
-                        Request to Buy
-                      </button>
-                    )}
-                    
-                    {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
-                       <div className="flex gap-4">
-                          <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-5 bg-green-500 text-white rounded-[28px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white">Approve Sale</button>
-                          <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-5 bg-red-50 text-red-500 rounded-[28px] font-black uppercase text-[12px] tracking-widest border border-red-100 active:scale-95">Decline</button>
-                       </div>
-                    )}
+                    {/* Primary Action Buttons - Clearly positioned in the thumb zone */}
+                    <div className="flex flex-col gap-3">
+                      {viewingItem.userId !== profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+                        <button 
+                          onClick={() => setConfirmRequestItem(viewingItem)} 
+                          className="w-full py-6 bg-teal-400 text-white rounded-[32px] font-black uppercase tracking-[0.25em] text-[15px] shadow-[0_15px_40px_rgba(45,191,189,0.3)] active:scale-[0.97] transition-all border-4 border-white block"
+                        >
+                          Request to Buy
+                        </button>
+                      )}
+                      
+                      {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
+                         <div className="flex gap-4">
+                            <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-5 bg-green-500 text-white rounded-[28px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white">Approve Sale</button>
+                            <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-5 bg-red-50 text-red-500 rounded-[28px] font-black uppercase text-[12px] tracking-widest border border-red-100 active:scale-95">Decline</button>
+                         </div>
+                      )}
 
-                    {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
-                      <div className="flex gap-4">
-                        <button onClick={() => onEdit(viewingItem)} className="flex-1 py-4.5 bg-gray-50 text-gray-400 rounded-[28px] font-black uppercase text-[11px] tracking-widest border border-gray-100 active:scale-95 shadow-sm">Edit</button>
-                        <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingItem.id); setViewingItem(null); } }} className="flex-1 py-4.5 bg-red-50 text-red-300 rounded-[28px] font-black uppercase text-[11px] tracking-widest border border-red-50 active:scale-95 shadow-sm">Delete</button>
-                      </div>
-                    )}
+                      {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+                        <div className="flex gap-4">
+                          <button onClick={() => onEdit(viewingItem)} className="flex-1 py-4.5 bg-gray-50 text-gray-400 rounded-[28px] font-black uppercase text-[11px] tracking-widest border border-gray-100 active:scale-95 shadow-sm">Edit</button>
+                          <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingItem.id); setViewingItem(null); } }} className="flex-1 py-4.5 bg-red-50 text-red-300 rounded-[28px] font-black uppercase text-[11px] tracking-widest border border-red-50 active:scale-95 shadow-sm">Delete</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center gap-4 py-6 bg-gray-50 rounded-[32px] border border-gray-100 shadow-inner">
@@ -470,7 +472,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
       {/* Decision Modals */}
       {confirmRequestItem && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-teal-400">
             <div className="text-center space-y-5">
               <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 mx-auto border-4 border-white shadow-lg"><AlertTriangle size={40} /></div>
@@ -486,7 +488,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       )}
 
       {rejectRequestItem && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-red-400">
             <div className="space-y-6">
               <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">Deny Request</h3>
