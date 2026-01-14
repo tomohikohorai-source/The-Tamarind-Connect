@@ -116,14 +116,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
     const { scrollLeft, clientWidth, scrollWidth } = galleryRef.current;
     
     if (direction === 'next') {
-      // Loop back to start if at the end
       if (scrollLeft + clientWidth >= scrollWidth - 5) {
         galleryRef.current.scrollTo({ left: 0, behavior: 'smooth' });
       } else {
         galleryRef.current.scrollBy({ left: clientWidth, behavior: 'smooth' });
       }
     } else {
-      // Loop to end if at the beginning
       if (scrollLeft <= 5) {
         galleryRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
       } else {
@@ -283,7 +281,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
               )}
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 pb-60">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <div className="flex gap-2">
@@ -310,7 +308,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </div>
               </div>
 
-              {/* Resident Seller Info */}
               <button onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} className="w-full flex items-center justify-between p-4 bg-teal-50/50 border border-teal-100 rounded-3xl active:scale-95 transition-all">
                 <div className="flex items-center gap-4">
                   <div className="text-3xl">{viewingItem.parentAvatarIcon}</div>
@@ -322,7 +319,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 <ChevronRight size={20} className="text-teal-300" />
               </button>
 
-              {/* Transaction Status Area */}
               {viewingItem.status !== 'AVAILABLE' && (
                 <div className={`border p-6 rounded-[32px] space-y-5 shadow-sm ${viewingItem.status === 'SOLD' ? 'bg-gray-50 border-gray-100' : 'bg-orange-50 border-orange-100'}`}>
                    <div className="flex items-center justify-center gap-4">
@@ -360,8 +356,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </div>
               )}
 
-              {/* Q&A Section with Integrated Input (Physically distant from Request Button) */}
-              <div className="space-y-4 pb-80">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
                   <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
                   <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
@@ -369,7 +364,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   </h3>
                 </div>
 
-                {/* Info Bar within Q&A */}
                 <div className={`p-4 rounded-3xl border shadow-inner ${viewingItem.status === 'SOLD' ? 'bg-gray-50 border-gray-100' : 'bg-teal-50/50 border-teal-100'}`}>
                   <p className={`text-[10px] font-bold leading-relaxed uppercase tracking-wider ${viewingItem.status === 'SOLD' ? 'text-gray-400' : 'text-teal-700'}`}>
                     {viewingItem.status === 'RESERVED' 
@@ -380,7 +374,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   </p>
                 </div>
 
-                {/* Chat Message List */}
                 {viewingItem.comments.length > 0 ? (
                   <div className="space-y-4 pt-2">
                     {viewingItem.comments.map(c => {
@@ -403,7 +396,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">No Messages Yet</div>
                 )}
 
-                {/* Chat Input Field inside Q&A Section */}
                 {viewingItem.status !== 'SOLD' && (
                   <div className="pt-4 animate-fade-in">
                     <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 shadow-sm focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all">
@@ -423,24 +415,21 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                         <Send size={18} />
                       </button>
                     </div>
-                    <div className="px-5 mt-2 text-[8px] font-black text-gray-300 uppercase tracking-widest text-center">Messaging neighbors is encouraged!</div>
                   </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* FIXED BOTTOM ACTION BAR: Updated bottom-6 to ensure visibility on mobile screens */}
-          <div className="fixed bottom-6 left-0 right-0 z-[210] px-4 pointer-events-none">
-             <div className="max-w-md mx-auto bg-white/90 backdrop-blur-md border border-gray-100 shadow-[0_-15px_50px_rgba(0,0,0,0.15)] p-4 rounded-[40px] pointer-events-auto">
+          {/* FIXED ACTION BAR: Strictly fixed at the bottom with higher z-index to ensure visibility */}
+          <div className="fixed bottom-0 left-0 right-0 z-[220] px-4 pb-10 pointer-events-none">
+             <div className="max-w-md mx-auto bg-white border border-gray-100 shadow-[0_-15px_50px_rgba(0,0,0,0.15)] p-4 rounded-[40px] pointer-events-auto">
                 {viewingItem.status !== 'SOLD' ? (
                   <div className="space-y-3">
-                    {/* Status Badge */}
                     {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && viewingItem.userId !== profile.uid && (
                        <div className="bg-teal-50 text-teal-600 px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest text-center border border-teal-100">Application Sent - Awaiting Approval</div>
                     )}
 
-                    {/* Transaction Action Buttons */}
                     {viewingItem.userId !== profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
                       <button onClick={() => setConfirmRequestItem(viewingItem)} className="w-full py-4.5 bg-teal-400 text-white rounded-full font-black uppercase tracking-[0.2em] text-[13px] shadow-2xl shadow-teal-100 active:scale-[0.98] transition-all">Request to Buy</button>
                     )}
