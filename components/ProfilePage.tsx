@@ -460,7 +460,8 @@ export const ProfilePage: React.FC<Props> = ({
                </div>
              </div>
              
-             <div className="flex-grow overflow-y-auto p-8 pt-6 space-y-10 hide-scrollbar overscroll-contain">
+             {/* CONTENT AREA: Added pb-32 to allow scrolling well past the last item */}
+             <div className="flex-grow overflow-y-auto p-8 pt-6 pb-32 space-y-10 hide-scrollbar overscroll-contain">
                 <div className="space-y-4">
                   <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Identity Icon</label>
                   <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
