@@ -443,14 +443,24 @@ export const ProfilePage: React.FC<Props> = ({
       )}
 
       {isEditingProfile && isOwnProfile && (
-        <div className="fixed inset-0 z-[120] bg-black/60 flex items-end justify-center p-0 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-lg bg-white rounded-t-[48px] shadow-2xl flex flex-col max-h-[92vh] border-t-4 border-pink-400 overflow-hidden">
-             <div className="flex justify-between items-center p-8 border-b border-gray-50 shrink-0">
-               <h3 className="font-black text-gray-800 uppercase text-[15px] tracking-[0.1em]">Resident Profile</h3>
-               <button onClick={() => setIsEditingProfile(false)}><X size={28} className="text-gray-300"/></button>
+        <div className="fixed inset-0 z-[120] bg-black/60 flex items-end justify-center p-0 backdrop-blur-sm animate-fade-in overscroll-none">
+          <div className="w-full max-w-lg bg-white rounded-t-[48px] shadow-2xl flex flex-col h-[92vh] border-t-4 border-pink-400 overflow-hidden relative">
+             <div className="flex justify-between items-center p-6 border-b border-gray-100 shrink-0 bg-white sticky top-0 z-10">
+               <h3 className="font-black text-gray-800 uppercase text-[14px] tracking-[0.1em]">Resident Profile</h3>
+               <div className="flex items-center gap-3">
+                 <button 
+                   onClick={handleSaveProfile} 
+                   className="px-5 py-2.5 bg-pink-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-pink-100 active:scale-95 transition-all"
+                 >
+                   Apply Updates
+                 </button>
+                 <button onClick={() => setIsEditingProfile(false)} className="text-gray-300 hover:text-gray-500 transition-colors p-1">
+                   <X size={26}/>
+                 </button>
+               </div>
              </div>
              
-             <div className="flex-grow overflow-y-auto p-8 pt-4 space-y-10 hide-scrollbar">
+             <div className="flex-grow overflow-y-auto p-8 pt-6 space-y-10 hide-scrollbar overscroll-contain">
                 <div className="space-y-4">
                   <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Identity Icon</label>
                   <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
@@ -552,10 +562,6 @@ export const ProfilePage: React.FC<Props> = ({
                     )}
                   </div>
                 </div>
-             </div>
-
-             <div className="p-8 border-t border-gray-50 shrink-0 bg-white">
-                <button onClick={handleSaveProfile} className="w-full py-5.5 bg-pink-400 text-white rounded-[28px] font-black shadow-2xl shadow-pink-100 active:scale-95 transition-all uppercase tracking-[0.25em] text-[13px]">Apply Updates</button>
              </div>
           </div>
         </div>
