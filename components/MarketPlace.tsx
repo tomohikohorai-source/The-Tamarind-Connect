@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -24,6 +24,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('All Genres');
   const [selectedCondition, setSelectedCondition] = useState<string>('Any Condition');
+  const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilters, setShowFilters] = useState(false);
@@ -69,7 +70,11 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedGenre !== 'All Genres' && item.genre !== selectedGenre) return false;
       if (selectedCondition !== 'Any Condition' && item.condition !== selectedCondition) return false;
-      if (maxPrice && item.price > Math.max(0, Number(maxPrice))) return false;
+      
+      // Price Filtering
+      if (minPrice && item.price < Number(minPrice)) return false;
+      if (maxPrice && item.price > Number(maxPrice)) return false;
+      
       return true;
     });
 
@@ -79,7 +84,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       if (sortBy === 'price_high') return b.price - a.price;
       return 0;
     });
-  }, [items, filterStatus, searchQuery, selectedGenre, selectedCondition, maxPrice, sortBy]);
+  }, [items, filterStatus, searchQuery, selectedGenre, selectedCondition, minPrice, maxPrice, sortBy]);
 
   const handleSendComment = (itemId: string) => {
     const text = commentInputs[itemId];
@@ -401,11 +406,62 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           <div className="bg-white p-6 rounded-[32px] border border-teal-50 shadow-xl space-y-5 animate-fade-in">
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Sort & Filters</h4>
-              <button onClick={() => { setSearchQuery(''); setSelectedGenre('All Genres'); setSelectedCondition('Any Condition'); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">Reset All</button>
+              <button onClick={() => { setSearchQuery(''); setSelectedGenre('All Genres'); setSelectedCondition('Any Condition'); setMinPrice(''); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">Reset All</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <select value={selectedGenre} onChange={e => setSelectedGenre(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>All Genres</option>{MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select>
-              <select value={selectedCondition} onChange={e => setSelectedCondition(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>Any Condition</option><option value="S">Rank S</option><option value="A">Rank A</option><option value="B">Rank B</option><option value="C">Rank C</option></select>
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Genre</label>
+                <select value={selectedGenre} onChange={e => setSelectedGenre(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>All Genres</option>{MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Condition</label>
+                <select value={selectedCondition} onChange={e => setSelectedCondition(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>Any Condition</option><option value="S">Rank S</option><option value="A">Rank A</option><option value="B">Rank B</option><option value="C">Rank C</option></select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Min Price (RM)</label>
+                <div className="relative">
+                  <Coins className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
+                  <input 
+                    type="number" 
+                    placeholder="Min" 
+                    value={minPrice}
+                    onChange={e => setMinPrice(e.target.value)}
+                    className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Max Price (RM)</label>
+                <div className="relative">
+                  <Coins className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
+                  <input 
+                    type="number" 
+                    placeholder="Max" 
+                    value={maxPrice}
+                    onChange={e => setMaxPrice(e.target.value)}
+                    className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Sort By</label>
+              <div className="relative">
+                <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
+                <select 
+                  value={sortBy} 
+                  onChange={e => setSortBy(e.target.value as SortOption)} 
+                  className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none appearance-none"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="price_low">Price: Low to High</option>
+                  <option value="price_high">Price: High to Low</option>
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -446,6 +502,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           </button>
         ))}
       </div>
+      {filteredItems.length === 0 && (
+        <div className="py-20 text-center">
+          <div className="text-gray-200 mb-4 flex justify-center"><ShoppingBag size={48}/></div>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">No matching items found</p>
+        </div>
+      )}
     </div>
   );
 };
