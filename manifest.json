@@ -1,6 +1,7 @@
+
 {
-  "name": "The Tamarind Connect",
-  "short_name": "Tamarind",
+  "name": "Nearby Exchange",
+  "short_name": "Nearby",
   "description": "Condominium playground sharing app",
   "start_url": "/",
   "display": "standalone",

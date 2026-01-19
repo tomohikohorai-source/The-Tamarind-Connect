@@ -347,7 +347,7 @@ const App: React.FC = () => {
   };
 
   if (!isVerified) return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Entering The Tamarind...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Entering Nearby Exchange...</div>;
   if (appState === 'AUTH') return <AuthScreen />;
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
@@ -369,7 +369,7 @@ const App: React.FC = () => {
              <LogOut size={20} />
            </button>
         </div>
-        <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>The Tamarind Connect</h1>
+        <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>Nearby Exchange</h1>
         {profile && <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">Block {profile.roomNumber}</div>}
       </header>
 

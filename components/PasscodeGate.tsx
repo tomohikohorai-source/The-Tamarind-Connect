@@ -25,7 +25,7 @@ export const PasscodeGate: React.FC<Props> = ({ onSuccess }) => {
     <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50">
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 text-center border border-pink-100">
         <div className="text-5xl mb-4">🏢</div>
-        <h1 className="text-2xl font-black text-pink-500 mb-2">The Tamarind Connect</h1>
+        <h1 className="text-2xl font-black text-pink-500 mb-2">Nearby Exchange</h1>
         <p className="text-gray-500 mb-8 font-medium text-sm">Please enter the resident passcode</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">

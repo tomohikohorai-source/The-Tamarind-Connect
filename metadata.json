@@ -1,5 +1,6 @@
+
 {
-  "name": "The Tamarind Connect",
+  "name": "Nearby Exchange",
   "description": "A community-focused scheduling and real-time status app for condominium playground facilities.",
   "requestFramePermissions": [
     "camera"

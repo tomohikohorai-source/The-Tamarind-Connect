@@ -90,7 +90,7 @@ export const AuthScreen: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50 text-center">
         <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-10 border border-pink-100 animate-fade-in">
           <div className="text-6xl mb-6">🏘️</div>
-          <h1 className="text-2xl font-black text-pink-500 mb-2 tracking-tighter uppercase">The Tamarind Connect</h1>
+          <h1 className="text-2xl font-black text-pink-500 mb-2 tracking-tighter uppercase">Nearby Exchange</h1>
           <p className="text-gray-400 mb-10 font-black text-[10px] uppercase tracking-widest leading-loose">Play Together • Trade Together</p>
           
           <div className="space-y-4">
