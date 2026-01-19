@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppState, UserProfile, Activity, MarketItem, AppTab, MarketComment } from './types';
+import { AppState, UserProfile, Activity, MarketItem, Skill, AppTab, MarketComment, SkillComment } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Timeline } from './components/Timeline';
@@ -10,8 +10,10 @@ import { PasscodeGate } from './components/PasscodeGate';
 import { PetGarden } from './components/PetGarden';
 import { MarketPlace } from './components/MarketPlace';
 import { MarketItemForm } from './components/MarketItemForm';
+import { SkillExchange } from './components/SkillExchange';
+import { SkillForm } from './components/SkillForm';
 import { store } from './services/store';
-import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, Plus, ShoppingCart, LogOut } from 'lucide-react';
+import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, Plus, ShoppingCart, LogOut, BookOpen, Star } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -25,6 +27,7 @@ const App: React.FC = () => {
   const [viewingProfile, setViewingProfile] = useState<UserProfile | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [activeTab, setActiveTab] = useState<AppTab>('HOME');
   
   const [showCheckIn, setShowCheckIn] = useState(false);
@@ -33,6 +36,10 @@ const App: React.FC = () => {
   const [showMarketForm, setShowMarketForm] = useState(false);
   const [editingMarketItem, setEditingMarketItem] = useState<MarketItem | undefined>(undefined);
   const [targetMarketId, setTargetMarketId] = useState<string | null>(null);
+
+  const [showSkillForm, setShowSkillForm] = useState(false);
+  const [editingSkill, setEditingSkill] = useState<Skill | undefined>(undefined);
+  const [targetSkillId, setTargetSkillId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -85,15 +92,19 @@ const App: React.FC = () => {
       const hash = window.location.hash;
       if (hash === '#profile') setActiveTab('PROFILE');
       else if (hash === '#market') setActiveTab('MARKET');
+      else if (hash === '#skills') setActiveTab('SKILLS');
       else if (hash === '#home' || hash === '') setActiveTab('HOME');
       
       if (hash === '#checkin') setShowCheckIn(true);
       else if (hash === '#sell') setShowMarketForm(true);
+      else if (hash === '#post-skill') setShowSkillForm(true);
       else { 
         setShowCheckIn(false); 
         setEditingActivity(undefined);
         setShowMarketForm(false);
         setEditingMarketItem(undefined);
+        setShowSkillForm(false);
+        setEditingSkill(undefined);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -148,7 +159,14 @@ const App: React.FC = () => {
         setMarketItems(data);
       });
 
-      return () => { unsubAct(); unsubMarket(); setIsLive(false); };
+      const qSkills = query(collection(db, "skills"), orderBy("createdAt", "desc"));
+      const unsubSkills = onSnapshot(qSkills, (snapshot) => {
+        const data: Skill[] = [];
+        snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Skill));
+        setSkills(data);
+      });
+
+      return () => { unsubAct(); unsubMarket(); unsubSkills(); setIsLive(false); };
     }
   }, [appState]);
 
@@ -164,14 +182,12 @@ const App: React.FC = () => {
   const marketActionsCount = useMemo(() => {
     if (!profile) return 0;
     return marketItems.filter(item => {
-      // Seller actions
       if (item.userId === profile.uid) {
         const hasPendingApp = item.requestStatus === 'PENDING';
         const hasNewMessage = item.status === 'RESERVED' && item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
         const needsCompletion = item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion;
         return hasPendingApp || hasNewMessage || needsCompletion;
       }
-      // Buyer actions
       if (item.buyerId === profile.uid && item.status === 'RESERVED') {
         const hasNewMessage = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
         const needsReception = !item.buyerConfirmedCompletion;
@@ -206,6 +222,9 @@ const App: React.FC = () => {
     if (activeTab === 'MARKET') {
       setShowMarketForm(true);
       window.location.hash = 'sell';
+    } else if (activeTab === 'SKILLS') {
+      setShowSkillForm(true);
+      window.location.hash = 'post-skill';
     } else {
       setShowCheckIn(true);
       window.location.hash = 'checkin';
@@ -215,8 +234,10 @@ const App: React.FC = () => {
   const closeModals = () => {
     setShowCheckIn(false);
     setShowMarketForm(false);
+    setShowSkillForm(false);
     setEditingActivity(undefined);
     setEditingMarketItem(undefined);
+    setEditingSkill(undefined);
     window.location.hash = activeTab.toLowerCase();
   };
 
@@ -262,7 +283,6 @@ const App: React.FC = () => {
   const handleMarketStatusChange = async (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => {
     try {
       const updates: any = { status, lastUpdated: new Date().toISOString(), ...extraFlags };
-      
       if (buyerId && profile) {
         updates.buyerId = buyerId;
         updates.buyerNickname = profile.parentNickname;
@@ -279,7 +299,6 @@ const App: React.FC = () => {
         updates.requestStatus = 'NONE';
         updates.rejectionReason = '';
       }
-
       await updateDoc(doc(db, "marketItems", id), updates);
     } catch (e: any) { alert(e.message); }
   };
@@ -308,6 +327,43 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSkillSubmit = async (skill: Skill) => {
+    try {
+      if (editingSkill) {
+        const { id, ...data } = skill;
+        await updateDoc(doc(db, "skills", editingSkill.id), data);
+      } else {
+        const { id, ...data } = skill;
+        await addDoc(collection(db, "skills"), data);
+      }
+      closeModals();
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleSkillComment = async (skillId: string, text: string) => {
+    if (!profile) return;
+    const comment: SkillComment = {
+      id: crypto.randomUUID(),
+      userId: profile.uid,
+      userNickname: profile.parentNickname,
+      userAvatar: profile.avatarIcon,
+      text,
+      createdAt: new Date().toISOString()
+    };
+    try {
+      await updateDoc(doc(db, "skills", skillId), {
+        comments: arrayUnion(comment),
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleSkillDelete = async (id: string) => {
+    if (confirm('Delete this skill post?')) {
+      try { await deleteDoc(doc(db, "skills", id)); } catch (e: any) { alert(e.message); }
+    }
+  };
+
   const handleViewProfile = async (userId: string) => {
     if (profile && userId === profile.uid) {
       changeTab('PROFILE');
@@ -332,6 +388,12 @@ const App: React.FC = () => {
     window.location.hash = 'market';
   };
 
+  const handleDirectToSkillDetail = (skillId: string) => {
+    setTargetSkillId(skillId);
+    setActiveTab('SKILLS');
+    window.location.hash = 'skills';
+  };
+
   const handleLogout = async () => { 
     if (confirm('Logout?')) { 
       try {
@@ -352,10 +414,12 @@ const App: React.FC = () => {
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
   const isMarket = activeTab === 'MARKET';
+  const isSkills = activeTab === 'SKILLS';
   const isProfile = activeTab === 'PROFILE';
-  const themeColor = isMarket ? 'text-teal-500' : 'text-pink-500';
-  const themeBg = isMarket ? 'bg-teal-400' : 'bg-pink-400';
-  const themeShadow = isMarket ? 'shadow-teal-100' : 'shadow-pink-100';
+  
+  const themeColor = isMarket ? 'text-teal-500' : isSkills ? 'text-indigo-500' : 'text-pink-500';
+  const themeBg = isMarket ? 'bg-teal-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
+  const themeShadow = isMarket ? 'shadow-teal-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
@@ -383,8 +447,11 @@ const App: React.FC = () => {
         {activeTab === 'MARKET' && profile && (
           <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
+        {activeTab === 'SKILLS' && profile && (
+          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); window.location.hash = 'post-skill'; }} onDelete={handleSkillDelete} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+        )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} onAddMarket={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} onAddMarketComment={handleMarketComment} onGoToTransaction={handleDirectToTransaction} />
+          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} onAddMarket={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} onAddSkill={() => { setShowSkillForm(true); window.location.hash = 'post-skill'; }} onEditSkill={(skill) => { setEditingSkill(skill); window.location.hash = 'post-skill'; }} onDeleteSkill={handleSkillDelete} onAddMarketComment={handleMarketComment} onGoToTransaction={handleDirectToTransaction} onGoToSkill={handleDirectToSkillDetail} />
         )}
       </main>
 
@@ -393,7 +460,8 @@ const App: React.FC = () => {
           profile={viewingProfile} 
           currentUser={profile} 
           activities={activities} 
-          marketItems={marketItems} 
+          marketItems={marketItems}
+          skills={skills}
           onLogout={() => {}} 
           onEdit={() => {}} 
           onDelete={() => {}} 
@@ -403,11 +471,18 @@ const App: React.FC = () => {
           onMarketStatusChange={() => {}} 
           onAddPlay={() => {}} 
           onAddMarket={() => {}} 
+          onAddSkill={() => {}}
+          onEditSkill={() => {}}
+          onDeleteSkill={() => {}}
           onAddMarketComment={() => {}} 
           onGoToTransaction={(itemId) => {
             handleDirectToTransaction(itemId);
-            setViewingProfile(null); // Close the neighbor's profile when navigating to the item detail
+            setViewingProfile(null);
           }} 
+          onGoToSkill={(skillId) => {
+            handleDirectToSkillDetail(skillId);
+            setViewingProfile(null);
+          }}
           onClose={() => setViewingProfile(null)} 
         />
       )}
@@ -430,28 +505,35 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
-        <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-4 relative">
-          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/4 relative ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Home size={22} /><span className="text-[9px] font-black uppercase tracking-wider">Play</span>
-            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-11px] -translate-y-[-11px] w-4.5 h-4.5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] text-white font-black">{unseenCount}</span>}
-          </button>
-          <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 w-1/4 relative ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
-            <ShoppingBag size={22} /><span className="text-[9px] font-black uppercase tracking-wider">Market</span>
-          </button>
-          <div className="w-1/4 flex justify-center">
-            {isProfile ? (
-              <div className="flex gap-2.5 -translate-y-6">
-                <button onClick={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} className="flex flex-col items-center justify-center w-14 h-14 bg-pink-400 text-white rounded-2xl font-black shadow-2xl shadow-pink-100 border-4 border-white active:scale-95 transition-all"><Plus size={22} /><span className="text-[7px] uppercase font-black">Play</span></button>
-                <button onClick={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} className="flex flex-col items-center justify-center w-14 h-14 bg-teal-400 text-white rounded-2xl font-black shadow-2xl shadow-teal-100 border-4 border-white active:scale-95 transition-all"><ShoppingCart size={20} /><span className="text-[7px] uppercase font-black">Sell</span></button>
-              </div>
-            ) : (
-              <button onClick={handleActionClick} className={`flex items-center gap-2.5 ${themeBg} text-white px-7 py-4 rounded-[32px] font-black shadow-2xl ${themeShadow} border-4 border-white -translate-y-6 active:scale-95 transition-all`}><PlusCircle size={22} /><span className="text-[10px] uppercase tracking-widest">{isMarket ? 'Sell' : 'Add'}</span></button>
-            )}
+      {(showSkillForm || editingSkill) && profile && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
+          <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
+            <SkillForm profile={profile} initialSkill={editingSkill} onSubmit={handleSkillSubmit} onCancel={closeModals} />
           </div>
-          <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/4 relative ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <UserCircle size={22} /><span className="text-[9px] font-black uppercase tracking-wider">Me</span>
-            {(activeTab !== 'PROFILE' && marketActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-11px] -translate-y-[-11px] w-4.5 h-4.5 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] text-white font-black">{marketActionsCount}</span>}
+        </div>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
+        <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-2 relative">
+          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <Home size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Play</span>
+            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{unseenCount}</span>}
+          </button>
+          <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
+            <ShoppingBag size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Market</span>
+          </button>
+          
+          <div className="w-1/5 flex justify-center">
+            <button onClick={handleActionClick} className={`flex items-center justify-center ${themeBg} text-white w-14 h-14 rounded-2xl font-black shadow-2xl ${themeShadow} border-4 border-white -translate-y-6 active:scale-95 transition-all`}><PlusCircle size={24} /></button>
+          </div>
+
+          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
+            <BookOpen size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Skills</span>
+          </button>
+          <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <UserCircle size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Me</span>
+            {(activeTab !== 'PROFILE' && marketActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{marketActionsCount}</span>}
           </button>
         </div>
       </nav>

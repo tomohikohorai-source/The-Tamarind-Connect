@@ -20,6 +20,7 @@ export interface PrivacySettings {
   showPastSales: boolean;
   showBuying: boolean;
   showPlayHistory: boolean;
+  showSkills?: boolean;
 }
 
 export interface UserProfile {
@@ -89,5 +90,30 @@ export interface MarketItem {
   sellerConfirmedCompletion?: boolean;
 }
 
-export type AppTab = 'HOME' | 'MARKET' | 'PROFILE';
+export interface SkillComment {
+  id: string;
+  userId: string;
+  userNickname: string;
+  userAvatar: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface Skill {
+  id: string;
+  userId: string;
+  parentNickname: string;
+  parentAvatarIcon: string;
+  roomNumber: string;
+  title: string;
+  category: string;
+  description: string;
+  type: 'OFFER' | 'REQUEST'; // Providing a skill or asking for one
+  price: string; // e.g. "Free", "RM 20/hr", "Exchange for coffee"
+  comments: SkillComment[];
+  createdAt: string;
+  lastUpdated: string;
+}
+
+export type AppTab = 'HOME' | 'MARKET' | 'SKILLS' | 'PROFILE';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';

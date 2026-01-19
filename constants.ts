@@ -78,6 +78,28 @@ export const GENRE_ICONS: Record<string, string> = {
   "Others": "📦"
 };
 
+export const SKILL_CATEGORIES = [
+  "Academic & Tutoring",
+  "Music & Instruments",
+  "Sports & Fitness",
+  "Arts & Crafts",
+  "Languages",
+  "Tech & Digital",
+  "Cooking & Baking",
+  "Hobby & Others"
+];
+
+export const SKILL_ICONS: Record<string, string> = {
+  "Academic & Tutoring": "📚",
+  "Music & Instruments": "🎵",
+  "Sports & Fitness": "🏃",
+  "Arts & Crafts": "🎨",
+  "Languages": "🗣️",
+  "Tech & Digital": "💻",
+  "Cooking & Baking": "🍳",
+  "Hobby & Others": "🌟"
+};
+
 export const AVATAR_ICONS = {
   PARENTS: [
     '👤', '👨', '👩', '👨🏻', '👩🏻', '👨🏼', '👩🏼', '👨🏽', '👩🏽', '👨🏾', '👩🏾', '👨🏿', '👩🏿',

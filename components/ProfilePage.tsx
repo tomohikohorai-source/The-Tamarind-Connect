@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { UserProfile, Activity, Child, MarketItem, PrivacySettings, LocationType } from '../types';
-import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS } from '../constants';
-import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket } from 'lucide-react';
+import { UserProfile, Activity, Child, MarketItem, Skill, PrivacySettings, LocationType } from '../types';
+import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS } from '../constants';
+import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
@@ -12,6 +12,7 @@ interface Props {
   currentUser: UserProfile; 
   activities: Activity[];
   marketItems: MarketItem[];
+  skills: Skill[];
   onLogout: () => void;
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
@@ -21,8 +22,12 @@ interface Props {
   onMarketStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
   onAddPlay: () => void;
   onAddMarket: () => void;
+  onAddSkill: () => void;
+  onEditSkill: (skill: Skill) => void;
+  onDeleteSkill: (id: string) => void;
   onAddMarketComment: (itemId: string, text: string) => void;
   onGoToTransaction: (itemId: string) => void;
+  onGoToSkill: (skillId: string) => void;
   onClose?: () => void; 
 }
 
@@ -41,8 +46,9 @@ const CollapsibleHeader: React.FC<{ title: string, icon: React.ReactNode, count:
 );
 
 export const ProfilePage: React.FC<Props> = ({ 
-  profile, currentUser, activities, marketItems, onLogout, onEdit, onDelete, onUpdateProfile, 
-  onEditMarket, onDeleteMarket, onMarketStatusChange, onAddPlay, onAddMarket, onAddMarketComment, onGoToTransaction, onClose
+  profile, currentUser, activities, marketItems, skills, onLogout, onEdit, onDelete, onUpdateProfile, 
+  onEditMarket, onDeleteMarket, onMarketStatusChange, onAddPlay, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
+  onAddMarketComment, onGoToTransaction, onGoToSkill, onClose
 }) => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -54,19 +60,19 @@ export const ProfilePage: React.FC<Props> = ({
     activeSales: true,
     pastSales: false,
     buying: true,
+    skills: true,
     play: true
   });
 
   const toggleSection = (key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
-  // Profile Edit State
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
   const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
   const [editBlock, setEditBlock] = useState(profile.roomNumber);
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
   const isOwnProfile = profile.uid === currentUser.uid;
-  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true };
+  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true, showSkills: true };
 
   const myActivities = useMemo(() => activities
     .filter(a => a.userId === profile.uid)
@@ -75,28 +81,24 @@ export const ProfilePage: React.FC<Props> = ({
   const mySales = useMemo(() => marketItems.filter(item => item.userId === profile.uid), [marketItems, profile.uid]);
   const myActiveSales = useMemo(() => mySales.filter(i => i.status !== 'SOLD'), [mySales]);
   const myPastSales = useMemo(() => mySales.filter(i => i.status === 'SOLD'), [mySales]);
-  
-  // Buyer logic: include items where I am the buyerId
   const myPurchases = useMemo(() => marketItems.filter(item => item.buyerId === profile.uid), [marketItems, profile.uid]);
+  
+  const mySkills = useMemo(() => skills.filter(s => s.userId === profile.uid), [skills, profile.uid]);
 
-  // Combined Action Items (For both Buyer and Seller)
   const actionItems = useMemo(() => {
     if (!isOwnProfile) return [];
-    
     const sellerTasks = mySales.filter(item => {
       const hasPendingApp = item.requestStatus === 'PENDING';
       const hasNewMessage = item.status === 'RESERVED' && item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
       const needsEndDeal = item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion;
       return hasPendingApp || hasNewMessage || needsEndDeal;
     });
-
     const buyerTasks = myPurchases.filter(item => {
       if (item.status !== 'RESERVED') return false;
       const hasNewMessage = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
       const needsConfirmation = !item.buyerConfirmedCompletion;
       return hasNewMessage || needsConfirmation;
     });
-
     return [...sellerTasks, ...buyerTasks];
   }, [mySales, myPurchases, isOwnProfile, profile.uid]);
 
@@ -126,7 +128,7 @@ export const ProfilePage: React.FC<Props> = ({
 
   const togglePrivacy = async (key: keyof PrivacySettings) => {
     if (!isOwnProfile) return;
-    const currentSettings = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true };
+    const currentSettings = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true, showSkills: true };
     const updatedSettings = { ...currentSettings, [key]: !currentSettings[key] };
     const updatedProfile = { ...profile, privacySettings: updatedSettings };
     try {
@@ -162,7 +164,6 @@ export const ProfilePage: React.FC<Props> = ({
         </button>
       )}
 
-      {/* Profile Info Header */}
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-5xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
@@ -189,6 +190,7 @@ export const ProfilePage: React.FC<Props> = ({
             {[
               { key: 'showChildren', label: 'Children Info', icon: <User size={14}/> },
               { key: 'showListings', label: 'Items for Sale', icon: <ShoppingBag size={14}/> },
+              { key: 'showSkills', label: 'Skills & Help', icon: <BookOpen size={14}/> },
               { key: 'showPastSales', label: 'Past Sales', icon: <History size={14}/> },
               { key: 'showBuying', label: 'Items I\'m Buying', icon: <PackageCheck size={14}/> },
               { key: 'showPlayHistory', label: 'Play History', icon: <Calendar size={14}/> }
@@ -210,7 +212,6 @@ export const ProfilePage: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Children Section */}
       {(isOwnProfile || privacy.showChildren) && profile.children.length > 0 && (
         <section className="space-y-4 animate-fade-in">
           <div className="flex items-center gap-2.5">
@@ -231,72 +232,51 @@ export const ProfilePage: React.FC<Props> = ({
         </section>
       )}
 
-      {isOwnProfile && actionItems.length > 0 && (
-        <section className="space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-orange-500 text-white p-2 rounded-xl shadow-xl shadow-orange-100"><Bell size={16} className="animate-pulse" /></div>
-            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">Active Tasks</h3>
-          </div>
-          <div className="grid gap-4">
-            {actionItems.map(item => {
-              const isSeller = item.userId === profile.uid;
-              const hasPendingApp = item.requestStatus === 'PENDING';
-              const latestComment = item.comments.length > 0 ? item.comments[item.comments.length - 1] : null;
-              const isNewMessage = latestComment && latestComment.userId !== profile.uid;
-
-              let label = 'Update Required';
-              if (isSeller) {
-                if (hasPendingApp) label = 'New Sale Request';
-                else if (item.buyerConfirmedCompletion) label = 'Action: Mark as Sold';
-                else if (isNewMessage) label = 'Chat: Message from Buyer';
-              } else {
-                if (isNewMessage) label = 'Chat: Message from Seller';
-                else if (!item.buyerConfirmedCompletion) label = 'Pending: Item Pick-up';
-              }
-
-              return (
-                <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full text-left bg-white p-6 rounded-[36px] border-2 border-orange-100 shadow-xl space-y-4 animate-slide-up active:scale-[0.98] transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl border border-orange-100">{GENRE_ICONS[item.genre] || '📦'}</div>
-                    <div className="flex-grow">
-                      <div className="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">{label}</div>
-                      <div className="text-[13px] font-black text-gray-800 line-clamp-1">{item.title}</div>
-                    </div>
-                  </div>
-
-                  {hasPendingApp && isSeller ? (
-                    <div className="flex gap-2">
-                      <button onClick={(e) => { e.stopPropagation(); onMarketStatusChange(item.id, 'RESERVED'); }} className="flex-1 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[9px] tracking-widest shadow-lg">Approve</button>
-                      <button onClick={(e) => { e.stopPropagation(); setRejectItem(item); }} className="flex-1 py-3 bg-red-50 text-red-500 rounded-xl font-black uppercase text-[9px] tracking-widest border border-red-100">Deny</button>
-                    </div>
-                  ) : (
-                    <div className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-orange-100">
-                      <MessageSquare size={16}/> View Transaction Chat
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {isOwnProfile && <PetGarden profile={profile} />}
 
-      {isOwnProfile && (
-        <div className="grid grid-cols-2 gap-4">
-          <button onClick={onAddPlay} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-pink-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
-            <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-400 mb-3 group-hover:bg-pink-400 group-hover:text-white transition-all"><Plus size={28} /></div>
-            <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Play Plan</span>
-          </button>
-          <button onClick={onAddMarket} className="flex flex-col items-center justify-center p-6 bg-white border-2 border-teal-50 rounded-[36px] shadow-sm active:scale-95 transition-all group">
-            <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-teal-400 mb-3 group-hover:bg-teal-400 group-hover:text-white transition-all"><ShoppingCart size={28} /></div>
-            <span className="text-[11px] font-black text-gray-800 uppercase tracking-widest">New Sale Item</span>
-          </button>
-        </div>
-      )}
-
       <div className="space-y-4">
+        {/* SKILLS SECTION */}
+        {(isOwnProfile || privacy.showSkills) && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Skills & Help" icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} />
+            {openSections.skills && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {mySkills.length > 0 ? (
+                  mySkills.map(skill => (
+                    <button key={skill.id} onClick={() => onGoToSkill(skill.id)} className="w-full p-4 rounded-[28px] border border-indigo-50 flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all shadow-sm">
+                      <div className="flex items-center gap-4 min-w-0 flex-grow">
+                        <div className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
+                          {SKILL_ICONS[skill.category] || '🌟'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{skill.title}</div>
+                          <div className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{skill.type} • {skill.price}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0 pl-2">
+                        {isOwnProfile && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); onEditSkill(skill); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-indigo-50 hover:text-indigo-400 transition-all border border-gray-100 shadow-sm"><Edit2 size={14}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); onDeleteSkill(skill.id); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all border border-gray-100 shadow-sm"><Trash2 size={14}/></button>
+                          </>
+                        )}
+                        <div className="p-2.5 rounded-xl bg-indigo-500 text-white shadow-lg"><MessageSquare size={14}/></div>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No skills shared yet</div>
+                )}
+                {isOwnProfile && (
+                   <button onClick={onAddSkill} className="w-full py-3.5 bg-indigo-50 text-indigo-500 rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                     <Plus size={16}/> Post a New Skill
+                   </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ITEMS FOR SALE - Active */}
         {(isOwnProfile || privacy.showListings) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
@@ -329,36 +309,6 @@ export const ProfilePage: React.FC<Props> = ({
                   ))
                 ) : (
                   <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No active listings</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* PAST SALES - Sold Items */}
-        {(isOwnProfile || privacy.showPastSales) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title="Past Sales" icon={<History size={18}/>} count={myPastSales.length} isOpen={openSections.pastSales} onToggle={() => toggleSection('pastSales')} />
-            {openSections.pastSales && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myPastSales.length > 0 ? (
-                  myPastSales.map(item => (
-                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-gray-50 flex items-center justify-between bg-gray-50/50 opacity-70 active:scale-[0.98] transition-all text-left">
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{GENRE_ICONS[item.genre] || '📦'}</div>
-                        <div className="min-w-0">
-                          <div className="text-[12px] font-black text-gray-400 line-through truncate uppercase tracking-tight">{item.title}</div>
-                          <div className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Sold for {item.type === 'FREE' ? 'FREE' : `RM ${item.price}`}</div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <div className="p-2 bg-gray-100 text-gray-400 rounded-xl"><CheckCircle size={14}/></div>
-                        <div className="p-2.5 bg-teal-500 text-white rounded-xl shadow-sm"><MessageSquare size={14}/></div>
-                      </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No past sales</div>
                 )}
               </div>
             )}
@@ -460,7 +410,6 @@ export const ProfilePage: React.FC<Props> = ({
                </div>
              </div>
              
-             {/* CONTENT AREA: Added pb-32 to allow scrolling well past the last item */}
              <div className="flex-grow overflow-y-auto p-8 pt-6 pb-32 space-y-10 hide-scrollbar overscroll-contain">
                 <div className="space-y-4">
                   <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Identity Icon</label>
@@ -486,7 +435,6 @@ export const ProfilePage: React.FC<Props> = ({
                   </div>
                 </div>
 
-                {/* Children Management Section */}
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block">Children Info</label>
@@ -564,27 +512,6 @@ export const ProfilePage: React.FC<Props> = ({
                   </div>
                 </div>
              </div>
-          </div>
-        </div>
-      )}
-
-      {rejectItem && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-red-400">
-            <div className="space-y-6">
-              <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">Deny Request</h3>
-              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center leading-loose">State a reason for the neighbor</p>
-              <textarea 
-                value={rejectionReason} 
-                onChange={e => setRejectionReason(e.target.value)}
-                placeholder="Reason..."
-                className="w-full p-5 bg-gray-50 border-none rounded-3xl font-bold text-sm h-32 resize-none outline-none focus:ring-4 ring-red-50"
-              />
-              <div className="flex gap-4 pt-2">
-                <button onClick={() => setRejectItem(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
-                <button onClick={handleRejectAction} disabled={!rejectionReason.trim()} className="flex-1 py-5 bg-red-500 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-red-100 active:scale-95">Send Denial</button>
-              </div>
-            </div>
           </div>
         </div>
       )}
