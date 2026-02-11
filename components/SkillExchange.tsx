@@ -2,8 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-// Added ChevronRight to the import list
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -16,6 +15,25 @@ interface Props {
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
 }
+
+const SkillStatusBanner = ({ skill, profile }: { skill: Skill, profile: UserProfile }) => {
+  const isOwner = skill.userId === profile.uid;
+  const lastComment = skill.comments.length > 0 ? skill.comments[skill.comments.length - 1] : null;
+  const hasAction = lastComment && lastComment.userId !== profile.uid;
+
+  if (hasAction) {
+    return (
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl"><MessageSquare size={24} /></div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">New Message</div>
+          <div className="text-[13px] font-bold leading-tight">Neighbor sent a reply! Scroll down to chat.</div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onAddComment, onViewProfile, onChatClose }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
@@ -72,6 +90,8 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
              <span className="text-xl">{viewingSkill.parentAvatarIcon}</span>
            </button>
         </div>
+
+        <SkillStatusBanner skill={viewingSkill} profile={profile} />
 
         <div className="bg-white p-6 rounded-[32px] border-2 border-indigo-50 shadow-lg space-y-4">
           <div className="flex justify-between items-start">

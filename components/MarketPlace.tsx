@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -17,6 +17,76 @@ interface Props {
   onChatClose?: () => void;
 }
 
+const InstructionBanner = ({ item, profile }: { item: MarketItem, profile: UserProfile }) => {
+  const isSeller = item.userId === profile.uid;
+  const isBuyer = item.buyerId === profile.uid;
+
+  if (item.status === 'AVAILABLE' && item.requestStatus === 'PENDING') {
+    if (isSeller) return (
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl"><AlertTriangle size={24} /></div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Seller Action Needed</div>
+          <div className="text-[13px] font-bold leading-tight">A neighbor wants to buy this! Review and "Approve" below.</div>
+        </div>
+      </div>
+    );
+    if (isBuyer) return (
+      <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl"><Clock size={24} /></div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Request Sent</div>
+          <div className="text-[13px] font-bold leading-tight">Seller is reviewing your request. We'll notify you here!</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (item.status === 'RESERVED') {
+    if (isBuyer) {
+      if (!item.buyerConfirmedCompletion) return (
+        <div className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><Handshake size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Items Reserved</div>
+            <div className="text-[13px] font-bold leading-tight">Use chat to meet! Tap "Picked Up" once you have the item.</div>
+          </div>
+        </div>
+      );
+      return (
+        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><CheckCircle size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Pickup Confirmed</div>
+            <div className="text-[13px] font-bold leading-tight">Waiting for seller to finalize the deal. Almost there!</div>
+          </div>
+        </div>
+      );
+    }
+    if (isSeller) {
+      if (item.buyerConfirmedCompletion) return (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-bounce border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><PackageCheck size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Buyer Confirmed</div>
+            <div className="text-[13px] font-bold leading-tight">Handover complete! Tap "Complete Transaction" below.</div>
+          </div>
+        </div>
+      );
+      return (
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><MessageCircle size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Reserved</div>
+            <div className="text-[13px] font-bold leading-tight">Chat with neighbor to arrange pickup time/location.</div>
+          </div>
+        </div>
+      );
+    }
+  }
+  return null;
+};
+
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
 export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onViewProfile, onChatClose }) => {
@@ -29,12 +99,11 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilters, setShowFilters] = useState(false);
 
-  // State for Item Detail View
   const [viewingItem, setViewingItem] = useState<MarketItem | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Handle deep linking or opening from profile
+  // Sync initial item if passed via target ID
   useEffect(() => {
     if (initialActiveItemId) {
       const item = items.find(i => i.id === initialActiveItemId);
@@ -42,15 +111,17 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
     }
   }, [initialActiveItemId, items]);
 
-  // Sync viewing item if list updates (for comments/status)
+  // CRITICAL: Ensure viewingItem is ALWAYS in sync with the live marketItems data array
   useEffect(() => {
     if (viewingItem) {
       const updated = items.find(i => i.id === viewingItem.id);
-      if (updated) setViewingItem(updated);
+      // Only set if we actually found the item and it differs to avoid loops (though items prop change usually implies data update)
+      if (updated && JSON.stringify(updated) !== JSON.stringify(viewingItem)) {
+        setViewingItem(updated);
+      }
     }
-  }, [items]);
+  }, [items, viewingItem?.id]); // Also listen to viewingItem.id to reset if we switch items
 
-  // Modals
   const [confirmRequestItem, setConfirmRequestItem] = useState<MarketItem | null>(null);
   const [rejectRequestItem, setRejectRequestItem] = useState<MarketItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -70,8 +141,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedGenre !== 'All Genres' && item.genre !== selectedGenre) return false;
       if (selectedCondition !== 'Any Condition' && item.condition !== selectedCondition) return false;
-      
-      // Price Filtering
       if (minPrice && item.price < Number(minPrice)) return false;
       if (maxPrice && item.price > Number(maxPrice)) return false;
       
@@ -114,6 +183,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const handleConfirmRequest = () => {
     if (confirmRequestItem) {
+      // Passes profile.uid as the buyerId (3rd arg)
       onStatusChange(confirmRequestItem.id, 'AVAILABLE', profile.uid);
       setConfirmRequestItem(null);
     }
@@ -121,6 +191,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const handleConfirmReject = () => {
     if (rejectRequestItem && rejectionReason.trim()) {
+      // Passes rejectionReason as 4th arg
       onStatusChange(rejectRequestItem.id, 'AVAILABLE', undefined, rejectionReason);
       setRejectRequestItem(null);
       setRejectionReason('');
@@ -129,12 +200,14 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const handleBuyerCompletion = (item: MarketItem) => {
     if (confirm("Confirm that you have received the item?")) {
+      // We keep status as 'RESERVED' but set the buyer flag in the 5th arg (extraFlags)
       onStatusChange(item.id, 'RESERVED', undefined, undefined, { buyerConfirmedCompletion: true });
     }
   };
 
   const handleSellerCompletion = (item: MarketItem) => {
     if (confirm("Buyer has confirmed receipt. End this transaction and mark as SOLD?")) {
+      // We set status to 'SOLD' and ensure seller flag is set too
       onStatusChange(item.id, 'SOLD', undefined, undefined, { sellerConfirmedCompletion: true });
       setViewingItem(null);
       if (onChatClose) onChatClose();
@@ -142,6 +215,9 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
   };
 
   if (viewingItem) {
+    const isSeller = viewingItem.userId === profile.uid;
+    const isBuyer = viewingItem.buyerId === profile.uid;
+
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
         {/* Detail Header */}
@@ -157,7 +233,9 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
            </button>
         </div>
 
-        {/* Action Hub (Top Placement) */}
+        {/* Action Hub & Instruction Banner */}
+        <InstructionBanner item={viewingItem} profile={profile} />
+
         {viewingItem.status !== 'SOLD' && (
           <div className="bg-white p-6 rounded-[32px] border-2 border-teal-50 shadow-lg animate-slide-down">
               {viewingItem.userId !== profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
@@ -169,7 +247,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </button>
               )}
 
-              {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
+              {isSeller && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">Buyer Application Received</p>
                   <div className="flex gap-3">
@@ -179,7 +257,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </div>
               )}
 
-              {viewingItem.userId === profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+              {isSeller && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
                 <div className="flex gap-4">
                   <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
                     <Edit2 size={14}/> Edit
@@ -190,7 +268,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </div>
               )}
 
-              {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && viewingItem.userId !== profile.uid && (
+              {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && !isSeller && (
                 <div className="bg-teal-50 text-teal-600 px-4 py-3.5 rounded-full text-[12px] font-black uppercase tracking-widest text-center border border-teal-100 shadow-inner flex items-center justify-center gap-2">
                   <PackageCheck size={18}/> Application Sent - Waiting for Seller
                 </div>
@@ -266,12 +344,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   </div>
                </div>
                {viewingItem.status === 'RESERVED' && (
-                 profile.uid === viewingItem.buyerId ? (
+                 isBuyer ? (
                     !viewingItem.buyerConfirmedCompletion && (
                       <button onClick={() => handleBuyerCompletion(viewingItem)} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">I've picked up the item</button>
                     )
                  ) : (
-                    viewingItem.buyerConfirmedCompletion && (
+                    isSeller && viewingItem.buyerConfirmedCompletion && (
                       <button onClick={() => handleSellerCompletion(viewingItem)} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Complete Transaction</button>
                     )
                  )
@@ -279,7 +357,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             </div>
           )}
 
-          {/* Chat History Section (Inline) */}
+          {/* Chat History Section */}
           <div className="space-y-4 pt-6">
             <div className="flex items-center gap-2 px-1">
               <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
@@ -291,13 +369,13 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             <div className="space-y-4">
               {viewingItem.comments.map(c => {
                 const isMe = c.userId === profile.uid;
-                const isSeller = c.userId === viewingItem.userId;
+                const isItemSeller = c.userId === viewingItem.userId;
                 return (
                   <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
                     <div className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{c.userAvatar}</div>
                     <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-teal-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                       <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-teal-50 text-right' : 'text-teal-500'}`}>
-                        {isSeller ? 'Seller' : 'Neighbor'} • {format(new Date(c.createdAt), 'HH:mm')}
+                        {isItemSeller ? 'Seller' : 'Neighbor'} • {format(new Date(c.createdAt), 'HH:mm')}
                       </div>
                       <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
                     </div>
@@ -309,7 +387,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
               )}
             </div>
 
-            {/* Chat Input (Inline at bottom of thread) */}
             {viewingItem.status !== 'SOLD' ? (
               <div className="pt-6">
                  <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all shadow-sm">
@@ -339,7 +416,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           </div>
         </div>
 
-        {/* Rejection / Confirm Modals (Local to Detail View) */}
+        {/* Rejection / Confirm Modals */}
         {confirmRequestItem && (
           <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-teal-400">

@@ -317,25 +317,38 @@ const App: React.FC = () => {
 
   const handleMarketStatusChange = async (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => {
     try {
-      const updates: any = { status, lastUpdated: new Date().toISOString(), ...extraFlags };
+      // Base updates with mandatory timestamp and provided status
+      const updates: any = { 
+        status, 
+        lastUpdated: new Date().toISOString(),
+        ...(extraFlags || {}) // Explicitly merge extra flags like buyerConfirmedCompletion
+      };
+
       if (buyerId && profile) {
+        // New buyer application
         updates.buyerId = buyerId;
         updates.buyerNickname = profile.parentNickname;
         updates.buyerAvatarIcon = profile.avatarIcon;
         updates.requestStatus = 'PENDING';
       } else if (rejectionReason) {
+        // Seller declines buyer
         updates.buyerId = ''; 
         updates.buyerNickname = '';
         updates.buyerAvatarIcon = '';
         updates.requestStatus = 'REJECTED';
         updates.rejectionReason = rejectionReason;
         updates.status = 'AVAILABLE';
-      } else if (status === 'RESERVED' && !extraFlags) {
+      } else if (status === 'RESERVED' && (!extraFlags || Object.keys(extraFlags).length === 0)) {
+        // Initial approval by seller (transition from AVAILABLE/PENDING to RESERVED)
         updates.requestStatus = 'NONE';
         updates.rejectionReason = '';
       }
+      
+      // Perform Firestore update
       await updateDoc(doc(db, "marketItems", id), updates);
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { 
+      alert("Status update failed: " + e.message); 
+    }
   };
 
   const handleMarketComment = async (itemId: string, text: string) => {

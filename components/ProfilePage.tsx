@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { UserProfile, Activity, Child, MarketItem, Skill, PrivacySettings, LocationType } from '../types';
 import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS } from '../constants';
-import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle } from 'lucide-react';
+import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
@@ -31,14 +31,17 @@ interface Props {
   onClose?: () => void; 
 }
 
-const CollapsibleHeader: React.FC<{ title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean }> = ({ title, icon, count, isOpen, onToggle, hasBadge }) => (
+const CollapsibleHeader: React.FC<{ title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }> = ({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }) => (
   <button onClick={onToggle} className="flex items-center justify-between w-full py-4 px-3 group transition-all">
     <div className="flex items-center gap-3">
       <div className={`p-2.5 rounded-xl transition-colors ${isOpen ? 'bg-pink-100 text-pink-500' : 'bg-gray-50 text-gray-400 group-hover:text-pink-400'} relative`}>
         {icon}
-        {hasBadge && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>}
+        {hasBadge && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm animate-pulse"></div>}
       </div>
-      <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{title} {count > 0 && <span className="text-pink-400 ml-1.5 opacity-60">({count})</span>}</h3>
+      <div className="flex flex-col items-start">
+        <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{title} {count > 0 && <span className="text-pink-400 ml-1.5 opacity-60">({count})</span>}</h3>
+        {hasBadge && badgeLabel && <span className="text-[7px] font-black text-red-500 uppercase tracking-tighter mt-0.5 animate-pulse flex items-center gap-1"><AlertTriangle size={8}/> {badgeLabel}</span>}
+      </div>
     </div>
     <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
       <ChevronDown size={18} className="text-gray-300" />
@@ -83,7 +86,6 @@ export const ProfilePage: React.FC<Props> = ({
   const myActiveSales = useMemo(() => mySales.filter(i => i.status !== 'SOLD'), [mySales]);
   const myPastSales = useMemo(() => mySales.filter(i => i.status === 'SOLD'), [mySales]);
   
-  // Buying includes items where I'm buyer or participated in Q&A
   const myPurchases = useMemo(() => marketItems.filter(item => {
     const isBuyer = item.buyerId === profile.uid;
     const isParticipant = item.comments.some(c => c.userId === profile.uid) && item.userId !== profile.uid;
@@ -96,7 +98,6 @@ export const ProfilePage: React.FC<Props> = ({
     return isOwner || isParticipant;
   }), [skills, profile.uid]);
 
-  // Helpers to check for notifications
   const hasMarketAction = (item: MarketItem) => {
     if (!isOwnProfile) return false;
     const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
@@ -107,7 +108,6 @@ export const ProfilePage: React.FC<Props> = ({
     if (item.buyerId === profile.uid) {
       return lastCommentFromOthers || (item.status === 'RESERVED' && !item.buyerConfirmedCompletion);
     }
-    // Just a Q&A participant
     return lastCommentFromOthers && item.comments.some(c => c.userId === profile.uid);
   };
 
@@ -118,7 +118,6 @@ export const ProfilePage: React.FC<Props> = ({
     if (skill.userId === profile.uid) {
       return lastCommentFromOthers;
     }
-    // Participant
     return lastCommentFromOthers && skill.comments.some(c => c.userId === profile.uid);
   };
 
@@ -262,12 +261,12 @@ export const ProfilePage: React.FC<Props> = ({
         {/* SKILLS SECTION */}
         {(isOwnProfile || privacy.showSkills) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title="Skills & Help" icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} hasBadge={hasAnySkillAction} />
+            <CollapsibleHeader title="Skills & Help" icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} hasBadge={hasAnySkillAction} badgeLabel="Needs Attention" />
             {openSections.skills && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {mySkills.length > 0 ? (
                   mySkills.map(skill => (
-                    <button key={skill.id} onClick={() => onGoToSkill(skill.id)} className="w-full p-4 rounded-[28px] border border-indigo-50 flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all shadow-sm relative">
+                    <button key={skill.id} onClick={() => onGoToSkill(skill.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all shadow-sm relative ${hasSkillAction(skill) ? 'border-red-100 bg-red-50/10' : 'border-indigo-50'}`}>
                       <div className="flex items-center gap-4 min-w-0 flex-grow">
                         <div className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
                           {SKILL_ICONS[skill.category] || '🌟'}
@@ -304,18 +303,19 @@ export const ProfilePage: React.FC<Props> = ({
         {/* ITEMS FOR SALE - Active */}
         {(isOwnProfile || privacy.showListings) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title="Items For Sale" icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} hasBadge={hasAnyMarketAction} />
+            <CollapsibleHeader title="Items For Sale" icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} hasBadge={hasAnyMarketAction} badgeLabel="Needs Action" />
             {openSections.activeSales && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myActiveSales.length > 0 ? (
                   myActiveSales.map(item => (
-                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all relative ${item.status === 'RESERVED' ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'border-gray-50 shadow-sm'}`}>
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all relative ${hasMarketAction(item) ? 'border-red-300 bg-red-50/20' : (item.status === 'RESERVED' ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'border-gray-50 shadow-sm')}`}>
                       <div className="flex items-center gap-4 min-w-0 flex-grow">
                         <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border shrink-0 ${item.status === 'RESERVED' ? 'bg-orange-50 border-orange-100' : 'bg-teal-50 border-teal-100'}`}>{GENRE_ICONS[item.genre] || '📦'}</div>
                         <div className="min-w-0">
                           <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
                           <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'text-pink-500' : 'text-teal-500') : 'text-orange-500'}`}>
                             {item.requestStatus === 'PENDING' ? 'PENDING REQUEST' : item.status}
+                            {hasMarketAction(item) && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[7px] animate-pulse">ACTION</span>}
                           </div>
                         </div>
                       </div>
@@ -341,18 +341,19 @@ export const ProfilePage: React.FC<Props> = ({
         {/* ITEMS I'M BUYING */}
         {(isOwnProfile || privacy.showBuying) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title="Shopping & Interest" icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} hasBadge={hasAnyBuyingAction} />
+            <CollapsibleHeader title="Shopping & Interest" icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} hasBadge={hasAnyBuyingAction} badgeLabel="Update Required" />
             {openSections.buying && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myPurchases.length > 0 ? (
                   myPurchases.map(item => (
-                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white active:scale-[0.98] transition-all text-left relative ${item.status === 'SOLD' ? 'opacity-60 border-gray-100 grayscale' : 'border-orange-100 bg-orange-50/20 shadow-sm'}`}>
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white active:scale-[0.98] transition-all text-left relative ${hasMarketAction(item) ? 'border-red-300 bg-red-50/20' : (item.status === 'SOLD' ? 'opacity-60 border-gray-100 grayscale' : 'border-orange-100 bg-orange-50/20 shadow-sm')}`}>
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{item.parentAvatarIcon}</div>
                         <div className="min-w-0">
                           <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
                           <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                             {item.status === 'SOLD' ? 'Received' : (item.status === 'RESERVED' ? 'Reserved' : 'Requested')} • Unit {item.roomNumber}
+                            {hasMarketAction(item) && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[7px] animate-pulse">ACTION</span>}
                           </div>
                         </div>
                       </div>
