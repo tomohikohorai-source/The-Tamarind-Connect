@@ -28,7 +28,9 @@ const App: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [activeTab, setActiveTab] = useState<AppTab>('HOME');
+  
+  // Default landing tab is MARKET
+  const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
   
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
@@ -91,9 +93,9 @@ const App: React.FC = () => {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash === '#profile') setActiveTab('PROFILE');
-      else if (hash === '#market') setActiveTab('MARKET');
+      else if (hash === '#market' || hash === '') setActiveTab('MARKET');
       else if (hash === '#skills') setActiveTab('SKILLS');
-      else if (hash === '#home' || hash === '') setActiveTab('HOME');
+      else if (hash === '#home') setActiveTab('HOME');
       
       if (hash === '#checkin') setShowCheckIn(true);
       else if (hash === '#sell') setShowMarketForm(true);
@@ -179,23 +181,56 @@ const App: React.FC = () => {
     }).length;
   }, [activities, acknowledgedMap, profile]);
 
-  const marketActionsCount = useMemo(() => {
+  const profileActionsCount = useMemo(() => {
     if (!profile) return 0;
-    return marketItems.filter(item => {
+    
+    // Market Notifications
+    const marketNotifications = marketItems.filter(item => {
+      const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+      const hasParticipated = item.comments.some(c => c.userId === profile.uid);
+
       if (item.userId === profile.uid) {
-        const hasPendingApp = item.requestStatus === 'PENDING';
-        const hasNewMessage = item.status === 'RESERVED' && item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+        // I am the seller
+        const hasPendingReq = item.requestStatus === 'PENDING';
         const needsCompletion = item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion;
-        return hasPendingApp || hasNewMessage || needsCompletion;
+        return hasPendingReq || lastCommentFromOthers || needsCompletion;
       }
-      if (item.buyerId === profile.uid && item.status === 'RESERVED') {
-        const hasNewMessage = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
-        const needsReception = !item.buyerConfirmedCompletion;
-        return hasNewMessage || needsReception;
+      
+      // If I'm the buyer
+      if (item.buyerId === profile.uid) {
+        // I am the buyer - notify on seller messages or when seller reserves it
+        const isReserved = item.status === 'RESERVED' && !item.buyerConfirmedCompletion;
+        return lastCommentFromOthers || isReserved;
       }
+
+      // If I'm just a participant in Q&A
+      if (hasParticipated) {
+        return lastCommentFromOthers;
+      }
+
       return false;
     }).length;
-  }, [marketItems, profile]);
+
+    // Skill Notifications
+    const skillNotifications = skills.filter(skill => {
+      const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
+      const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
+
+      if (skill.userId === profile.uid) {
+        // I am the owner
+        return lastCommentFromOthers;
+      }
+
+      // If I've interacted with this skill before (as participant)
+      if (hasParticipated) {
+        return lastCommentFromOthers;
+      }
+
+      return false;
+    }).length;
+
+    return marketNotifications + skillNotifications;
+  }, [marketItems, skills, profile]);
 
   useEffect(() => {
     if (activeTab === 'HOME' && profile && activities.length > 0) {
@@ -416,6 +451,7 @@ const App: React.FC = () => {
   const isMarket = activeTab === 'MARKET';
   const isSkills = activeTab === 'SKILLS';
   const isProfile = activeTab === 'PROFILE';
+  const isHome = activeTab === 'HOME';
   
   const themeColor = isMarket ? 'text-teal-500' : isSkills ? 'text-indigo-500' : 'text-pink-500';
   const themeBg = isMarket ? 'bg-teal-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
@@ -438,17 +474,17 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
-        {activeTab === 'HOME' && profile && (
-          <div className="animate-fade-in">
-            <PetGarden profile={profile} />
-            <Timeline activities={activities} profile={profile} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onViewProfile={handleViewProfile} />
-          </div>
-        )}
         {activeTab === 'MARKET' && profile && (
           <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
         {activeTab === 'SKILLS' && profile && (
           <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); window.location.hash = 'post-skill'; }} onDelete={handleSkillDelete} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+        )}
+        {activeTab === 'HOME' && profile && (
+          <div className="animate-fade-in">
+            <PetGarden profile={profile} />
+            <Timeline activities={activities} profile={profile} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onViewProfile={handleViewProfile} />
+          </div>
         )}
         {activeTab === 'PROFILE' && profile && (
           <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} onAddMarket={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} onAddSkill={() => { setShowSkillForm(true); window.location.hash = 'post-skill'; }} onEditSkill={(skill) => { setEditingSkill(skill); window.location.hash = 'post-skill'; }} onDeleteSkill={handleSkillDelete} onAddMarketComment={handleMarketComment} onGoToTransaction={handleDirectToTransaction} onGoToSkill={handleDirectToSkillDetail} />
@@ -516,24 +552,25 @@ const App: React.FC = () => {
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-2 relative">
-          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Home size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Play</span>
-            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{unseenCount}</span>}
-          </button>
           <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
             <ShoppingBag size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Market</span>
+          </button>
+          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
+            <BookOpen size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Skills</span>
           </button>
           
           <div className="w-1/5 flex justify-center">
             <button onClick={handleActionClick} className={`flex items-center justify-center ${themeBg} text-white w-14 h-14 rounded-2xl font-black shadow-2xl ${themeShadow} border-4 border-white -translate-y-6 active:scale-95 transition-all`}><PlusCircle size={24} /></button>
           </div>
 
-          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
-            <BookOpen size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Skills</span>
+          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <Home size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Play</span>
+            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{unseenCount}</span>}
           </button>
+
           <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
             <UserCircle size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Me</span>
-            {(activeTab !== 'PROFILE' && marketActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{marketActionsCount}</span>}
+            {(activeTab !== 'PROFILE' && profileActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{profileActionsCount}</span>}
           </button>
         </div>
       </nav>

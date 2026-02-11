@@ -115,5 +115,5 @@ export interface Skill {
   lastUpdated: string;
 }
 
-export type AppTab = 'HOME' | 'MARKET' | 'SKILLS' | 'PROFILE';
+export type AppTab = 'MARKET' | 'SKILLS' | 'HOME' | 'PROFILE';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';
