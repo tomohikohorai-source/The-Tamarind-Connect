@@ -1,6 +1,6 @@
 
-// Cache name
-const CACHE_NAME = 'tamarind-cache-v1';
+// Cache name updated to current app branding
+const CACHE_NAME = 'nearby-exchange-cache-v1';
 
 // Execute on install
 self.addEventListener('install', (event) => {
