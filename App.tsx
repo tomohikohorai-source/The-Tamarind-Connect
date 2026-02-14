@@ -29,7 +29,6 @@ const App: React.FC = () => {
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   
-  // Default landing tab is MARKET
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
   
   const [showCheckIn, setShowCheckIn] = useState(false);
@@ -48,9 +47,9 @@ const App: React.FC = () => {
   const [isLive, setIsLive] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => {
-    return store.getAcknowledgedActivities();
-  });
+  const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
+  const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
+  const [acknowledgedSkillMap, setAcknowledgedSkillMap] = useState<Record<string, string>>(() => store.getAcknowledgedSkills());
 
   const touchStartRef = useRef<number | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
@@ -189,26 +188,18 @@ const App: React.FC = () => {
       const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
       const hasParticipated = item.comments.some(c => c.userId === profile.uid);
 
-      if (item.userId === profile.uid) {
-        // I am the seller
-        const hasPendingReq = item.requestStatus === 'PENDING';
-        const needsCompletion = item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion;
-        return hasPendingReq || lastCommentFromOthers || needsCompletion;
-      }
+      // Action Required cases (Persist until done)
+      const isSellerAction = item.userId === profile.uid && (item.requestStatus === 'PENDING' || (item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion));
+      const isBuyerAction = item.buyerId === profile.uid && item.status === 'RESERVED' && !item.buyerConfirmedCompletion;
+      const isNewMessageAction = (item.userId === profile.uid || hasParticipated) && lastCommentFromOthers;
+
+      if (isSellerAction || isBuyerAction || isNewMessageAction) return true;
+
+      // Information Only cases (Disappear once seen)
+      const lastSeenUpdate = acknowledgedMarketMap[item.id];
+      const isUnseenInformation = lastSeenUpdate !== (item.lastUpdated || 'initial');
       
-      // If I'm the buyer
-      if (item.buyerId === profile.uid) {
-        // I am the buyer - notify on seller messages or when seller reserves it
-        const isReserved = item.status === 'RESERVED' && !item.buyerConfirmedCompletion;
-        return lastCommentFromOthers || isReserved;
-      }
-
-      // If I'm just a participant in Q&A
-      if (hasParticipated) {
-        return lastCommentFromOthers;
-      }
-
-      return false;
+      return isUnseenInformation;
     }).length;
 
     // Skill Notifications
@@ -216,37 +207,41 @@ const App: React.FC = () => {
       const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
       const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
 
-      if (skill.userId === profile.uid) {
-        // I am the owner
-        return lastCommentFromOthers;
-      }
+      // Action Required
+      const isAction = (skill.userId === profile.uid || hasParticipated) && lastCommentFromOthers;
+      if (isAction) return true;
 
-      // If I've interacted with this skill before (as participant)
-      if (hasParticipated) {
-        return lastCommentFromOthers;
-      }
-
-      return false;
+      // Information
+      const lastSeenUpdate = acknowledgedSkillMap[skill.id];
+      return lastSeenUpdate !== (skill.lastUpdated || 'initial');
     }).length;
 
     return marketNotifications + skillNotifications;
-  }, [marketItems, skills, profile]);
+  }, [marketItems, skills, profile, acknowledgedMarketMap, acknowledgedSkillMap]);
 
+  // Acknowledge logic on Profile Tab visit
   useEffect(() => {
-    if (activeTab === 'HOME' && profile && activities.length > 0) {
-      const itemsToAcknowledge = activities.filter(a => {
-        if (a.userId === profile.uid) return false;
-        return acknowledgedMap[a.id] !== (a.lastUpdated || 'initial');
-      });
+    if (activeTab === 'PROFILE' && profile) {
+      // Sync Market
+      const newMarketMapping = { ...acknowledgedMarketMap };
+      marketItems.forEach(item => { newMarketMapping[item.id] = item.lastUpdated || 'initial'; });
+      setAcknowledgedMarketMap(newMarketMapping);
+      store.setAcknowledgedMarket(newMarketMapping);
 
-      if (itemsToAcknowledge.length > 0) {
-        const newMapping = { ...acknowledgedMap };
-        activities.forEach(a => { newMapping[a.id] = a.lastUpdated || 'initial'; });
-        setAcknowledgedMap(newMapping);
-        store.setAcknowledgedActivities(newMapping);
-      }
+      // Sync Skills
+      const newSkillMapping = { ...acknowledgedSkillMap };
+      skills.forEach(skill => { newSkillMapping[skill.id] = skill.lastUpdated || 'initial'; });
+      setAcknowledgedSkillMap(newSkillMapping);
+      store.setAcknowledgedSkills(newSkillMapping);
     }
-  }, [activeTab, activities, profile, acknowledgedMap]);
+    
+    if (activeTab === 'HOME' && profile && activities.length > 0) {
+      const newMapping = { ...acknowledgedMap };
+      activities.forEach(a => { newMapping[a.id] = a.lastUpdated || 'initial'; });
+      setAcknowledgedMap(newMapping);
+      store.setAcknowledgedActivities(newMapping);
+    }
+  }, [activeTab, activities, marketItems, skills, profile]);
 
   const changeTab = (tab: AppTab) => {
     setActiveTab(tab);
@@ -317,21 +312,18 @@ const App: React.FC = () => {
 
   const handleMarketStatusChange = async (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => {
     try {
-      // Base updates with mandatory timestamp and provided status
       const updates: any = { 
         status, 
         lastUpdated: new Date().toISOString(),
-        ...(extraFlags || {}) // Explicitly merge extra flags like buyerConfirmedCompletion
+        ...(extraFlags || {}) 
       };
 
       if (buyerId && profile) {
-        // New buyer application
         updates.buyerId = buyerId;
         updates.buyerNickname = profile.parentNickname;
         updates.buyerAvatarIcon = profile.avatarIcon;
         updates.requestStatus = 'PENDING';
       } else if (rejectionReason) {
-        // Seller declines buyer
         updates.buyerId = ''; 
         updates.buyerNickname = '';
         updates.buyerAvatarIcon = '';
@@ -339,12 +331,10 @@ const App: React.FC = () => {
         updates.rejectionReason = rejectionReason;
         updates.status = 'AVAILABLE';
       } else if (status === 'RESERVED' && (!extraFlags || Object.keys(extraFlags).length === 0)) {
-        // Initial approval by seller (transition from AVAILABLE/PENDING to RESERVED)
         updates.requestStatus = 'NONE';
         updates.rejectionReason = '';
       }
       
-      // Perform Firestore update
       await updateDoc(doc(db, "marketItems", id), updates);
     } catch (e: any) { 
       alert("Status update failed: " + e.message); 

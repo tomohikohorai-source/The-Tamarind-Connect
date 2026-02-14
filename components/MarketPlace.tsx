@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
   onChatClose?: () => void;
 }
 
-const InstructionBanner = ({ item, profile }: { item: MarketItem, profile: UserProfile }) => {
+const InstructionBanner = memo(({ item, profile }: { item: MarketItem, profile: UserProfile }) => {
   const isSeller = item.userId === profile.uid;
   const isBuyer = item.buyerId === profile.uid;
 
@@ -85,7 +85,35 @@ const InstructionBanner = ({ item, profile }: { item: MarketItem, profile: UserP
     }
   }
   return null;
-};
+});
+
+const MarketItemCard = memo(({ item, onClick }: { item: MarketItem, onClick: () => void }) => {
+  return (
+    <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col">
+      <div className="relative aspect-square">
+        {item.images && item.images.length > 0 ? (
+          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={32} /></div>
+        )}
+        <div className="absolute top-2 left-2 flex flex-col gap-1">
+          <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'bg-teal-400 text-white' : 'bg-green-400 text-white') : (item.status === 'SOLD' ? 'bg-gray-400 text-white' : 'bg-orange-400 text-white')}`}>
+            {item.requestStatus === 'PENDING' ? 'REQ' : item.status}
+          </div>
+        </div>
+        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl shadow-sm border border-teal-50">
+          <span className="text-teal-600 font-black text-[10px]">{item.type === 'FREE' ? 'FREE' : `RM${item.price}`}</span>
+        </div>
+      </div>
+      <div className="p-3 space-y-1">
+        <h3 className="text-[11px] font-black text-gray-800 line-clamp-1 uppercase tracking-tight">{item.title}</h3>
+        <div className="flex items-center gap-1">
+          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Unit {item.roomNumber}</span>
+        </div>
+      </div>
+    </button>
+  );
+});
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
@@ -103,24 +131,28 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  // Sync initial item if passed via target ID
   useEffect(() => {
     if (initialActiveItemId) {
       const item = items.find(i => i.id === initialActiveItemId);
-      if (item) setViewingItem(item);
+      if (item) {
+        // Validation for deep linking - restrict access to RESERVED and SOLD items
+        if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
+           alert("This item detail is currently private to the parties involved in the transaction.");
+           return;
+        }
+        setViewingItem(item);
+      }
     }
-  }, [initialActiveItemId, items]);
+  }, [initialActiveItemId, items, profile.uid]);
 
-  // CRITICAL: Ensure viewingItem is ALWAYS in sync with the live marketItems data array
   useEffect(() => {
     if (viewingItem) {
       const updated = items.find(i => i.id === viewingItem.id);
-      // Only set if we actually found the item and it differs to avoid loops (though items prop change usually implies data update)
       if (updated && JSON.stringify(updated) !== JSON.stringify(viewingItem)) {
         setViewingItem(updated);
       }
     }
-  }, [items, viewingItem?.id]); // Also listen to viewingItem.id to reset if we switch items
+  }, [items, viewingItem?.id]);
 
   const [confirmRequestItem, setConfirmRequestItem] = useState<MarketItem | null>(null);
   const [rejectRequestItem, setRejectRequestItem] = useState<MarketItem | null>(null);
@@ -183,7 +215,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const handleConfirmRequest = () => {
     if (confirmRequestItem) {
-      // Passes profile.uid as the buyerId (3rd arg)
       onStatusChange(confirmRequestItem.id, 'AVAILABLE', profile.uid);
       setConfirmRequestItem(null);
     }
@@ -191,7 +222,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const handleConfirmReject = () => {
     if (rejectRequestItem && rejectionReason.trim()) {
-      // Passes rejectionReason as 4th arg
       onStatusChange(rejectRequestItem.id, 'AVAILABLE', undefined, rejectionReason);
       setRejectRequestItem(null);
       setRejectionReason('');
@@ -200,18 +230,25 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
   const handleBuyerCompletion = (item: MarketItem) => {
     if (confirm("Confirm that you have received the item?")) {
-      // We keep status as 'RESERVED' but set the buyer flag in the 5th arg (extraFlags)
       onStatusChange(item.id, 'RESERVED', undefined, undefined, { buyerConfirmedCompletion: true });
     }
   };
 
   const handleSellerCompletion = (item: MarketItem) => {
     if (confirm("Buyer has confirmed receipt. End this transaction and mark as SOLD?")) {
-      // We set status to 'SOLD' and ensure seller flag is set too
       onStatusChange(item.id, 'SOLD', undefined, undefined, { sellerConfirmedCompletion: true });
       setViewingItem(null);
       if (onChatClose) onChatClose();
     }
+  };
+
+  const handleItemClick = (item: MarketItem) => {
+    // Check privacy for TRADE (RESERVED) and SOLD items
+    if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
+      alert("Access Restricted: This transaction details are now private to the parties involved.");
+      return;
+    }
+    setViewingItem(item);
   };
 
   if (viewingItem) {
@@ -220,7 +257,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
-        {/* Detail Header */}
         <div className="flex items-center justify-between">
            <button 
              onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
@@ -233,7 +269,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
            </button>
         </div>
 
-        {/* Action Hub & Instruction Banner */}
         <InstructionBanner item={viewingItem} profile={profile} />
 
         {viewingItem.status !== 'SOLD' && (
@@ -276,13 +311,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           </div>
         )}
 
-        {/* Gallery */}
         <div className="bg-white rounded-[40px] border border-gray-100 overflow-hidden shadow-sm relative">
           {viewingItem.images && viewingItem.images.length > 0 ? (
             <>
               <div ref={galleryRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
                 {viewingItem.images.map((img, i) => (
-                  <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} />
+                  <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} loading="lazy" />
                 ))}
               </div>
               {viewingItem.images.length > 1 && (
@@ -297,7 +331,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           )}
         </div>
 
-        {/* Details Card */}
         <div className="space-y-6">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
@@ -325,7 +358,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             </div>
           </div>
 
-          {/* Transaction Flow */}
           {viewingItem.status !== 'AVAILABLE' && (
             <div className={`border p-6 rounded-[32px] space-y-5 shadow-sm ${viewingItem.status === 'SOLD' ? 'bg-gray-50 border-gray-100' : 'bg-orange-50 border-orange-100'}`}>
                <div className="flex items-center justify-center gap-4">
@@ -357,7 +389,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
             </div>
           )}
 
-          {/* Chat History Section */}
           <div className="space-y-4 pt-6">
             <div className="flex items-center gap-2 px-1">
               <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
@@ -416,7 +447,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           </div>
         </div>
 
-        {/* Rejection / Confirm Modals */}
         {confirmRequestItem && (
           <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-teal-400">
@@ -553,30 +583,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {filteredItems.map(item => (
-          <button key={item.id} onClick={() => setViewingItem(item)} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col">
-            <div className="relative aspect-square">
-              {item.images && item.images.length > 0 ? (
-                <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={32} /></div>
-              )}
-              <div className="absolute top-2 left-2 flex flex-col gap-1">
-                <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'bg-teal-400 text-white' : 'bg-green-400 text-white') : (item.status === 'SOLD' ? 'bg-gray-400 text-white' : 'bg-orange-400 text-white')}`}>
-                  {item.requestStatus === 'PENDING' ? 'REQ' : item.status}
-                </div>
-              </div>
-              <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl shadow-sm border border-teal-50">
-                <span className="text-teal-600 font-black text-[10px]">{item.type === 'FREE' ? 'FREE' : `RM${item.price}`}</span>
-              </div>
-            </div>
-            <div className="p-3 space-y-1">
-              <h3 className="text-[11px] font-black text-gray-800 line-clamp-1 uppercase tracking-tight">{item.title}</h3>
-              <div className="flex items-center gap-1">
-                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Unit {item.roomNumber}</span>
-              </div>
-            </div>
-          </button>
+        {filteredItems.map((item) => (
+          <MarketItemCard key={item.id} item={item} onClick={() => handleItemClick(item)} />
         ))}
       </div>
       {filteredItems.length === 0 && (

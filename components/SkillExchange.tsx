@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -216,7 +216,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {filteredSkills.map(skill => (
+        {filteredSkills.map((skill) => (
           <button key={skill.id} onClick={() => setViewingSkill(skill)} className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group">
             <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center opacity-10 rotate-12 ${skill.type === 'OFFER' ? 'text-indigo-500' : 'text-orange-500'}`}>
                <BookOpen size={48} fill="currentColor" />
