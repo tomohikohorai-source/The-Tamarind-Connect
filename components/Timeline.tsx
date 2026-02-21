@@ -75,17 +75,24 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
       <div className="flex items-center gap-3 border-t border-gray-50 pt-4 mt-2">
         <button 
           onClick={() => onViewProfile && onViewProfile(a.userId)}
-          className="flex items-center gap-2 bg-gray-50/80 px-3 py-1.5 rounded-full shrink-0 hover:bg-pink-50 transition-colors"
+          className="flex flex-col items-center gap-1 bg-gray-50/80 px-3 py-2 rounded-2xl shrink-0 hover:bg-pink-50 transition-colors"
         >
           <div className="text-lg leading-none">{a.parentAvatarIcon}</div>
-          <div className="text-[9px] font-black text-gray-400 uppercase">Unit {a.roomNumber}</div>
-        </button>
-        {a.message && (
-          <div className="flex gap-2 items-start min-w-0">
-            <MessageCircle size={12} className="text-pink-300 mt-1 shrink-0" />
-            <p className="text-[11px] text-gray-400 font-medium truncate italic">{a.message}</p>
+          <div className="text-[8px] font-black text-gray-400 uppercase tracking-tighter max-w-[50px] truncate text-center leading-tight">
+            {a.parentNickname}
           </div>
-        )}
+        </button>
+        <div className="flex-grow min-w-0">
+          <div className="text-[8px] font-black text-gray-300 uppercase mb-0.5 tracking-widest">Unit {a.roomNumber}</div>
+          {a.message ? (
+            <div className="flex gap-2 items-start">
+              <MessageCircle size={10} className="text-pink-300 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-gray-400 font-medium truncate italic">{a.message}</p>
+            </div>
+          ) : (
+             <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">No Message</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import { UserProfile, Activity, Child, MarketItem, Skill, PrivacySettings, LocationType } from '../types';
 import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS } from '../constants';
-import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle } from 'lucide-react';
+import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
@@ -23,7 +23,7 @@ interface Props {
   onAddPlay: () => void;
   onAddMarket: () => void;
   onAddSkill: () => void;
-  onEditSkill: (skill: Skill) => void;
+  onEditSkill: (skill) => void;
   onDeleteSkill: (id: string) => void;
   onAddMarketComment: (itemId: string, text: string) => void;
   onGoToTransaction: (itemId: string) => void;
@@ -49,6 +49,17 @@ const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge
   </button>
 ));
 
+interface AppNotification {
+  id: string;
+  type: 'MARKET' | 'SKILL';
+  itemId: string;
+  title: string;
+  message: string;
+  isActionRequired: boolean;
+  isDismissed: boolean;
+  timestamp: string;
+}
+
 export const ProfilePage: React.FC<Props> = ({ 
   profile, currentUser, activities, marketItems, skills, onLogout, onEdit, onDelete, onUpdateProfile, 
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddPlay, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
@@ -56,13 +67,20 @@ export const ProfilePage: React.FC<Props> = ({
 }) => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   
+  // Track notifications that have been read/clicked
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>(() => {
+    return JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
+  });
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     activeSales: true,
     pastSales: false,
     buying: true,
     skills: true,
-    play: true
+    play: true,
+    notifications: true
   });
 
   const toggleSection = useCallback((key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] })), []);
@@ -74,6 +92,57 @@ export const ProfilePage: React.FC<Props> = ({
 
   const isOwnProfile = profile.uid === currentUser.uid;
   const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true, showSkills: true };
+
+  // Notification Generation Logic (English, Persists after clicking but visuals change)
+  const notifications = useMemo(() => {
+    if (!isOwnProfile) return [];
+    
+    const list: AppNotification[] = [];
+    marketItems.forEach(item => {
+      const isOwner = item.userId === profile.uid;
+      const isBuyer = item.buyerId === profile.uid;
+      const hasParticipated = item.comments.some(c => c.userId === profile.uid);
+      const lastComment = item.comments.length > 0 ? item.comments[item.comments.length - 1] : null;
+      const lastUpdate = item.lastUpdated || 'initial';
+
+      const checkIsDismissed = (id: string) => dismissedNotifIds.includes(id);
+
+      // 1. Purchase Request (Seller)
+      if (isOwner && item.requestStatus === 'PENDING') {
+        list.push({ id: `${item.id}-req`, type: 'MARKET', itemId: item.id, title: item.title, message: 'A neighbor is requesting to buy this item. Please approve or decline.', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-req`), timestamp: lastUpdate });
+      }
+      // 2. Buyer confirmed pickup (Seller)
+      if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion) {
+        list.push({ id: `${item.id}-conf`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Buyer reported pickup! Please finalize the transaction.', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-conf`), timestamp: lastUpdate });
+      }
+      // 3. Request Approved (Buyer)
+      if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion) {
+        list.push({ id: `${item.id}-appr`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Your purchase request was approved! Please report pickup once you have the item.', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-appr`), timestamp: lastUpdate });
+      }
+      // 4. New Comments
+      if ((isOwner || isBuyer || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
+        list.push({ id: `${item.id}-cmt`, type: 'MARKET', itemId: item.id, title: item.title, message: `New message: "${lastComment.text.substring(0, 20)}..."`, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-cmt`), timestamp: lastUpdate });
+      }
+    });
+
+    skills.forEach(skill => {
+      const isOwner = skill.userId === profile.uid;
+      const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
+      const lastComment = skill.comments.length > 0 ? skill.comments[skill.comments.length - 1] : null;
+      const lastUpdate = skill.lastUpdated || 'initial';
+
+      const checkIsDismissed = (id: string) => dismissedNotifIds.includes(id);
+
+      if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
+        list.push({ id: `${skill.id}-cmt`, type: 'SKILL', itemId: skill.id, title: skill.title, message: `New reply in skill exchange: "${lastComment.text.substring(0, 20)}..."`, isActionRequired: true, isDismissed: checkIsDismissed(`${skill.id}-cmt`), timestamp: lastUpdate });
+      }
+    });
+
+    return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  }, [marketItems, skills, profile.uid, isOwnProfile, dismissedNotifIds]);
+
+  // Unread badge logic
+  const activeUnreadCount = useMemo(() => notifications.filter(n => !n.isDismissed).length, [notifications]);
 
   const myActivities = useMemo(() => activities
     .filter(a => a.userId === profile.uid)
@@ -137,6 +206,21 @@ export const ProfilePage: React.FC<Props> = ({
     } catch (e: any) { alert("Error: " + e.message); }
   };
 
+  const handleNotificationJump = (notif: AppNotification) => {
+    // Record as read but keep in list
+    if (!notif.isDismissed) {
+      const nextDismissed = [...dismissedNotifIds, notif.id];
+      setDismissedNotifIds(nextDismissed);
+      localStorage.setItem('play_share_dismissed_notifs', JSON.stringify(nextDismissed));
+    }
+
+    if (notif.type === 'MARKET') {
+      onGoToTransaction(notif.itemId);
+    } else {
+      onGoToSkill(notif.itemId);
+    }
+  };
+
   const togglePrivacy = async (key: keyof PrivacySettings) => {
     if (!isOwnProfile) return;
     const currentSettings = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showPlayHistory: true, showSkills: true };
@@ -191,6 +275,62 @@ export const ProfilePage: React.FC<Props> = ({
         )}
       </div>
 
+      {/* 1. Children Info */}
+      {(isOwnProfile || privacy.showChildren) && profile.children.length > 0 && (
+        <section className="space-y-4 animate-fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="bg-pink-100 text-pink-500 p-2 rounded-xl"><User size={16} /></div>
+            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">Children Info</h3>
+          </div>
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+            {profile.children.map(child => (
+              <div key={child.id} className="bg-white p-4 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3 shrink-0">
+                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl">{child.avatarIcon}</div>
+                <div>
+                  <div className="text-[11px] font-black text-gray-800 uppercase">{child.nickname}</div>
+                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} yrs • {child.gender}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 2. Notifications Section */}
+      {isOwnProfile && notifications.length > 0 && (
+        <div className="bg-white rounded-[32px] border border-pink-100 overflow-hidden shadow-sm">
+          <CollapsibleHeader title="Notifications" icon={<Bell size={18}/>} count={activeUnreadCount} isOpen={openSections.notifications} onToggle={() => toggleSection('notifications')} hasBadge={notifications.some(n => !n.isDismissed && n.isActionRequired)} badgeLabel="Urgent" />
+          {openSections.notifications && (
+            <div className="px-4 pb-4 space-y-2 animate-fade-in">
+               {(showAllNotifications ? notifications : notifications.slice(0, 5)).map(n => (
+                 <button 
+                   key={n.id} 
+                   onClick={() => handleNotificationJump(n)}
+                   className={`w-full p-4 rounded-2xl border text-left transition-all active:scale-[0.98] flex gap-4 items-start ${n.isDismissed ? 'bg-gray-50 border-gray-100 opacity-60' : n.isActionRequired ? 'bg-red-50 border-red-100 shadow-sm ring-1 ring-red-50' : 'bg-white border-pink-100 shadow-sm'}`}
+                 >
+                   <div className={`p-2 rounded-xl shrink-0 ${n.isDismissed ? 'bg-gray-200 text-gray-400' : n.isActionRequired ? 'bg-red-500 text-white animate-pulse' : 'bg-pink-100 text-pink-500'}`}>
+                     {n.type === 'MARKET' ? <ShoppingBag size={16}/> : <BookOpen size={16}/>}
+                   </div>
+                   <div className="min-w-0 flex-grow">
+                     <div className="flex justify-between items-start mb-0.5">
+                       <h4 className={`text-[11px] font-black uppercase truncate tracking-tight ${n.isDismissed ? 'text-gray-400' : n.isActionRequired ? 'text-red-600' : 'text-gray-800'}`}>{n.title}</h4>
+                       <span className="text-[7px] font-bold text-gray-300 shrink-0 ml-2">{format(new Date(n.timestamp), 'HH:mm')}</span>
+                     </div>
+                     <p className={`text-[10px] leading-relaxed font-bold ${n.isDismissed ? 'text-gray-400' : n.isActionRequired ? 'text-red-400' : 'text-gray-500'}`}>{n.message}</p>
+                   </div>
+                   <ChevronRight size={14} className="mt-2 text-gray-300 shrink-0" />
+                 </button>
+               ))}
+               {notifications.length > 5 && (
+                 <button onClick={() => setShowAllNotifications(!showAllNotifications)} className="w-full py-2 text-[9px] font-black text-pink-400 uppercase tracking-widest hover:text-pink-600 transition-colors">
+                   {showAllNotifications ? 'Show Less' : `View All ${notifications.length} notifications`}
+                 </button>
+               )}
+            </div>
+          )}
+        </div>
+      )}
+
       {showSettings && isOwnProfile && (
         <div className="bg-white p-6 rounded-[32px] border-2 border-gray-800 shadow-xl space-y-4 animate-slide-up">
           <div className="flex items-center gap-2 mb-2">
@@ -223,30 +363,76 @@ export const ProfilePage: React.FC<Props> = ({
         </div>
       )}
 
-      {(isOwnProfile || privacy.showChildren) && profile.children.length > 0 && (
-        <section className="space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-pink-100 text-pink-500 p-2 rounded-xl"><User size={16} /></div>
-            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">Children Info</h3>
-          </div>
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
-            {profile.children.map(child => (
-              <div key={child.id} className="bg-white p-4 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3 shrink-0">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl">{child.avatarIcon}</div>
-                <div>
-                  <div className="text-[11px] font-black text-gray-800 uppercase">{child.nickname}</div>
-                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} yrs • {child.gender}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {isOwnProfile && <PetGarden profile={profile} />}
-
       <div className="space-y-4">
-        {/* SKILLS SECTION */}
+        {/* 3. ITEMS FOR SALE - Active */}
+        {(isOwnProfile || privacy.showListings) && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Items For Sale" icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} hasBadge={hasAnyMarketAction} badgeLabel="Needs Action" />
+            {openSections.activeSales && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {myActiveSales.length > 0 ? (
+                  myActiveSales.map(item => (
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all relative ${checkHasMarketAction(item) ? 'border-red-300 bg-red-50/20' : (item.status === 'RESERVED' ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'border-gray-50 shadow-sm')}`}>
+                      <div className="flex items-center gap-4 min-w-0 flex-grow">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border shrink-0 ${item.status === 'RESERVED' ? 'bg-orange-50 border-orange-100' : 'bg-teal-50 border-teal-100'}`}>{GENRE_ICONS[item.genre] || '📦'}</div>
+                        <div className="min-w-0">
+                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
+                          <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'text-pink-500' : 'text-teal-500') : 'text-orange-500'}`}>
+                            {item.requestStatus === 'PENDING' ? 'PENDING REQUEST' : item.status}
+                            {checkHasMarketAction(item) && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[7px] animate-pulse">ACTION</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0 pl-2">
+                        {isOwnProfile && item.userId === profile.uid && item.status === 'AVAILABLE' && (
+                          <>
+                            <button onClick={(e) => { e.stopPropagation(); onEditMarket(item); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-teal-50 hover:text-teal-400 transition-all border border-gray-100 shadow-sm"><Edit2 size={14}/></button>
+                            <button onClick={(e) => { e.stopPropagation(); onDeleteMarket(item.id); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all border border-gray-100 shadow-sm"><Trash2 size={14}/></button>
+                          </>
+                        )}
+                        <div className={`p-2.5 rounded-xl shadow-lg transition-all ${checkHasMarketAction(item) ? 'bg-red-500 animate-pulse text-white' : (item.status === 'RESERVED' ? 'bg-orange-500 text-white' : 'bg-teal-500 text-white')}`}><MessageCircle size={14}/></div>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No active listings</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. ITEMS I'M BUYING */}
+        {(isOwnProfile || privacy.showBuying) && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title="Shopping & Interest" icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} hasBadge={hasAnyBuyingAction} badgeLabel="Update Required" />
+            {openSections.buying && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {myPurchases.length > 0 ? (
+                  myPurchases.map(item => (
+                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white active:scale-[0.98] transition-all text-left relative ${checkHasMarketAction(item) ? 'border-red-300 bg-red-50/20' : (item.status === 'SOLD' ? 'opacity-60 border-gray-100 grayscale' : 'border-orange-100 bg-orange-50/20 shadow-sm')}`}>
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{item.parentAvatarIcon}</div>
+                        <div className="min-w-0">
+                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
+                          <div className={`text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5`}>
+                            {item.status === 'SOLD' ? 'Received' : (item.status === 'RESERVED' ? 'Reserved' : 'Requested')} • Unit {item.roomNumber}
+                            {checkHasMarketAction(item) && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[7px] animate-pulse">ACTION</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`p-2.5 rounded-xl shadow-lg transition-all ${checkHasMarketAction(item) ? 'bg-red-500 animate-pulse text-white' : (item.status === 'SOLD' ? 'bg-gray-100 text-gray-400' : 'bg-orange-500 text-white')}`}><MessageCircle size={14}/></div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No items currently buying</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 5. SKILLS SECTION (Now below Buying) */}
         {(isOwnProfile || privacy.showSkills) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
             <CollapsibleHeader title="Skills & Help" icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} hasBadge={hasAnySkillAction} badgeLabel="Needs Attention" />
@@ -288,75 +474,7 @@ export const ProfilePage: React.FC<Props> = ({
           </div>
         )}
 
-        {/* ITEMS FOR SALE - Active */}
-        {(isOwnProfile || privacy.showListings) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title="Items For Sale" icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} hasBadge={hasAnyMarketAction} badgeLabel="Needs Action" />
-            {openSections.activeSales && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myActiveSales.length > 0 ? (
-                  myActiveSales.map(item => (
-                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white text-left active:scale-[0.98] transition-all relative ${checkHasMarketAction(item) ? 'border-red-300 bg-red-50/20' : (item.status === 'RESERVED' ? 'border-orange-200 bg-orange-50/20 shadow-sm' : 'border-gray-50 shadow-sm')}`}>
-                      <div className="flex items-center gap-4 min-w-0 flex-grow">
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border shrink-0 ${item.status === 'RESERVED' ? 'bg-orange-50 border-orange-100' : 'bg-teal-50 border-teal-100'}`}>{GENRE_ICONS[item.genre] || '📦'}</div>
-                        <div className="min-w-0">
-                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                          <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-2 ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'text-pink-500' : 'text-teal-500') : 'text-orange-500'}`}>
-                            {item.requestStatus === 'PENDING' ? 'PENDING REQUEST' : item.status}
-                            {checkHasMarketAction(item) && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[7px] animate-pulse">ACTION</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-1.5 shrink-0 pl-2">
-                        {isOwnProfile && item.userId === profile.uid && item.status === 'AVAILABLE' && (
-                          <>
-                            <button onClick={(e) => { e.stopPropagation(); onEditMarket(item); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-teal-50 hover:text-teal-400 transition-all border border-gray-100 shadow-sm"><Edit2 size={14}/></button>
-                            <button onClick={(e) => { e.stopPropagation(); onDeleteMarket(item.id); }} className="p-2.5 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 transition-all border border-gray-100 shadow-sm"><Trash2 size={14}/></button>
-                          </>
-                        )}
-                        <div className={`p-2.5 rounded-xl shadow-lg transition-all ${checkHasMarketAction(item) ? 'bg-red-500 animate-pulse text-white' : (item.status === 'RESERVED' ? 'bg-orange-500 text-white' : 'bg-teal-500 text-white')}`}><MessageCircle size={14}/></div>
-                      </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No active listings</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ITEMS I'M BUYING */}
-        {(isOwnProfile || privacy.showBuying) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title="Shopping & Interest" icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} hasBadge={hasAnyBuyingAction} badgeLabel="Update Required" />
-            {openSections.buying && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myPurchases.length > 0 ? (
-                  myPurchases.map(item => (
-                    <button key={item.id} onClick={() => onGoToTransaction(item.id)} className={`w-full p-4 rounded-[28px] border flex items-center justify-between bg-white active:scale-[0.98] transition-all text-left relative ${checkHasMarketAction(item) ? 'border-red-300 bg-red-50/20' : (item.status === 'SOLD' ? 'opacity-60 border-gray-100 grayscale' : 'border-orange-100 bg-orange-50/20 shadow-sm')}`}>
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{item.parentAvatarIcon}</div>
-                        <div className="min-w-0">
-                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                          <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                            {item.status === 'SOLD' ? 'Received' : (item.status === 'RESERVED' ? 'Reserved' : 'Requested')} • Unit {item.roomNumber}
-                            {checkHasMarketAction(item) && <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-[7px] animate-pulse">ACTION</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`p-2.5 rounded-xl shadow-lg transition-all ${checkHasMarketAction(item) ? 'bg-red-500 animate-pulse text-white' : (item.status === 'SOLD' ? 'bg-gray-100 text-gray-400' : 'bg-orange-500 text-white')}`}><MessageCircle size={14}/></div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">No items currently buying</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* PLAY HISTORY */}
+        {/* 6. PLAY HISTORY */}
         {(isOwnProfile || privacy.showPlayHistory) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
             <CollapsibleHeader title="Play History" icon={<History size={18}/>} count={myActivities.length} isOpen={openSections.play} onToggle={() => toggleSection('play')} />
@@ -394,6 +512,9 @@ export const ProfilePage: React.FC<Props> = ({
           </div>
         )}
       </div>
+
+      {/* 7. Pet Garden (Now at the bottom of the list) */}
+      {isOwnProfile && <PetGarden profile={profile} />}
 
       {isOwnProfile && (
         <button 

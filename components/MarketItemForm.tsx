@@ -56,7 +56,8 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
   const [title, setTitle] = useState(initialItem?.title || '');
   const [genre, setGenre] = useState(initialItem?.genre || MARKET_GENRES[0]);
   const [description, setDescription] = useState(initialItem?.description || '');
-  const [price, setPrice] = useState(initialItem?.price?.toString() || '0');
+  // Default price is now '1' instead of '0'
+  const [price, setPrice] = useState(initialItem?.price?.toString() || '1');
   const [type, setType] = useState<'SALE' | 'FREE'>(initialItem?.type || 'FREE');
   const [condition, setCondition] = useState<MarketItem['condition']>(initialItem?.condition || 'B');
   const [paymentMethod, setPaymentMethod] = useState<MarketItem['paymentMethod']>(initialItem?.paymentMethod || 'FREE');
@@ -128,7 +129,8 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       title,
       genre,
       description,
-      price: type === 'FREE' ? 0 : Math.max(0, Number(price)),
+      // Minimum price 1 RM enforced for SALE type
+      price: type === 'FREE' ? 0 : Math.max(1, Number(price)),
       type,
       condition,
       status: initialItem?.status || 'AVAILABLE',
@@ -220,7 +222,8 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
             <div className="bg-teal-50/50 p-6 rounded-[32px] border border-teal-100 space-y-3">
               <label className="text-[10px] font-black text-teal-600 uppercase tracking-widest flex items-center gap-2">Price (RM)</label>
-              <input type="number" min="0" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-white border-2 border-teal-100 rounded-2xl outline-none font-black text-xl text-teal-600" />
+              {/* Added min="1" attribute */}
+              <input type="number" min="1" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-4 bg-white border-2 border-teal-100 rounded-2xl outline-none font-black text-xl text-teal-600" />
             </div>
             <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 space-y-3">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">Payment</label>

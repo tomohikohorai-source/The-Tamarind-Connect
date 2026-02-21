@@ -264,8 +264,14 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
            >
              <ChevronLeft size={16} /> Market List
            </button>
-           <button onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} className="p-2 text-teal-500 bg-white rounded-2xl border border-teal-50 shadow-sm active:scale-90 transition-all">
-             {viewingItem.parentAvatarIcon}
+           <button 
+             onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} 
+             className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-teal-50 shadow-sm active:scale-90 transition-all shrink-0"
+           >
+             <span className="text-xl leading-none">{viewingItem.parentAvatarIcon}</span>
+             <span className="text-[8px] font-black text-teal-500 uppercase tracking-tighter max-w-[50px] truncate text-center leading-none">
+               {viewingItem.parentNickname}
+             </span>
            </button>
         </div>
 
@@ -403,7 +409,10 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 const isItemSeller = c.userId === viewingItem.userId;
                 return (
                   <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                    <div className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{c.userAvatar}</div>
+                    <div className="flex flex-col items-center gap-1 shrink-0">
+                      <div className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-2xl shadow-sm">{c.userAvatar}</div>
+                      <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter max-w-[44px] truncate text-center leading-tight">{c.userNickname}</span>
+                    </div>
                     <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-teal-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                       <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-teal-50 text-right' : 'text-teal-500'}`}>
                         {isItemSeller ? 'Seller' : 'Neighbor'} • {format(new Date(c.createdAt), 'HH:mm')}

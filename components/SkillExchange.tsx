@@ -85,9 +85,14 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
            >
              <ChevronLeft size={16} /> Skill Board
            </button>
-           <button onClick={() => onViewProfile && onViewProfile(viewingSkill.userId)} className="p-2 text-indigo-500 bg-white rounded-2xl border border-indigo-50 shadow-sm active:scale-90 transition-all flex items-center gap-2">
-             <span className="text-[10px] font-black uppercase tracking-widest">{viewingSkill.parentNickname}</span>
-             <span className="text-xl">{viewingSkill.parentAvatarIcon}</span>
+           <button 
+             onClick={() => onViewProfile && onViewProfile(viewingSkill.userId)} 
+             className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-indigo-50 shadow-sm active:scale-90 transition-all shrink-0"
+           >
+             <span className="text-xl leading-none">{viewingSkill.parentAvatarIcon}</span>
+             <span className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter max-w-[50px] truncate text-center leading-none">
+               {viewingSkill.parentNickname}
+             </span>
            </button>
         </div>
 
@@ -129,7 +134,10 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               const isMe = c.userId === profile.uid;
               return (
                 <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm">{c.userAvatar}</div>
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <div className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-2xl shadow-sm">{c.userAvatar}</div>
+                    <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter max-w-[44px] truncate text-center leading-tight">{c.userNickname}</span>
+                  </div>
                   <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-indigo-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                     <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-indigo-50 text-right' : 'text-indigo-500'}`}>
                       {c.userNickname} • {format(new Date(c.createdAt), 'HH:mm')}

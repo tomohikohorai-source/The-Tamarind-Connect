@@ -183,37 +183,40 @@ const App: React.FC = () => {
   const profileActionsCount = useMemo(() => {
     if (!profile) return 0;
     
+    // Notifications that the user has already clicked on (Read)
+    const dismissedIds: string[] = JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
+
     // Market Notifications
     const marketNotifications = marketItems.filter(item => {
       const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
       const hasParticipated = item.comments.some(c => c.userId === profile.uid);
 
-      // Action Required cases (Persist until done)
-      const isSellerAction = item.userId === profile.uid && (item.requestStatus === 'PENDING' || (item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion));
-      const isBuyerAction = item.buyerId === profile.uid && item.status === 'RESERVED' && !item.buyerConfirmedCompletion;
-      const isNewMessageAction = (item.userId === profile.uid || hasParticipated) && lastCommentFromOthers;
+      // Check for specific undismissed variants
+      const isReqUnread = item.userId === profile.uid && item.requestStatus === 'PENDING' && !dismissedIds.includes(`${item.id}-req`);
+      const isConfUnread = item.userId === profile.uid && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion && !dismissedIds.includes(`${item.id}-conf`);
+      const isApprUnread = item.buyerId === profile.uid && item.status === 'RESERVED' && !item.buyerConfirmedCompletion && !dismissedIds.includes(`${item.id}-appr`);
+      const isCmtUnread = (item.userId === profile.uid || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`);
 
-      if (isSellerAction || isBuyerAction || isNewMessageAction) return true;
+      if (isReqUnread || isConfUnread || isApprUnread || isCmtUnread) return true;
 
-      // Information Only cases (Disappear once seen)
+      // Information Only cases (Acknowledged via map when visiting tab)
       const lastSeenUpdate = acknowledgedMarketMap[item.id];
       const isUnseenInformation = lastSeenUpdate !== (item.lastUpdated || 'initial');
-      
-      return isUnseenInformation;
+      // If it's unseen info AND hasn't been explicitly dismissed by clicking
+      return isUnseenInformation && !dismissedIds.some(id => id.startsWith(item.id));
     }).length;
 
     // Skill Notifications
     const skillNotifications = skills.filter(skill => {
       const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
       const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
+      const isCmtUnread = (skill.userId === profile.uid || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${skill.id}-cmt`);
 
-      // Action Required
-      const isAction = (skill.userId === profile.uid || hasParticipated) && lastCommentFromOthers;
-      if (isAction) return true;
+      if (isCmtUnread) return true;
 
-      // Information
       const lastSeenUpdate = acknowledgedSkillMap[skill.id];
-      return lastSeenUpdate !== (skill.lastUpdated || 'initial');
+      const isUnseenInformation = lastSeenUpdate !== (skill.lastUpdated || 'initial');
+      return isUnseenInformation && !dismissedIds.includes(`${skill.id}-cmt`);
     }).length;
 
     return marketNotifications + skillNotifications;
@@ -249,7 +252,7 @@ const App: React.FC = () => {
   };
 
   const handleActionClick = () => {
-    if (activeTab === 'MARKET') {
+    if (activeTab === 'MARKET' || activeTab === 'PROFILE') {
       setShowMarketForm(true);
       window.location.hash = 'sell';
     } else if (activeTab === 'SKILLS') {
@@ -457,8 +460,9 @@ const App: React.FC = () => {
   const isHome = activeTab === 'HOME';
   
   const themeColor = isMarket ? 'text-teal-500' : isSkills ? 'text-indigo-500' : 'text-pink-500';
-  const themeBg = isMarket ? 'bg-teal-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
-  const themeShadow = isMarket ? 'shadow-teal-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
+  // Central FAB for ME tab now matches MARKET (teal/green)
+  const themeBg = (isMarket || isProfile) ? 'bg-teal-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
+  const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
@@ -527,7 +531,7 @@ const App: React.FC = () => {
       )}
 
       {(showCheckIn || editingActivity) && profile && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <CheckInForm profile={profile} initialActivity={editingActivity} onSubmit={handleAddActivity} onCancel={closeModals} />
@@ -536,7 +540,7 @@ const App: React.FC = () => {
       )}
 
       {(showMarketForm || editingMarketItem) && profile && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <MarketItemForm profile={profile} initialItem={editingMarketItem} onSubmit={handleMarketSubmit} onCancel={closeModals} />
@@ -545,7 +549,7 @@ const App: React.FC = () => {
       )}
 
       {(showSkillForm || editingSkill) && profile && (
-        <div className="fixed inset-0 z-50 flex items-end">
+        <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <SkillForm profile={profile} initialSkill={editingSkill} onSubmit={handleSkillSubmit} onCancel={closeModals} />
