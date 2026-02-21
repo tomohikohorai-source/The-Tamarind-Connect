@@ -70,6 +70,8 @@ export interface MarketItem {
   genre: string;
   description: string;
   price: number;
+  previousPrice?: number; // For discount tracking
+  priceUpdatedAt?: string; // For discount timing
   type: 'SALE' | 'FREE';
   status: 'AVAILABLE' | 'RESERVED' | 'SOLD';
   requestStatus: 'NONE' | 'PENDING' | 'REJECTED';
@@ -110,6 +112,8 @@ export interface Skill {
   description: string;
   type: 'OFFER' | 'REQUEST'; // Providing a skill or asking for one
   price: string; // e.g. "Free", "RM 20/hr", "Exchange for coffee"
+  previousPrice?: string; // For discount tracking
+  priceUpdatedAt?: string; // For discount timing
   comments: SkillComment[];
   createdAt: string;
   lastUpdated: string;

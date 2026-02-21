@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame } from 'lucide-react';
+import { format, differenceInHours } from 'date-fns';
 
 interface Props {
   items: MarketItem[];
@@ -88,21 +88,45 @@ const InstructionBanner = memo(({ item, profile }: { item: MarketItem, profile: 
 });
 
 const MarketItemCard = memo(({ item, onClick }: { item: MarketItem, onClick: () => void }) => {
+  const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
+  const isDiscounted = item.priceUpdatedAt && 
+                      item.previousPrice !== undefined && 
+                      item.price < item.previousPrice && 
+                      differenceInHours(new Date(), new Date(item.priceUpdatedAt)) <= 72;
+
   return (
-    <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col">
+    <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative">
       <div className="relative aspect-square">
         {item.images && item.images.length > 0 ? (
           <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={32} /></div>
         )}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        
+        {/* Floating Badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
           <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'bg-teal-400 text-white' : 'bg-green-400 text-white') : (item.status === 'SOLD' ? 'bg-gray-400 text-white' : 'bg-orange-400 text-white')}`}>
             {item.requestStatus === 'PENDING' ? 'REQ' : item.status}
           </div>
+          {isNew && (
+            <div className="bg-gradient-to-r from-teal-400 to-cyan-400 text-white px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm flex items-center gap-0.5">
+              <Sparkles size={8} /> NEW
+            </div>
+          )}
+          {isDiscounted && (
+            <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm flex items-center gap-0.5 animate-pulse">
+              <Flame size={8} /> DISCOUNT
+            </div>
+          )}
         </div>
+
         <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl shadow-sm border border-teal-50">
-          <span className="text-teal-600 font-black text-[10px]">{item.type === 'FREE' ? 'FREE' : `RM${item.price}`}</span>
+          <div className="flex flex-col items-end">
+            {isDiscounted && item.previousPrice && (
+               <span className="text-[7px] text-gray-400 line-through font-bold">RM{item.previousPrice}</span>
+            )}
+            <span className="text-teal-600 font-black text-[10px]">{item.type === 'FREE' ? 'FREE' : `RM${item.price}`}</span>
+          </div>
         </div>
       </div>
       <div className="p-3 space-y-1">

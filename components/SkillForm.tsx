@@ -22,6 +22,15 @@ export const SkillForm: React.FC<Props> = ({ profile, initialSkill, onSubmit, on
     e.preventDefault();
     if (!title.trim()) return;
 
+    // Numeric comparison for DISCOUNT tracking
+    const getNum = (s: string) => parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
+    const currentVal = getNum(price);
+    const oldVal = initialSkill ? getNum(initialSkill.price) : 0;
+
+    const isPriceReduced = initialSkill && currentVal > 0 && oldVal > 0 && currentVal < oldVal;
+    const priceUpdatedAt = isPriceReduced ? new Date().toISOString() : initialSkill?.priceUpdatedAt;
+    const previousPrice = isPriceReduced ? initialSkill.price : initialSkill?.previousPrice;
+
     const skill: Skill = {
       id: initialSkill?.id || crypto.randomUUID(),
       userId: profile.uid,
@@ -33,6 +42,8 @@ export const SkillForm: React.FC<Props> = ({ profile, initialSkill, onSubmit, on
       description,
       type,
       price,
+      previousPrice,
+      priceUpdatedAt,
       comments: initialSkill?.comments || [],
       createdAt: initialSkill?.createdAt || new Date().toISOString(),
       lastUpdated: new Date().toISOString()

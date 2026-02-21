@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppState, UserProfile, Activity, MarketItem, Skill, AppTab, MarketComment, SkillComment } from './types';
 import { AuthScreen } from './components/AuthScreen';
@@ -13,14 +12,14 @@ import { MarketItemForm } from './components/MarketItemForm';
 import { SkillExchange } from './components/SkillExchange';
 import { SkillForm } from './components/SkillForm';
 import { store } from './services/store';
-import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, Plus, ShoppingCart, LogOut, BookOpen, Star } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen } from 'lucide-react';
+import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, getDocs, writeBatch
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion
 } from './firebase';
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   const [isVerified, setIsVerified] = useState(store.isVerified());
   const [appState, setAppState] = useState<AppState>('AUTH');
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -183,55 +182,50 @@ const App: React.FC = () => {
   const profileActionsCount = useMemo(() => {
     if (!profile) return 0;
     
-    // Notifications that the user has already clicked on (Read)
     const dismissedIds: string[] = JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
 
-    // Market Notifications
     const marketNotifications = marketItems.filter(item => {
-      const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+      const isOwner = item.userId === profile.uid;
+      const isBuyer = item.buyerId === profile.uid;
       const hasParticipated = item.comments.some(c => c.userId === profile.uid);
+      const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
 
-      // Check for specific undismissed variants
-      const isReqUnread = item.userId === profile.uid && item.requestStatus === 'PENDING' && !dismissedIds.includes(`${item.id}-req`);
-      const isConfUnread = item.userId === profile.uid && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion && !dismissedIds.includes(`${item.id}-conf`);
-      const isApprUnread = item.buyerId === profile.uid && item.status === 'RESERVED' && !item.buyerConfirmedCompletion && !dismissedIds.includes(`${item.id}-appr`);
-      const isCmtUnread = (item.userId === profile.uid || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`);
+      if (isOwner && item.requestStatus === 'PENDING' && !dismissedIds.includes(`${item.id}-req`)) return true;
+      if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion && !dismissedIds.includes(`${item.id}-conf`)) return true;
+      if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion && !dismissedIds.includes(`${item.id}-appr`)) return true;
+      if ((isOwner || isBuyer || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`)) return true;
 
-      if (isReqUnread || isConfUnread || isApprUnread || isCmtUnread) return true;
-
-      // Information Only cases (Acknowledged via map when visiting tab)
       const lastSeenUpdate = acknowledgedMarketMap[item.id];
       const isUnseenInformation = lastSeenUpdate !== (item.lastUpdated || 'initial');
-      // If it's unseen info AND hasn't been explicitly dismissed by clicking
-      return isUnseenInformation && !dismissedIds.some(id => id.startsWith(item.id));
+      if (isUnseenInformation && !dismissedIds.some(id => id.startsWith(item.id))) return true;
+
+      return false;
     }).length;
 
-    // Skill Notifications
     const skillNotifications = skills.filter(skill => {
-      const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
+      const isOwner = skill.userId === profile.uid;
       const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
-      const isCmtUnread = (skill.userId === profile.uid || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${skill.id}-cmt`);
+      const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
+      const isCmtDismissed = dismissedIds.includes(`${skill.id}-cmt`);
 
-      if (isCmtUnread) return true;
+      if ((isOwner || hasParticipated) && lastCommentFromOthers && !isCmtDismissed) return true;
 
       const lastSeenUpdate = acknowledgedSkillMap[skill.id];
-      const isUnseenInformation = lastSeenUpdate !== (skill.lastUpdated || 'initial');
-      return isUnseenInformation && !dismissedIds.includes(`${skill.id}-cmt`);
+      if (lastSeenUpdate !== (skill.lastUpdated || 'initial') && !isCmtDismissed) return true;
+
+      return false;
     }).length;
 
     return marketNotifications + skillNotifications;
   }, [marketItems, skills, profile, acknowledgedMarketMap, acknowledgedSkillMap]);
 
-  // Acknowledge logic on Profile Tab visit
   useEffect(() => {
     if (activeTab === 'PROFILE' && profile) {
-      // Sync Market
       const newMarketMapping = { ...acknowledgedMarketMap };
       marketItems.forEach(item => { newMarketMapping[item.id] = item.lastUpdated || 'initial'; });
       setAcknowledgedMarketMap(newMarketMapping);
       store.setAcknowledgedMarket(newMarketMapping);
 
-      // Sync Skills
       const newSkillMapping = { ...acknowledgedSkillMap };
       skills.forEach(skill => { newSkillMapping[skill.id] = skill.lastUpdated || 'initial'; });
       setAcknowledgedSkillMap(newSkillMapping);
@@ -274,7 +268,10 @@ const App: React.FC = () => {
     window.location.hash = activeTab.toLowerCase();
   };
 
-  const handlePasscodeSuccess = () => { store.setVerified(true); setIsVerified(true); };
+  const handlePasscodeSuccess = () => { 
+    store.setVerified(true); 
+    setIsVerified(true); 
+  };
   
   const handleProfileComplete = (newProfile: UserProfile) => {
     setProfile({ ...newProfile, totalLoginDays: 1, lastLoginDate: new Date().toISOString() });
@@ -320,7 +317,6 @@ const App: React.FC = () => {
         lastUpdated: new Date().toISOString(),
         ...(extraFlags || {}) 
       };
-
       if (buyerId && profile) {
         updates.buyerId = buyerId;
         updates.buyerNickname = profile.parentNickname;
@@ -337,11 +333,8 @@ const App: React.FC = () => {
         updates.requestStatus = 'NONE';
         updates.rejectionReason = '';
       }
-      
       await updateDoc(doc(db, "marketItems", id), updates);
-    } catch (e: any) { 
-      alert("Status update failed: " + e.message); 
-    }
+    } catch (e: any) { alert("Update failed: " + e.message); }
   };
 
   const handleMarketComment = async (itemId: string, text: string) => {
@@ -360,12 +353,6 @@ const App: React.FC = () => {
         lastUpdated: new Date().toISOString()
       });
     } catch (e: any) { alert(e.message); }
-  };
-
-  const handleMarketDelete = async (id: string) => {
-    if (confirm('Delete this listing permanently?')) {
-      try { await deleteDoc(doc(db, "marketItems", id)); } catch (e: any) { alert(e.message); }
-    }
   };
 
   const handleSkillSubmit = async (skill: Skill) => {
@@ -399,12 +386,6 @@ const App: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
-  const handleSkillDelete = async (id: string) => {
-    if (confirm('Delete this skill post?')) {
-      try { await deleteDoc(doc(db, "skills", id)); } catch (e: any) { alert(e.message); }
-    }
-  };
-
   const handleViewProfile = async (userId: string) => {
     if (profile && userId === profile.uid) {
       changeTab('PROFILE');
@@ -423,25 +404,11 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDirectToTransaction = (itemId: string) => {
-    setTargetMarketId(itemId);
-    setActiveTab('MARKET');
-    window.location.hash = 'market';
-  };
-
-  const handleDirectToSkillDetail = (skillId: string) => {
-    setTargetSkillId(skillId);
-    setActiveTab('SKILLS');
-    window.location.hash = 'skills';
-  };
-
   const handleLogout = async () => { 
     if (confirm('Logout?')) { 
       try {
         await signOut(auth); 
         store.clearAll(); 
-        setAppState('AUTH'); 
-        setProfile(null);
         window.location.reload(); 
       } catch (e: any) {
         alert("Logout failed: " + e.message);
@@ -450,7 +417,7 @@ const App: React.FC = () => {
   };
 
   if (!isVerified) return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Entering Nearby Exchange...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Loading community...</div>;
   if (appState === 'AUTH') return <AuthScreen />;
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
@@ -460,7 +427,6 @@ const App: React.FC = () => {
   const isHome = activeTab === 'HOME';
   
   const themeColor = isMarket ? 'text-teal-500' : isSkills ? 'text-indigo-500' : 'text-pink-500';
-  // Central FAB for ME tab now matches MARKET (teal/green)
   const themeBg = (isMarket || isProfile) ? 'bg-teal-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
   const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
@@ -482,19 +448,19 @@ const App: React.FC = () => {
 
       <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'MARKET' && profile && (
-          <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
+          <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={() => {}} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
         {activeTab === 'SKILLS' && profile && (
-          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); window.location.hash = 'post-skill'; }} onDelete={handleSkillDelete} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={() => {}} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
         )}
         {activeTab === 'HOME' && profile && (
           <div className="animate-fade-in">
             <PetGarden profile={profile} />
-            <Timeline activities={activities} profile={profile} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onViewProfile={handleViewProfile} />
+            <Timeline activities={activities} profile={profile} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onViewProfile={handleViewProfile} />
           </div>
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); window.location.hash = 'checkin'; }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); window.location.hash = 'sell'; }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => { setShowCheckIn(true); window.location.hash = 'checkin'; }} onAddMarket={() => { setShowMarketForm(true); window.location.hash = 'sell'; }} onAddSkill={() => { setShowSkillForm(true); window.location.hash = 'post-skill'; }} onEditSkill={(skill) => { setEditingSkill(skill); window.location.hash = 'post-skill'; }} onDeleteSkill={handleSkillDelete} onAddMarketComment={handleMarketComment} onGoToTransaction={handleDirectToTransaction} onGoToSkill={handleDirectToSkillDetail} />
+          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onDeleteMarket={() => {}} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => setShowCheckIn(true)} onAddMarket={() => setShowMarketForm(true)} onAddSkill={() => setShowSkillForm(true)} onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDeleteSkill={() => {}} onAddMarketComment={handleMarketComment} onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} />
         )}
       </main>
 
@@ -518,14 +484,8 @@ const App: React.FC = () => {
           onEditSkill={() => {}}
           onDeleteSkill={() => {}}
           onAddMarketComment={() => {}} 
-          onGoToTransaction={(itemId) => {
-            handleDirectToTransaction(itemId);
-            setViewingProfile(null);
-          }} 
-          onGoToSkill={(skillId) => {
-            handleDirectToSkillDetail(skillId);
-            setViewingProfile(null);
-          }}
+          onGoToTransaction={(id) => { setTargetMarketId(id); setViewingProfile(null); setActiveTab('MARKET'); }} 
+          onGoToSkill={(id) => { setTargetSkillId(id); setViewingProfile(null); setActiveTab('SKILLS'); }}
           onClose={() => setViewingProfile(null)} 
         />
       )}
@@ -584,5 +544,3 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-export default App;

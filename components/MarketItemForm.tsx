@@ -120,6 +120,13 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       case 'NONE': finalTime = `Contact for details`; break;
     }
 
+    const currentPrice = type === 'FREE' ? 0 : Math.max(1, Number(price));
+    
+    // Check for discount
+    const isPriceReduced = initialItem && initialItem.type === 'SALE' && currentPrice < initialItem.price;
+    const priceUpdatedAt = isPriceReduced ? new Date().toISOString() : initialItem?.priceUpdatedAt;
+    const previousPrice = isPriceReduced ? initialItem.price : initialItem?.previousPrice;
+
     const item: MarketItem = {
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
@@ -129,8 +136,9 @@ export const MarketItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       title,
       genre,
       description,
-      // Minimum price 1 RM enforced for SALE type
-      price: type === 'FREE' ? 0 : Math.max(1, Number(price)),
+      price: currentPrice,
+      previousPrice,
+      priceUpdatedAt,
       type,
       condition,
       status: initialItem?.status || 'AVAILABLE',

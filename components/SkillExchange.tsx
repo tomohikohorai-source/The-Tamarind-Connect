@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles } from 'lucide-react';
+import { format, differenceInHours } from 'date-fns';
 
 interface Props {
   skills: Skill[];
@@ -224,32 +224,55 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {filteredSkills.map((skill) => (
-          <button key={skill.id} onClick={() => setViewingSkill(skill)} className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group">
-            <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center opacity-10 rotate-12 ${skill.type === 'OFFER' ? 'text-indigo-500' : 'text-orange-500'}`}>
-               <BookOpen size={48} fill="currentColor" />
-            </div>
-            
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${skill.type === 'OFFER' ? 'bg-indigo-50 border border-indigo-100' : 'bg-orange-50 border border-orange-100'}`}>
-               {SKILL_ICONS[skill.category] || '🌟'}
-            </div>
-            
-            <div className="flex-grow min-w-0 pr-8">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${skill.type === 'OFFER' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
-                  {skill.type}
-                </span>
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Unit {skill.roomNumber}</span>
+        {filteredSkills.map((skill) => {
+          const isNew = differenceInHours(new Date(), new Date(skill.createdAt)) <= 72;
+          
+          // Logic for Skill Discount (extract numeric part of price string)
+          const getNum = (s: string) => parseFloat(s.replace(/[^0-9.]/g, '')) || 0;
+          const currentVal = getNum(skill.price);
+          const prevVal = skill.previousPrice ? getNum(skill.previousPrice) : 0;
+          const isDiscounted = skill.priceUpdatedAt && 
+                               prevVal > 0 && 
+                               currentVal < prevVal && 
+                               differenceInHours(new Date(), new Date(skill.priceUpdatedAt)) <= 72;
+
+          return (
+            <button key={skill.id} onClick={() => setViewingSkill(skill)} className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group">
+              <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center opacity-10 rotate-12 ${skill.type === 'OFFER' ? 'text-indigo-500' : 'text-orange-500'}`}>
+                 <BookOpen size={48} fill="currentColor" />
               </div>
-              <h3 className="text-[15px] font-black text-gray-800 truncate tracking-tight">{skill.title}</h3>
-              <div className="text-[10px] font-bold text-indigo-400 line-clamp-1">{skill.price} • {skill.category}</div>
-            </div>
-            
-            <div className="absolute top-1/2 -translate-y-1/2 right-6 opacity-0 group-hover:opacity-100 transition-all">
-              <ChevronRight size={20} className="text-indigo-300" />
-            </div>
-          </button>
-        ))}
+              
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${skill.type === 'OFFER' ? 'bg-indigo-50 border border-indigo-100' : 'bg-orange-50 border border-orange-100'}`}>
+                 {SKILL_ICONS[skill.category] || '🌟'}
+              </div>
+              
+              <div className="flex-grow min-w-0 pr-8">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${skill.type === 'OFFER' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
+                    {skill.type}
+                  </span>
+                  {isNew && (
+                    <span className="bg-gradient-to-r from-teal-400 to-cyan-400 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-0.5">
+                      <Sparkles size={8}/> NEW
+                    </span>
+                  )}
+                  {isDiscounted && (
+                    <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-0.5">
+                      <Flame size={8}/> DISCOUNT
+                    </span>
+                  )}
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Unit {skill.roomNumber}</span>
+                </div>
+                <h3 className="text-[15px] font-black text-gray-800 truncate tracking-tight">{skill.title}</h3>
+                <div className="text-[10px] font-bold text-indigo-400 line-clamp-1">{skill.price} • {skill.category}</div>
+              </div>
+              
+              <div className="absolute top-1/2 -translate-y-1/2 right-6 opacity-0 group-hover:opacity-100 transition-all">
+                <ChevronRight size={20} className="text-indigo-300" />
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {filteredSkills.length === 0 && (
