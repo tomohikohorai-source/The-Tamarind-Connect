@@ -21,6 +21,7 @@ export interface PrivacySettings {
   showBuying: boolean;
   showPlayHistory: boolean;
   showSkills?: boolean;
+  showWanted?: boolean;
 }
 
 export interface UserProfile {
@@ -119,5 +120,35 @@ export interface Skill {
   lastUpdated: string;
 }
 
-export type AppTab = 'MARKET' | 'SKILLS' | 'HOME' | 'PROFILE';
+export interface WantedComment {
+  id: string;
+  userId: string;
+  userNickname: string;
+  userAvatar: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface WantedItem {
+  id: string;
+  userId: string;
+  parentNickname: string;
+  roomNumber: string;
+  parentAvatarIcon: string;
+  title: string;
+  genre: string;
+  description: string;
+  hopePrice: number;
+  previousHopePrice?: number;
+  hopePriceUpdatedAt?: string;
+  pickupLocation: string;
+  preferredTiming: string;
+  images: string[];
+  comments: WantedComment[];
+  status: 'OPEN' | 'CLOSED';
+  createdAt: string;
+  lastUpdated: string;
+}
+
+export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'HOME' | 'PROFILE';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';

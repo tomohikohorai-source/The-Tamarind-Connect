@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppState, UserProfile, Activity, MarketItem, Skill, AppTab, MarketComment, SkillComment } from './types';
+import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment } from './types';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Timeline } from './components/Timeline';
@@ -11,8 +12,10 @@ import { MarketPlace } from './components/MarketPlace';
 import { MarketItemForm } from './components/MarketItemForm';
 import { SkillExchange } from './components/SkillExchange';
 import { SkillForm } from './components/SkillForm';
+import { WantedList } from './components/WantedList';
+import { WantedItemForm } from './components/WantedItemForm';
 import { store } from './services/store';
-import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen } from 'lucide-react';
+import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -27,6 +30,7 @@ export const App: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [wantedItems, setWantedItems] = useState<WantedItem[]>([]);
   
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
   
@@ -41,6 +45,10 @@ export const App: React.FC = () => {
   const [editingSkill, setEditingSkill] = useState<Skill | undefined>(undefined);
   const [targetSkillId, setTargetSkillId] = useState<string | null>(null);
 
+  const [showWantedForm, setShowWantedForm] = useState(false);
+  const [editingWantedItem, setEditingWantedItem] = useState<WantedItem | undefined>(undefined);
+  const [targetWantedId, setTargetWantedId] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLive, setIsLive] = useState(false);
@@ -49,6 +57,7 @@ export const App: React.FC = () => {
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
   const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
   const [acknowledgedSkillMap, setAcknowledgedSkillMap] = useState<Record<string, string>>(() => store.getAcknowledgedSkills());
+  const [acknowledgedWantedMap, setAcknowledgedWantedMap] = useState<Record<string, string>>(() => JSON.parse(localStorage.getItem('play_share_seen_wanted') || '{}'));
 
   const touchStartRef = useRef<number | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
@@ -92,12 +101,14 @@ export const App: React.FC = () => {
       const hash = window.location.hash;
       if (hash === '#profile') setActiveTab('PROFILE');
       else if (hash === '#market' || hash === '') setActiveTab('MARKET');
+      else if (hash === '#wanted') setActiveTab('WANTED');
       else if (hash === '#skills') setActiveTab('SKILLS');
-      else if (hash === '#home') setActiveTab('HOME');
+      else if (hash === '#home' || hash === '#play') setActiveTab('HOME');
       
       if (hash === '#checkin') setShowCheckIn(true);
       else if (hash === '#sell') setShowMarketForm(true);
       else if (hash === '#post-skill') setShowSkillForm(true);
+      else if (hash === '#post-wanted') setShowWantedForm(true);
       else { 
         setShowCheckIn(false); 
         setEditingActivity(undefined);
@@ -105,6 +116,8 @@ export const App: React.FC = () => {
         setEditingMarketItem(undefined);
         setShowSkillForm(false);
         setEditingSkill(undefined);
+        setShowWantedForm(false);
+        setEditingWantedItem(undefined);
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -166,7 +179,14 @@ export const App: React.FC = () => {
         setSkills(data);
       });
 
-      return () => { unsubAct(); unsubMarket(); unsubSkills(); setIsLive(false); };
+      const qWanted = query(collection(db, "wantedItems"), orderBy("createdAt", "desc"));
+      const unsubWanted = onSnapshot(qWanted, (snapshot) => {
+        const data: WantedItem[] = [];
+        snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as WantedItem));
+        setWantedItems(data);
+      });
+
+      return () => { unsubAct(); unsubMarket(); unsubSkills(); unsubWanted(); setIsLive(false); };
     }
   }, [appState]);
 
@@ -216,8 +236,22 @@ export const App: React.FC = () => {
       return false;
     }).length;
 
-    return marketNotifications + skillNotifications;
-  }, [marketItems, skills, profile, acknowledgedMarketMap, acknowledgedSkillMap]);
+    const wantedNotifications = wantedItems.filter(wanted => {
+      const isOwner = wanted.userId === profile.uid;
+      // Fixed: Add missing 'const' keyword to fix "Cannot find name 'hasParticipated'" error
+      const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
+      const lastCommentFromOthers = wanted.comments.length > 0 && wanted.comments[wanted.comments.length - 1].userId !== profile.uid;
+      
+      if ((isOwner || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${wanted.id}-cmt`)) return true;
+      
+      const lastSeenUpdate = acknowledgedWantedMap[wanted.id];
+      if (lastSeenUpdate !== (wanted.lastUpdated || 'initial') && !dismissedIds.some(id => id.startsWith(wanted.id))) return true;
+
+      return false;
+    }).length;
+
+    return marketNotifications + skillNotifications + wantedNotifications;
+  }, [marketItems, skills, wantedItems, profile, acknowledgedMarketMap, acknowledgedSkillMap, acknowledgedWantedMap]);
 
   useEffect(() => {
     if (activeTab === 'PROFILE' && profile) {
@@ -230,6 +264,11 @@ export const App: React.FC = () => {
       skills.forEach(skill => { newSkillMapping[skill.id] = skill.lastUpdated || 'initial'; });
       setAcknowledgedSkillMap(newSkillMapping);
       store.setAcknowledgedSkills(newSkillMapping);
+
+      const newWantedMapping = { ...acknowledgedWantedMap };
+      wantedItems.forEach(w => { newWantedMapping[w.id] = w.lastUpdated || 'initial'; });
+      setAcknowledgedWantedMap(newWantedMapping);
+      localStorage.setItem('play_share_seen_wanted', JSON.stringify(newWantedMapping));
     }
     
     if (activeTab === 'HOME' && profile && activities.length > 0) {
@@ -238,17 +277,20 @@ export const App: React.FC = () => {
       setAcknowledgedMap(newMapping);
       store.setAcknowledgedActivities(newMapping);
     }
-  }, [activeTab, activities, marketItems, skills, profile]);
+  }, [activeTab, activities, marketItems, skills, wantedItems, profile]);
 
   const changeTab = (tab: AppTab) => {
     setActiveTab(tab);
-    window.location.hash = tab.toLowerCase();
+    window.location.hash = tab === 'HOME' ? 'play' : tab.toLowerCase();
   };
 
   const handleActionClick = () => {
     if (activeTab === 'MARKET' || activeTab === 'PROFILE') {
       setShowMarketForm(true);
       window.location.hash = 'sell';
+    } else if (activeTab === 'WANTED') {
+      setShowWantedForm(true);
+      window.location.hash = 'post-wanted';
     } else if (activeTab === 'SKILLS') {
       setShowSkillForm(true);
       window.location.hash = 'post-skill';
@@ -262,10 +304,12 @@ export const App: React.FC = () => {
     setShowCheckIn(false);
     setShowMarketForm(false);
     setShowSkillForm(false);
+    setShowWantedForm(false);
     setEditingActivity(undefined);
     setEditingMarketItem(undefined);
     setEditingSkill(undefined);
-    window.location.hash = activeTab.toLowerCase();
+    setEditingWantedItem(undefined);
+    window.location.hash = activeTab === 'HOME' ? 'play' : activeTab.toLowerCase();
   };
 
   const handlePasscodeSuccess = () => { 
@@ -386,6 +430,37 @@ export const App: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
+  const handleWantedSubmit = async (wanted: WantedItem) => {
+    try {
+      if (editingWantedItem) {
+        const { id, ...data } = wanted;
+        await updateDoc(doc(db, "wantedItems", editingWantedItem.id), data);
+      } else {
+        const { id, ...data } = wanted;
+        await addDoc(collection(db, "wantedItems"), data);
+      }
+      closeModals();
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleWantedComment = async (wantedId: string, text: string) => {
+    if (!profile) return;
+    const comment: WantedComment = {
+      id: crypto.randomUUID(),
+      userId: profile.uid,
+      userNickname: profile.parentNickname,
+      userAvatar: profile.avatarIcon,
+      text,
+      createdAt: new Date().toISOString()
+    };
+    try {
+      await updateDoc(doc(db, "wantedItems", wantedId), {
+        comments: arrayUnion(comment),
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (e: any) { alert(e.message); }
+  };
+
   const handleViewProfile = async (userId: string) => {
     if (profile && userId === profile.uid) {
       changeTab('PROFILE');
@@ -422,13 +497,14 @@ export const App: React.FC = () => {
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
   const isMarket = activeTab === 'MARKET';
+  const isWanted = activeTab === 'WANTED';
   const isSkills = activeTab === 'SKILLS';
   const isProfile = activeTab === 'PROFILE';
   const isHome = activeTab === 'HOME';
   
-  const themeColor = isMarket ? 'text-teal-500' : isSkills ? 'text-indigo-500' : 'text-pink-500';
-  const themeBg = (isMarket || isProfile) ? 'bg-teal-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
-  const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
+  const themeColor = isMarket ? 'text-teal-500' : isWanted ? 'text-amber-500' : isSkills ? 'text-indigo-500' : isHome ? 'text-pink-500' : 'text-pink-500';
+  const themeBg = (isMarket || isProfile) ? 'bg-teal-400' : isWanted ? 'bg-amber-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
+  const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isWanted ? 'shadow-amber-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
@@ -450,6 +526,9 @@ export const App: React.FC = () => {
         {activeTab === 'MARKET' && profile && (
           <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={() => {}} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
+        {activeTab === 'WANTED' && profile && (
+          <WantedList items={wantedItems} profile={profile} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={() => {}} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
+        )}
         {activeTab === 'SKILLS' && profile && (
           <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={() => {}} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
         )}
@@ -460,7 +539,7 @@ export const App: React.FC = () => {
           </div>
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onDeleteMarket={() => {}} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => setShowCheckIn(true)} onAddMarket={() => setShowMarketForm(true)} onAddSkill={() => setShowSkillForm(true)} onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDeleteSkill={() => {}} onAddMarketComment={handleMarketComment} onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} />
+          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} wantedItems={wantedItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onDeleteMarket={() => {}} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => setShowCheckIn(true)} onAddMarket={() => setShowMarketForm(true)} onAddSkill={() => setShowSkillForm(true)} onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDeleteSkill={() => {}} onAddMarketComment={handleMarketComment} onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} />
         )}
       </main>
 
@@ -471,6 +550,7 @@ export const App: React.FC = () => {
           activities={activities} 
           marketItems={marketItems}
           skills={skills}
+          wantedItems={wantedItems}
           onLogout={() => {}} 
           onEdit={() => {}} 
           onDelete={() => {}} 
@@ -517,27 +597,38 @@ export const App: React.FC = () => {
         </div>
       )}
 
+      {(showWantedForm || editingWantedItem) && profile && (
+        <div className="fixed inset-0 z-[500] flex items-end">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
+          <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
+            <WantedItemForm profile={profile} initialItem={editingWantedItem} onSubmit={handleWantedSubmit} onCancel={closeModals} />
+          </div>
+        </div>
+      )}
+
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
-        <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-2 relative">
-          <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
-            <ShoppingBag size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Market</span>
+        <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-1 relative">
+          <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
+            <ShoppingBag size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Market</span>
           </button>
-          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
-            <BookOpen size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Skills</span>
+          <button onClick={() => changeTab('WANTED')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'WANTED' ? 'text-amber-400' : 'text-gray-300'}`}>
+            <Heart size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Wanted</span>
           </button>
           
-          <div className="w-1/5 flex justify-center">
-            <button onClick={handleActionClick} className={`flex items-center justify-center ${themeBg} text-white w-14 h-14 rounded-2xl font-black shadow-2xl ${themeShadow} border-4 border-white -translate-y-6 active:scale-95 transition-all`}><PlusCircle size={24} /></button>
-          </div>
+          <button onClick={handleActionClick} className={`flex items-center justify-center ${themeBg} text-white w-12 h-12 rounded-2xl font-black shadow-xl ${themeShadow} border-4 border-white -translate-y-4 active:scale-95 transition-all flex-shrink-0 mx-1`}><PlusCircle size={24} /></button>
 
-          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Home size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Play</span>
-            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{unseenCount}</span>}
+          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
+            <BookOpen size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Skills</span>
           </button>
 
-          <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 w-1/5 relative transition-all ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <UserCircle size={20} /><span className="text-[8px] font-black uppercase tracking-wider">Me</span>
-            {(activeTab !== 'PROFILE' && profileActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white font-black">{profileActionsCount}</span>}
+          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <Home size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Play</span>
+            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-50 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{unseenCount}</span>}
+          </button>
+
+          <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <UserCircle size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Me</span>
+            {(activeTab !== 'PROFILE' && profileActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{profileActionsCount}</span>}
           </button>
         </div>
       </nav>
