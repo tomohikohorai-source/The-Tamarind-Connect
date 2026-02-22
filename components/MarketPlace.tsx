@@ -322,13 +322,15 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                 </div>
               )}
 
-              {isSeller && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+              {isSeller && (viewingItem.status === 'AVAILABLE' || viewingItem.status === 'RESERVED') && (
                 <div className="flex gap-4">
-                  <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
-                    <Edit2 size={14}/> Edit
-                  </button>
-                  <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingItem.id); setViewingItem(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
-                    <Trash2 size={14}/> Delete
+                  {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+                    <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+                      <Edit2 size={14}/> Edit
+                    </button>
+                  )}
+                  <button onClick={() => { if(confirm('Permanently delete this item?')) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+                    <Trash2 size={14}/> Delete Item
                   </button>
                 </div>
               )}
@@ -467,6 +469,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                       disabled={!(commentInputs[viewingItem.id] || '').trim()}
                       className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingItem.id] || '').trim() ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-300'}`}
                     >
+                      <span className="sr-only">Send</span>
                       <Send size={18} />
                     </button>
                   </div>

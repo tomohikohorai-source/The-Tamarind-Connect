@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
 import { UserProfile, WantedItem } from '../types';
-import { MARKET_LOCATIONS, MARKET_GENRES } from '../constants';
-import { ChevronLeft, X, Package, Heart, Info, MapPin, Clock, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar } from 'lucide-react';
+import { MARKET_GENRES } from '../constants';
+import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -18,8 +18,8 @@ const compressImage = (base64Str: string): Promise<string> => {
     img.src = base64Str;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800;
-      const MAX_HEIGHT = 800;
+      const MAX_WIDTH = 400; // Updated from 800 to 400 for better performance
+      const MAX_HEIGHT = 400; // Updated from 800 to 400 for better performance
       let width = img.width;
       let height = img.height;
       if (width > height) {
@@ -48,8 +48,6 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
   const [description, setDescription] = useState(initialItem?.description || '');
   const [hopePrice, setHopePrice] = useState(initialItem?.hopePrice?.toString() || '10');
   const [images, setImages] = useState<string[]>(initialItem?.images || []);
-  const [pickupLocation, setPickupLocation] = useState(initialItem?.pickupLocation || MARKET_LOCATIONS[0]);
-  const [otherLocationText, setOtherLocationText] = useState('');
   const [preferredTiming, setPreferredTiming] = useState(initialItem?.preferredTiming || format(new Date(), 'yyyy-MM-dd'));
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +92,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       genre,
       description,
       hopePrice: currentHopePrice,
-      pickupLocation: pickupLocation === 'Other (Specify)' ? `Other: ${otherLocationText}` : pickupLocation,
+      pickupLocation: '', // Removed preference field
       preferredTiming,
       images,
       comments: initialItem?.comments || [],
@@ -191,16 +189,6 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
           <div>
             <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">Additional details</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Color, brand, or condition you want..." className="w-full p-4 bg-gray-50 border-none rounded-2xl outline-none font-medium text-sm h-24 resize-none focus:ring-2 ring-amber-50" />
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">Meeting preference</label>
-            <select value={pickupLocation} onChange={e => setPickupLocation(e.target.value)} className="w-full p-4 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none mb-2">
-              {MARKET_LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-            </select>
-            {pickupLocation === 'Other (Specify)' && (
-              <input type="text" value={otherLocationText} onChange={e => setOtherLocationText(e.target.value)} placeholder="Enter location..." className="w-full p-4 bg-gray-50 border-2 border-amber-100 rounded-2xl outline-none font-bold text-sm" />
-            )}
           </div>
 
           <div>

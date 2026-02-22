@@ -27,8 +27,8 @@ const compressImage = (base64Str: string): Promise<string> => {
     img.src = base64Str;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800;
-      const MAX_HEIGHT = 800;
+      const MAX_WIDTH = 400; // Updated from 800 to 400 for better performance
+      const MAX_HEIGHT = 400; // Updated from 800 to 400 for better performance
       let width = img.width;
       let height = img.height;
 

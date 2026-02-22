@@ -190,6 +190,25 @@ export const App: React.FC = () => {
     }
   }, [appState]);
 
+  // One-time cleanup script for specific items as requested
+  useEffect(() => {
+    const performCleanup = async () => {
+      const titlesToDelete = ["Swimming Fins", "Swimming Kickboard 900"];
+      for (const item of marketItems) {
+        if (titlesToDelete.includes(item.title) && profile && item.userId === profile.uid) {
+           try {
+             await deleteDoc(doc(db, "marketItems", item.id));
+           } catch (e) {
+             console.error("Cleanup deletion failed:", e);
+           }
+        }
+      }
+    };
+    if (appState === 'READY' && marketItems.length > 0 && profile) {
+      performCleanup();
+    }
+  }, [appState, marketItems, profile?.uid]);
+
   const unseenCount = useMemo(() => {
     if (!profile) return 0;
     return activities.filter(a => {
@@ -353,6 +372,14 @@ export const App: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
+  const handleMarketDelete = async (id: string) => {
+    try { 
+      await deleteDoc(doc(db, "marketItems", id)); 
+    } catch (e: any) { 
+      alert("Failed to delete item: " + e.message); 
+    }
+  };
+
   const handleMarketStatusChange = async (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => {
     try {
       const updates: any = { 
@@ -409,6 +436,10 @@ export const App: React.FC = () => {
       }
       closeModals();
     } catch (e: any) { alert(e.message); }
+  };
+
+  const handleSkillDelete = async (id: string) => {
+    try { await deleteDoc(doc(db, "skills", id)); } catch (e: any) { alert("Failed to delete post: " + e.message); }
   };
 
   const handleSkillComment = async (skillId: string, text: string) => {
@@ -531,13 +562,13 @@ export const App: React.FC = () => {
 
       <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'MARKET' && profile && (
-          <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={() => {}} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
+          <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
         {activeTab === 'WANTED' && profile && (
           <WantedList items={wantedItems} profile={profile} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={handleWantedDelete} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
         )}
         {activeTab === 'SKILLS' && profile && (
-          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={() => {}} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={handleSkillDelete} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
         )}
         {activeTab === 'HOME' && profile && (
           <div className="animate-fade-in">
@@ -546,7 +577,7 @@ export const App: React.FC = () => {
           </div>
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} wantedItems={wantedItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onDeleteMarket={() => {}} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => setShowCheckIn(true)} onAddMarket={() => setShowMarketForm(true)} onAddSkill={() => setShowSkillForm(true)} onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDeleteSkill={() => {}} onAddMarketComment={handleMarketComment} onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} />
+          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} wantedItems={wantedItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => setShowCheckIn(true)} onAddMarket={() => setShowMarketForm(true)} onAddSkill={() => setShowSkillForm(true)} onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDeleteSkill={handleSkillDelete} onAddMarketComment={handleMarketComment} onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} />
         )}
       </main>
 

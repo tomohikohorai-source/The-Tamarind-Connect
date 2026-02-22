@@ -153,7 +153,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, initialActiveItemI
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
               <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">Meeting</span></div>
-              <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{viewingItem.pickupLocation}</div>
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{viewingItem.pickupLocation || 'Discuss in Chat'}</div>
             </div>
             <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
               <div className="flex items-center gap-2 text-gray-400"><Clock size={12}/><span className="text-[8px] font-black uppercase tracking-widest">Wanted By</span></div>
@@ -178,7 +178,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, initialActiveItemI
               <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
                 <Edit2 size={14}/> Edit
               </button>
-              <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingItem.id); setViewingItem(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+              <button onClick={() => { if(confirm('Permanently delete this wishlist post?')) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
                 <Trash2 size={14}/> Delete
               </button>
             </div>
