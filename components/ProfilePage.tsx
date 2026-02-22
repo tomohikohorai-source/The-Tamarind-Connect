@@ -256,8 +256,8 @@ export const ProfilePage: React.FC<Props> = ({
       {isEditingProfile && (
         <div className="fixed inset-0 z-[600] flex items-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditingProfile(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-12">
-             <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-2 z-10">
+          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
+             <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-4 z-10">
               <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Edit My Profile</h2>
               <button onClick={() => setIsEditingProfile(false)} className="p-2 text-gray-400"><X size={24}/></button>
             </div>
@@ -342,7 +342,7 @@ export const ProfilePage: React.FC<Props> = ({
                </div>
             </div>
 
-            <div className="flex gap-3 pt-4 pb-20">
+            <div className="flex gap-3 pt-6 pb-32">
               <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px]">Cancel</button>
               <button onClick={handleSaveProfile} className="flex-1 py-4 bg-pink-400 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg">Save Profile</button>
             </div>

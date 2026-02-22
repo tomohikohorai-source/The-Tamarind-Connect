@@ -31,7 +31,8 @@ export const SkillForm: React.FC<Props> = ({ profile, initialSkill, onSubmit, on
     const priceUpdatedAt = isPriceReduced ? new Date().toISOString() : initialSkill?.priceUpdatedAt;
     const previousPrice = isPriceReduced ? initialSkill.price : initialSkill?.previousPrice;
 
-    const skill: Skill = {
+    // Clean construction to avoid undefined properties
+    const skillData: any = {
       id: initialSkill?.id || crypto.randomUUID(),
       userId: profile.uid,
       parentNickname: profile.parentNickname,
@@ -42,14 +43,15 @@ export const SkillForm: React.FC<Props> = ({ profile, initialSkill, onSubmit, on
       description,
       type,
       price,
-      previousPrice,
-      priceUpdatedAt,
       comments: initialSkill?.comments || [],
       createdAt: initialSkill?.createdAt || new Date().toISOString(),
       lastUpdated: new Date().toISOString()
     };
 
-    onSubmit(skill);
+    if (previousPrice !== undefined) skillData.previousPrice = previousPrice;
+    if (priceUpdatedAt !== undefined) skillData.priceUpdatedAt = priceUpdatedAt;
+
+    onSubmit(skillData as Skill);
   };
 
   return (
