@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { UserProfile, WantedItem } from '../types';
 import { MARKET_LOCATIONS, MARKET_GENRES } from '../constants';
@@ -83,7 +84,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
     const currentHopePrice = Math.max(0, Number(hopePrice));
     const isPriceChanged = initialItem && currentHopePrice !== initialItem.hopePrice;
     
-    const item: WantedItem = {
+    const itemData: any = {
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
       parentNickname: profile.parentNickname,
@@ -93,8 +94,6 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       genre,
       description,
       hopePrice: currentHopePrice,
-      previousHopePrice: isPriceChanged ? initialItem.hopePrice : initialItem?.previousHopePrice,
-      hopePriceUpdatedAt: isPriceChanged ? new Date().toISOString() : initialItem?.hopePriceUpdatedAt,
       pickupLocation: pickupLocation === 'Other (Specify)' ? `Other: ${otherLocationText}` : pickupLocation,
       preferredTiming,
       images,
@@ -104,7 +103,15 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
       lastUpdated: new Date().toISOString()
     };
 
-    onSubmit(item);
+    if (isPriceChanged && initialItem) {
+        itemData.previousHopePrice = initialItem.hopePrice;
+        itemData.hopePriceUpdatedAt = new Date().toISOString();
+    } else if (initialItem?.previousHopePrice !== undefined) {
+        itemData.previousHopePrice = initialItem.previousHopePrice;
+        itemData.hopePriceUpdatedAt = initialItem.hopePriceUpdatedAt;
+    }
+
+    onSubmit(itemData as WantedItem);
   };
 
   return (
@@ -140,7 +147,16 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
             <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">What are you looking for?</label>
             <div className="relative">
               <Package className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Baby Stroller" className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm focus:ring-2 ring-amber-50" required />
+              <input 
+                type="text" 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity('Please fill in this field')}
+                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                placeholder="e.g. Baby Stroller" 
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm focus:ring-2 ring-amber-50" 
+                required 
+              />
             </div>
           </div>
 
@@ -158,7 +174,17 @@ export const WantedItemForm: React.FC<Props> = ({ profile, initialItem, onSubmit
             <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">Hope Price (RM)</label>
             <div className="relative">
               <Coins className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <input type="number" min="0" value={hopePrice} onChange={e => setHopePrice(e.target.value)} placeholder="10" className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-black text-lg text-amber-600 focus:ring-2 ring-amber-50" required />
+              <input 
+                type="number" 
+                min="0" 
+                value={hopePrice} 
+                onChange={e => setHopePrice(e.target.value)} 
+                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity('Please fill in this field')}
+                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                placeholder="10" 
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-black text-lg text-amber-600 focus:ring-2 ring-amber-50" 
+                required 
+              />
             </div>
           </div>
 

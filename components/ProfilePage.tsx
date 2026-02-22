@@ -181,6 +181,17 @@ export const ProfilePage: React.FC<Props> = ({
     } catch (e: any) { alert("Update failed: " + e.message); }
   };
 
+  const addChild = () => {
+    setEditChildren([...editChildren, {
+      id: crypto.randomUUID(),
+      nickname: '',
+      age: '3',
+      gender: 'boy',
+      intro: '',
+      avatarIcon: AVATAR_ICONS.CHILDREN[0]
+    }]);
+  };
+
   return (
     <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
       {onClose && (
@@ -245,16 +256,31 @@ export const ProfilePage: React.FC<Props> = ({
       {isEditingProfile && (
         <div className="fixed inset-0 z-[600] flex items-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditingProfile(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh]">
-             <div className="flex justify-between items-center mb-2">
+          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-12">
+             <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-2 z-10">
               <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Edit My Profile</h2>
               <button onClick={() => setIsEditingProfile(false)} className="p-2 text-gray-400"><X size={24}/></button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
                <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Parent Nickname</label>
                 <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl mt-1 font-bold outline-none border-2 border-transparent focus:border-pink-100" />
+               </div>
+
+               <div>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Your Block</label>
+                <div className="flex gap-2 mt-2">
+                  {['3A', '3B'].map(b => (
+                    <button
+                      key={b}
+                      onClick={() => setEditBlock(b as any)}
+                      className={`flex-1 py-3 rounded-2xl font-black text-sm transition-all ${editBlock === b ? 'bg-pink-400 text-white shadow-md' : 'bg-gray-50 text-gray-400'}`}
+                    >
+                      Block {b}
+                    </button>
+                  ))}
+                </div>
                </div>
                
                <div>
@@ -265,9 +291,58 @@ export const ProfilePage: React.FC<Props> = ({
                   ))}
                 </div>
                </div>
+
+               <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">Children</h3>
+                  <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest flex items-center gap-1"><PlusCircle size={14}/> Add</button>
+                </div>
+                {editChildren.map((child, index) => (
+                  <div key={child.id} className="p-4 bg-gray-50 border border-gray-100 rounded-[28px] relative space-y-4">
+                    <button onClick={() => setEditChildren(editChildren.filter(c => c.id !== child.id))} className="absolute top-2 right-2 p-2 text-red-300 hover:text-red-500"><Trash2 size={16} /></button>
+                    
+                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                      {AVATAR_ICONS.CHILDREN.map(icon => (
+                        <button key={icon} onClick={() => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, avatarIcon: icon} : c))} className={`shrink-0 w-9 h-9 text-lg rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-pink-400 bg-pink-50' : 'border-white bg-white shadow-sm'}`}>{icon}</button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input type="text" value={child.nickname} onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder="Name" className="flex-grow p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none" />
+                      <div className="relative">
+                        <select 
+                          value={child.age} 
+                          onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, age: e.target.value} : c))}
+                          className="w-20 p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none appearance-none pr-6"
+                        >
+                          {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">YRS</div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {['boy', 'girl', 'other'].map(g => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, gender: g as any} : c))}
+                          className={`flex-1 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
+                            child.gender === g 
+                              ? 'bg-pink-400 border-pink-400 text-white' 
+                              : 'bg-white border-white text-gray-400 shadow-sm'
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-4 pb-20">
               <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px]">Cancel</button>
               <button onClick={handleSaveProfile} className="flex-1 py-4 bg-pink-400 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg">Save Profile</button>
             </div>
@@ -323,7 +398,7 @@ export const ProfilePage: React.FC<Props> = ({
             {openSections.activeSales && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myActiveSales.map(item => (
-                  <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-gray-50 flex items-center justify-between bg-white text-left shadow-sm">
+                  <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-gray-100 flex items-center justify-between bg-white text-left shadow-sm">
                     <div className="flex items-center gap-4 min-w-0">
                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl border bg-teal-50 border-teal-100">{GENRE_ICONS[item.genre] || '📦'}</div>
                        <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>

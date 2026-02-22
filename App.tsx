@@ -238,7 +238,6 @@ export const App: React.FC = () => {
 
     const wantedNotifications = wantedItems.filter(wanted => {
       const isOwner = wanted.userId === profile.uid;
-      // Fixed: Add missing 'const' keyword to fix "Cannot find name 'hasParticipated'" error
       const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
       const lastCommentFromOthers = wanted.comments.length > 0 && wanted.comments[wanted.comments.length - 1].userId !== profile.uid;
       
@@ -461,6 +460,14 @@ export const App: React.FC = () => {
     } catch (e: any) { alert(e.message); }
   };
 
+  const handleWantedDelete = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "wantedItems", id));
+    } catch (e: any) {
+      alert("Failed to delete item: " + e.message);
+    }
+  };
+
   const handleViewProfile = async (userId: string) => {
     if (profile && userId === profile.uid) {
       changeTab('PROFILE');
@@ -527,7 +534,7 @@ export const App: React.FC = () => {
           <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={() => {}} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
         {activeTab === 'WANTED' && profile && (
-          <WantedList items={wantedItems} profile={profile} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={() => {}} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
+          <WantedList items={wantedItems} profile={profile} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={handleWantedDelete} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
         )}
         {activeTab === 'SKILLS' && profile && (
           <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={() => {}} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />

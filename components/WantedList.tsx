@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { WantedItem, UserProfile, WantedComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
@@ -160,13 +161,13 @@ export const WantedList: React.FC<Props> = ({ items, profile, initialActiveItemI
             </div>
           </div>
 
-          {/* New guidance message for other users */}
+          {/* Guidance message for other users in English */}
           {!isOwner && (
             <div className="bg-amber-50 p-6 rounded-[32px] border border-amber-100 shadow-sm animate-fade-in">
               <div className="flex items-start gap-3">
                 <Info size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-[11px] font-bold text-amber-700 leading-relaxed tracking-tight">
-                  このアイテムを持っていて、販売または譲渡を希望する近所の方は、MARKETタブにて出品してください。
+                <p className="text-[11px] font-bold text-amber-700 leading-relaxed tracking-tight uppercase">
+                  If you have this item and are willing to sell or give it away, please list it on the MARKET tab.
                 </p>
               </div>
             </div>
