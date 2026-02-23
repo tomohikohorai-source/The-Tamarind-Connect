@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import { UserProfile, Activity, Child, MarketItem, Skill, WantedItem, PrivacySettings, LocationType } from '../types';
 import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS } from '../constants';
-import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock } from 'lucide-react';
+import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc, updateDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
@@ -496,11 +495,25 @@ export const ProfilePage: React.FC<Props> = ({
 
       {isOwnProfile && <PetGarden profile={profile} />}
 
-      {isOwnProfile && (
-        <button onClick={onLogout} className="w-full py-5 bg-white border-2 border-red-50 text-red-400 rounded-[32px] font-black uppercase text-[11px] tracking-[0.2em] shadow-sm active:bg-red-50 transition-all mt-4">
-          Logout of Community
-        </button>
-      )}
+      <div className="space-y-4">
+        <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Mail size={18} className="text-pink-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Support & Inquiries</p>
+              <p className="text-[11px] font-bold text-gray-600 leading-relaxed mt-1">
+                For inquiries or questions, please email <a href="mailto:nearbyexchange@gmail.com" className="text-pink-500 underline">nearbyexchange@gmail.com</a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {isOwnProfile && (
+          <button onClick={onLogout} className="w-full py-5 bg-white border-2 border-red-50 text-red-400 rounded-[32px] font-black uppercase text-[11px] tracking-[0.2em] shadow-sm active:bg-red-50 transition-all mt-4">
+            Logout of Community
+          </button>
+        )}
+      </div>
     </div>
   );
 };

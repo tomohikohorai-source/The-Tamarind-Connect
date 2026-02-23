@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
-import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info } from 'lucide-react';
+import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info, Mail } from 'lucide-react';
 
 type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
 
@@ -71,6 +70,14 @@ export const AuthScreen: React.FC = () => {
           <Info size={14} className="text-orange-400 shrink-0 mt-0.5" />
           <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest text-left leading-relaxed">
             <span className="text-orange-700">Warning:</span> If you forget your User ID or Password, you cannot recover your account. You will need to create a new one. Please keep your credentials safe.
+          </p>
+        </div>
+      </div>
+      <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+        <div className="flex items-start gap-2">
+          <Mail size={14} className="text-blue-400 shrink-0 mt-0.5" />
+          <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest text-left leading-relaxed">
+            Support: For inquiries or questions, please email <span className="underline select-all">nearbyexchange@gmail.com</span>
           </p>
         </div>
       </div>
