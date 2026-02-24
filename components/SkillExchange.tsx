@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
 interface Props {
@@ -11,31 +11,61 @@ interface Props {
   initialActiveSkillId?: string | null;
   onEdit: (skill: Skill) => void;
   onDelete: (id: string) => void;
+  onStatusChange: (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string) => void;
   onAddComment: (skillId: string, text: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
 }
 
-const SkillStatusBanner = ({ skill, profile }: { skill: Skill, profile: UserProfile }) => {
+const SkillStatusBanner = memo(({ skill, profile }: { skill: Skill, profile: UserProfile }) => {
   const isOwner = skill.userId === profile.uid;
-  const lastComment = skill.comments.length > 0 ? skill.comments[skill.comments.length - 1] : null;
-  const hasAction = lastComment && lastComment.userId !== profile.uid;
+  const isRequester = skill.requesterId === profile.uid;
 
-  if (hasAction) {
-    return (
+  if (skill.status === 'AVAILABLE' && skill.requestStatus === 'PENDING') {
+    if (isOwner) return (
       <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
-        <div className="bg-white/20 p-2 rounded-xl"><MessageSquare size={24} /></div>
+        <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{skill.requesterAvatarIcon || <AlertTriangle size={24} />}</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">New Message</div>
-          <div className="text-[13px] font-bold leading-tight">Neighbor sent a reply! Scroll down to chat.</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Request from: {skill.requesterNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Neighbor wants to exchange skills! Review below.</div>
+        </div>
+      </div>
+    );
+    if (isRequester) return (
+      <div className="bg-gradient-to-r from-indigo-400 to-indigo-600 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl"><Clock size={24} /></div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Application Sent</div>
+          <div className="text-[13px] font-bold leading-tight">Waiting for neighbor to approve your request.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (skill.status === 'RESERVED') {
+    if (isOwner) return (
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{skill.requesterAvatarIcon || <Handshake size={24} />}</div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Partner: {skill.requesterNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Session Reserved! Use chat below to discuss details.</div>
+        </div>
+      </div>
+    );
+    if (isRequester) return (
+      <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{skill.parentAvatarIcon || <CheckCircle size={24} />}</div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Partner: {skill.parentNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Request Approved! Start chatting with your neighbor.</div>
         </div>
       </div>
     );
   }
   return null;
-};
+});
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onAddComment, onViewProfile, onChatClose }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onViewProfile, onChatClose }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
@@ -47,19 +77,29 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   useEffect(() => {
     if (initialActiveSkillId) {
       const skill = skills.find(s => s.id === initialActiveSkillId);
-      if (skill) setViewingSkill(skill);
+      if (skill) {
+        // Access gate for private reserved/closed sessions
+        if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
+           alert("This skill session is currently private to the parties involved.");
+           return;
+        }
+        setViewingSkill(skill);
+      }
     }
-  }, [initialActiveSkillId, skills]);
+  }, [initialActiveSkillId, skills, profile.uid]);
 
   useEffect(() => {
     if (viewingSkill) {
       const updated = skills.find(s => s.id === viewingSkill.id);
-      if (updated) setViewingSkill(updated);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(viewingSkill)) {
+        setViewingSkill(updated);
+      }
     }
-  }, [skills]);
+  }, [skills, viewingSkill?.id]);
 
   const filteredSkills = useMemo(() => {
     return skills.filter(skill => {
+      if (skill.status === 'CLOSED') return false;
       if (filterType !== 'ALL' && skill.type !== filterType) return false;
       if (searchQuery && !skill.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedCategory !== 'All Categories' && skill.category !== selectedCategory) return false;
@@ -74,8 +114,27 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
     setCommentInputs(prev => ({ ...prev, [skillId]: '' }));
   };
 
+  const [confirmRequestSkill, setConfirmRequestSkill] = useState<Skill | null>(null);
+
+  const handleConfirmRequest = () => {
+    if (confirmRequestSkill) {
+      onStatusChange(confirmRequestSkill.id, 'AVAILABLE', profile.uid);
+      setConfirmRequestSkill(null);
+    }
+  };
+
+  const handleItemClick = (skill: Skill) => {
+    if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
+      alert("Access Restricted: This interaction is now private.");
+      return;
+    }
+    setViewingSkill(skill);
+  };
+
   if (viewingSkill) {
     const isMine = viewingSkill.userId === profile.uid;
+    const isRequester = viewingSkill.requesterId === profile.uid;
+
     return (
       <div className="animate-fade-in space-y-6 pb-32 px-4 pt-4">
         <div className="flex items-center justify-between">
@@ -98,7 +157,26 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
         <SkillStatusBanner skill={viewingSkill} profile={profile} />
 
-        <div className="bg-white p-6 rounded-[32px] border-2 border-indigo-50 shadow-lg space-y-4">
+        <div className="bg-white p-6 rounded-[32px] border-2 border-indigo-50 shadow-lg space-y-6 animate-slide-down">
+          {!isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
+            <button 
+              onClick={() => setConfirmRequestSkill(viewingSkill)} 
+              className="w-full py-5 bg-indigo-500 text-white rounded-[28px] font-black uppercase tracking-[0.2em] text-[14px] shadow-xl shadow-indigo-100 active:scale-[0.97] transition-all border-4 border-white block"
+            >
+              EXPRESS INTEREST
+            </button>
+          )}
+
+          {isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus === 'PENDING' && (
+            <div className="space-y-3">
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Inquiry Received from {viewingSkill.requesterNickname}</p>
+              <div className="flex gap-3">
+                <button onClick={() => onStatusChange(viewingSkill.id, 'RESERVED')} className="flex-1 py-4.5 bg-indigo-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">Start Exchange</button>
+                <button onClick={() => onStatusChange(viewingSkill.id, 'AVAILABLE', undefined, 'declined')} className="flex-1 py-4.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-gray-100 active:scale-95 transition-all">Not Now</button>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${viewingSkill.type === 'OFFER' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
@@ -117,7 +195,9 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
           
           {isMine && (
             <div className="flex gap-4 pt-2">
-              <button onClick={() => onEdit(viewingSkill)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-gray-100 shadow-sm active:scale-95 transition-all">Edit Info</button>
+              {viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
+                <button onClick={() => onEdit(viewingSkill)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-gray-100 shadow-sm active:scale-95 transition-all">Edit Info</button>
+              )}
               <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingSkill.id); setViewingSkill(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-red-50 shadow-sm active:scale-95 transition-all">Delete Post</button>
             </div>
           )}
@@ -126,7 +206,17 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         <div className="space-y-4 pt-4">
           <div className="flex items-center gap-2 px-1">
             <div className="bg-indigo-100 text-indigo-600 p-2 rounded-xl"><MessageSquare size={14}/></div>
-            <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">Interest & Chat</h3>
+            <div className="flex-grow">
+              <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
+                {viewingSkill.status === 'RESERVED' ? 'Private Discussion' : 'Interest & Chat'}
+              </h3>
+              {isMine && viewingSkill.status === 'RESERVED' && (
+                <p className="text-[8px] font-black text-indigo-500 uppercase mt-0.5">Partner: {viewingSkill.requesterNickname}</p>
+              )}
+              {isRequester && viewingSkill.status === 'RESERVED' && (
+                <p className="text-[8px] font-black text-indigo-500 uppercase mt-0.5">Partner: {viewingSkill.parentNickname}</p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -172,6 +262,22 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               </div>
           </div>
         </div>
+
+        {confirmRequestSkill && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-indigo-400">
+              <div className="text-center space-y-5">
+                <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 mx-auto border-4 border-white shadow-lg"><Star size={40} /></div>
+                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Express Interest</h3>
+                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">Contact neighbor about "{confirmRequestSkill.title}"?</p>
+                <div className="flex gap-4 pt-6">
+                  <button onClick={() => setConfirmRequestSkill(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
+                  <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-indigo-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -237,7 +343,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                                differenceInHours(new Date(), new Date(skill.priceUpdatedAt)) <= 72;
 
           return (
-            <button key={skill.id} onClick={() => setViewingSkill(skill)} className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group">
+            <button key={skill.id} onClick={() => handleItemClick(skill)} className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group">
               <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center opacity-10 rotate-12 ${skill.type === 'OFFER' ? 'text-indigo-500' : 'text-orange-500'}`}>
                  <BookOpen size={48} fill="currentColor" />
               </div>
@@ -262,6 +368,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                     </span>
                   )}
                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Unit {skill.roomNumber}</span>
+                  {skill.status === 'RESERVED' && <span className="bg-indigo-400 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase">Reserved</span>}
                 </div>
                 <h3 className="text-[15px] font-black text-gray-800 truncate tracking-tight">{skill.title}</h3>
                 <div className="text-[10px] font-bold text-indigo-400 line-clamp-1">{skill.price} • {skill.category}</div>

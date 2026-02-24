@@ -24,10 +24,10 @@ const InstructionBanner = memo(({ item, profile }: { item: MarketItem, profile: 
   if (item.status === 'AVAILABLE' && item.requestStatus === 'PENDING') {
     if (isSeller) return (
       <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
-        <div className="bg-white/20 p-2 rounded-xl"><AlertTriangle size={24} /></div>
+        <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{item.buyerAvatarIcon || <AlertTriangle size={24} />}</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Seller Action Needed</div>
-          <div className="text-[13px] font-bold leading-tight">A neighbor wants to buy this! Review and "Approve" below.</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Buyer: {item.buyerNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Wants to buy this! Review and "Approve" below.</div>
         </div>
       </div>
     );
@@ -75,9 +75,9 @@ const InstructionBanner = memo(({ item, profile }: { item: MarketItem, profile: 
       );
       return (
         <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
-          <div className="bg-white/20 p-2 rounded-xl"><MessageCircle size={24} /></div>
+          <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{item.buyerAvatarIcon || <MessageCircle size={24} />}</div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Reserved</div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Reserved for {item.buyerNickname}</div>
             <div className="text-[13px] font-bold leading-tight">Chat with neighbor to arrange pickup time/location.</div>
           </div>
         </div>
@@ -424,9 +424,14 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
           <div className="space-y-4 pt-6">
             <div className="flex items-center gap-2 px-1">
               <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
-              <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
-                {viewingItem.status === 'RESERVED' ? 'Transaction Chat' : viewingItem.status === 'SOLD' ? 'Q&A Archive' : 'Public Q&A'}
-              </h3>
+              <div className="flex-grow">
+                <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
+                  {viewingItem.status === 'RESERVED' ? 'Transaction Chat' : viewingItem.status === 'SOLD' ? 'Q&A Archive' : 'Public Q&A'}
+                </h3>
+                {isSeller && viewingItem.status === 'RESERVED' && (
+                  <p className="text-[8px] font-black text-teal-500 uppercase mt-0.5">Chatting with {viewingItem.buyerNickname}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">

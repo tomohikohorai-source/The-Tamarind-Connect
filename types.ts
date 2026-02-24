@@ -112,6 +112,11 @@ export interface Skill {
   category: string;
   description: string;
   type: 'OFFER' | 'REQUEST'; // Providing a skill or asking for one
+  status: 'AVAILABLE' | 'RESERVED' | 'CLOSED';
+  requestStatus: 'NONE' | 'PENDING' | 'REJECTED';
+  requesterId?: string;
+  requesterNickname?: string;
+  requesterAvatarIcon?: string;
   price: string; // e.g. "Free", "RM 20/hr", "Exchange for coffee"
   previousPrice?: string; // For discount tracking
   priceUpdatedAt?: string; // For discount timing

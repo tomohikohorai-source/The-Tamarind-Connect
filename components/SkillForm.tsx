@@ -42,6 +42,8 @@ export const SkillForm: React.FC<Props> = ({ profile, initialSkill, onSubmit, on
       category,
       description,
       type,
+      status: initialSkill?.status || 'AVAILABLE',
+      requestStatus: initialSkill?.requestStatus || 'NONE',
       price,
       comments: initialSkill?.comments || [],
       createdAt: initialSkill?.createdAt || new Date().toISOString(),
@@ -50,6 +52,11 @@ export const SkillForm: React.FC<Props> = ({ profile, initialSkill, onSubmit, on
 
     if (previousPrice !== undefined) skillData.previousPrice = previousPrice;
     if (priceUpdatedAt !== undefined) skillData.priceUpdatedAt = priceUpdatedAt;
+    if (initialSkill?.requesterId) {
+      skillData.requesterId = initialSkill.requesterId;
+      skillData.requesterNickname = initialSkill.requesterNickname;
+      skillData.requesterAvatarIcon = initialSkill.requesterAvatarIcon;
+    }
 
     onSubmit(skillData as Skill);
   };

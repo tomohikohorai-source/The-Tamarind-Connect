@@ -243,10 +243,13 @@ export const App: React.FC = () => {
 
     const skillNotifications = skills.filter(skill => {
       const isOwner = skill.userId === profile.uid;
+      const isRequester = skill.requesterId === profile.uid;
       const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
       const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
       const isCmtDismissed = dismissedIds.includes(`${skill.id}-cmt`);
 
+      if (isOwner && skill.requestStatus === 'PENDING' && !dismissedIds.includes(`${skill.id}-req`)) return true;
+      if (isRequester && skill.status === 'RESERVED' && !dismissedIds.includes(`${skill.id}-appr`)) return true;
       if ((isOwner || hasParticipated) && lastCommentFromOthers && !isCmtDismissed) return true;
 
       const lastSeenUpdate = acknowledgedSkillMap[skill.id];
@@ -442,6 +445,30 @@ export const App: React.FC = () => {
     try { await deleteDoc(doc(db, "skills", id)); } catch (e: any) { alert("Failed to delete post: " + e.message); }
   };
 
+  const handleSkillStatusChange = async (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string) => {
+    try {
+      const updates: any = { 
+        status, 
+        lastUpdated: new Date().toISOString()
+      };
+      if (requesterId && profile) {
+        updates.requesterId = requesterId;
+        updates.requesterNickname = profile.parentNickname;
+        updates.requesterAvatarIcon = profile.avatarIcon;
+        updates.requestStatus = 'PENDING';
+      } else if (rejectionReason) {
+        updates.requesterId = ''; 
+        updates.requesterNickname = '';
+        updates.requesterAvatarIcon = '';
+        updates.requestStatus = 'REJECTED';
+        updates.status = 'AVAILABLE';
+      } else if (status === 'RESERVED') {
+        updates.requestStatus = 'NONE';
+      }
+      await updateDoc(doc(db, "skills", id), updates);
+    } catch (e: any) { alert("Update failed: " + e.message); }
+  };
+
   const handleSkillComment = async (skillId: string, text: string) => {
     if (!profile) return;
     const comment: SkillComment = {
@@ -568,7 +595,7 @@ export const App: React.FC = () => {
           <WantedList items={wantedItems} profile={profile} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={handleWantedDelete} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
         )}
         {activeTab === 'SKILLS' && profile && (
-          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={handleSkillDelete} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={handleSkillDelete} onStatusChange={handleSkillStatusChange} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
         )}
         {activeTab === 'HOME' && profile && (
           <div className="animate-fade-in">
