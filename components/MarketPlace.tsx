@@ -87,20 +87,35 @@ const InstructionBanner = memo(({ item, profile }: { item: MarketItem, profile: 
   return null;
 });
 
-const MarketItemCard = memo(({ item, onClick }: { item: MarketItem, onClick: () => void }) => {
+const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onClick: () => void, profile: UserProfile }) => {
   const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
   const isDiscounted = item.priceUpdatedAt && 
                       item.previousPrice !== undefined && 
                       item.price < item.previousPrice && 
                       differenceInHours(new Date(), new Date(item.priceUpdatedAt)) <= 72;
 
+  const isSold = item.status === 'SOLD';
+  const canClick = !isSold || item.userId === profile.uid || item.buyerId === profile.uid;
+
   return (
-    <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative">
+    <button 
+      onClick={onClick} 
+      disabled={!canClick}
+      className={`bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative ${!canClick ? 'opacity-80 grayscale-[0.5]' : ''}`}
+    >
       <div className="relative aspect-square">
         {item.images && item.images.length > 0 ? (
           <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={32} /></div>
+        )}
+        
+        {isSold && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+            <div className="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-4 border-white -rotate-12 animate-pulse">
+              SOLD
+            </div>
+          </div>
         )}
         
         {/* Floating Badges */}
@@ -193,7 +208,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
         return false;
       }
 
-      if (currentFilter === 'ALL' && item.status === 'SOLD') return false;
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedGenre !== 'All Genres' && item.genre !== selectedGenre) return false;
       if (selectedCondition !== 'Any Condition' && item.condition !== selectedCondition) return false;
@@ -625,7 +639,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
 
       <div className="grid grid-cols-2 gap-4">
         {filteredItems.map((item) => (
-          <MarketItemCard key={item.id} item={item} onClick={() => handleItemClick(item)} />
+          <MarketItemCard key={item.id} item={item} onClick={() => handleItemClick(item)} profile={profile} />
         ))}
       </div>
       {filteredItems.length === 0 && (

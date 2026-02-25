@@ -15,7 +15,7 @@ import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
 import { store } from './services/store';
-import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart } from 'lucide-react';
+import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -59,6 +59,7 @@ export const App: React.FC = () => {
   const [acknowledgedSkillMap, setAcknowledgedSkillMap] = useState<Record<string, string>>(() => store.getAcknowledgedSkills());
   const [acknowledgedWantedMap, setAcknowledgedWantedMap] = useState<Record<string, string>>(() => JSON.parse(localStorage.getItem('play_share_seen_wanted') || '{}'));
 
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const touchStartRef = useRef<number | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
 
@@ -556,6 +557,37 @@ export const App: React.FC = () => {
     } 
   };
 
+  const handleShare = (platform: 'copy' | 'whatsapp' | 'line' | 'airdrop') => {
+    const shareData = {
+      title: 'Nearby Exchange',
+      text: 'Join our community app for condominium residents!',
+      url: window.location.origin,
+    };
+
+    const fullText = `${shareData.text} ${shareData.url}`;
+
+    switch (platform) {
+      case 'copy':
+        navigator.clipboard.writeText(shareData.url);
+        alert('Link copied to clipboard!');
+        break;
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(fullText)}`, '_blank');
+        break;
+      case 'line':
+        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(fullText)}`, '_blank');
+        break;
+      case 'airdrop':
+        if (navigator.share) {
+          navigator.share(shareData).catch(() => {});
+        } else {
+          alert('AirDrop is only available on supported devices via the system share menu.');
+        }
+        break;
+    }
+    setShowShareMenu(false);
+  };
+
   if (!isVerified) return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Loading community...</div>;
   if (appState === 'AUTH') return <AuthScreen />;
@@ -575,16 +607,26 @@ export const App: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md p-5 flex flex-col items-center border-b border-gray-100">
         <div className="w-full flex justify-between items-center absolute px-5">
-           <button onClick={handleManualRefresh} className="flex items-center gap-2 group active:scale-95 transition-all">
-             <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-             <RefreshCw size={12} className="text-gray-300 group-hover:text-pink-400 transition-colors" />
-           </button>
+           <div className="flex items-center gap-3">
+             <button onClick={handleManualRefresh} className="flex items-center gap-2 group active:scale-95 transition-all">
+               <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+               <RefreshCw size={12} className="text-gray-300 group-hover:text-pink-400 transition-colors" />
+             </button>
+           </div>
            <button onClick={handleLogout} className="p-2.5 text-gray-300 hover:text-red-400 active:scale-90 transition-all">
              <LogOut size={20} />
            </button>
         </div>
-        <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>Nearby Exchange</h1>
-        {profile && <div className="mt-2 text-[9px] font-black text-gray-400 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 uppercase tracking-widest">Block {profile.roomNumber}</div>}
+        <div className="flex flex-col items-center">
+          <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>Nearby Exchange</h1>
+          <button 
+            onClick={() => setShowShareMenu(true)} 
+            className="mt-1 flex items-center gap-1.5 bg-pink-500 text-white px-3 py-1 rounded-full shadow-lg shadow-pink-100 active:scale-90 transition-all hover:bg-pink-600 z-10"
+          >
+            <Share2 size={12} className="animate-bounce" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Share App</span>
+          </button>
+        </div>
       </header>
 
       <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
@@ -667,6 +709,43 @@ export const App: React.FC = () => {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <WantedItemForm profile={profile} initialItem={editingWantedItem} onSubmit={handleWantedSubmit} onCancel={closeModals} />
+          </div>
+        </div>
+      )}
+
+      {showShareMenu && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white rounded-[40px] w-full max-w-sm overflow-hidden shadow-2xl border-4 border-pink-400 animate-slide-up">
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center text-pink-500 mx-auto border-4 border-white shadow-lg mb-2">
+                  <Share2 size={32} />
+                </div>
+                <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">Spread the Word</h3>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Invite your neighbors to join!</p>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                <button onClick={() => handleShare('copy')} className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all group active:scale-95">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><ExternalLink size={20} className="text-gray-400" /></div>
+                  <span className="font-black text-gray-700 uppercase text-xs tracking-widest">Copy Link</span>
+                </button>
+                <button onClick={() => handleShare('whatsapp')} className="flex items-center gap-4 p-4 bg-green-50 hover:bg-green-100 rounded-2xl transition-all group active:scale-95">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><MessageCircle size={20} className="text-green-500" /></div>
+                  <span className="font-black text-green-700 uppercase text-xs tracking-widest">WhatsApp</span>
+                </button>
+                <button onClick={() => handleShare('line')} className="flex items-center gap-4 p-4 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all group active:scale-95">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><Send size={20} className="text-emerald-500" /></div>
+                  <span className="font-black text-emerald-700 uppercase text-xs tracking-widest">LINE</span>
+                </button>
+                <button onClick={() => handleShare('airdrop')} className="flex items-center gap-4 p-4 bg-blue-50 hover:bg-blue-100 rounded-2xl transition-all group active:scale-95">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><RefreshCw size={20} className="text-blue-500" /></div>
+                  <span className="font-black text-blue-700 uppercase text-xs tracking-widest">AirDrop</span>
+                </button>
+              </div>
+              
+              <button onClick={() => setShowShareMenu(false)} className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">Close</button>
+            </div>
           </div>
         </div>
       )}

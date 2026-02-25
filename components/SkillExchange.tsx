@@ -99,7 +99,6 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
   const filteredSkills = useMemo(() => {
     return skills.filter(skill => {
-      if (skill.status === 'CLOSED') return false;
       if (filterType !== 'ALL' && skill.type !== filterType) return false;
       if (searchQuery && !skill.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedCategory !== 'All Categories' && skill.category !== selectedCategory) return false;
@@ -342,8 +341,23 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                                currentVal < prevVal && 
                                differenceInHours(new Date(), new Date(skill.priceUpdatedAt)) <= 72;
 
+          const isClosed = skill.status === 'CLOSED';
+          const canClick = !isClosed || skill.userId === profile.uid || skill.requesterId === profile.uid;
+
           return (
-            <button key={skill.id} onClick={() => handleItemClick(skill)} className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group">
+            <button 
+              key={skill.id} 
+              onClick={() => handleItemClick(skill)} 
+              disabled={!canClick}
+              className={`bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group ${!canClick ? 'opacity-80 grayscale-[0.5]' : ''}`}
+            >
+              {isClosed && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                  <div className="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-4 border-white -rotate-12 animate-pulse">
+                    SOLD
+                  </div>
+                </div>
+              )}
               <div className={`absolute top-0 right-0 w-12 h-12 flex items-center justify-center opacity-10 rotate-12 ${skill.type === 'OFFER' ? 'text-indigo-500' : 'text-orange-500'}`}>
                  <BookOpen size={48} fill="currentColor" />
               </div>
