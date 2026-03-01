@@ -83,7 +83,6 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
           </div>
         </button>
         <div className="flex-grow min-w-0">
-          <div className="text-[8px] font-black text-gray-300 uppercase mb-0.5 tracking-widest">Unit {a.roomNumber}</div>
           {a.message ? (
             <div className="flex gap-2 items-start">
               <MessageCircle size={10} className="text-pink-300 mt-0.5 shrink-0" />

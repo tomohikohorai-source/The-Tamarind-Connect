@@ -91,6 +91,8 @@ export interface MarketItem {
   // Transaction flow flags
   buyerConfirmedCompletion?: boolean;
   sellerConfirmedCompletion?: boolean;
+  buyerRequestedCancellation?: boolean;
+  sellerRequestedCancellation?: boolean;
 }
 
 export interface SkillComment {
@@ -123,6 +125,8 @@ export interface Skill {
   comments: SkillComment[];
   createdAt: string;
   lastUpdated: string;
+  requesterRequestedCancellation?: boolean;
+  sellerRequestedCancellation?: boolean;
 }
 
 export interface WantedComment {

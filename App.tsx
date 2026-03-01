@@ -386,9 +386,10 @@ export const App: React.FC = () => {
 
   const handleMarketStatusChange = async (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => {
     try {
+      const now = new Date().toISOString();
       const updates: any = { 
         status, 
-        lastUpdated: new Date().toISOString(),
+        lastUpdated: now,
         ...(extraFlags || {}) 
       };
       if (buyerId && profile) {
@@ -408,24 +409,34 @@ export const App: React.FC = () => {
         updates.rejectionReason = '';
       }
       await updateDoc(doc(db, "marketItems", id), updates);
+      
+      // Immediate acknowledgment for the current user
+      const nextMap = { ...acknowledgedMarketMap, [id]: now };
+      setAcknowledgedMarketMap(nextMap);
+      store.setAcknowledgedMarket(nextMap);
     } catch (e: any) { alert("Update failed: " + e.message); }
   };
 
   const handleMarketComment = async (itemId: string, text: string) => {
     if (!profile) return;
+    const now = new Date().toISOString();
     const comment: MarketComment = {
       id: crypto.randomUUID(),
       userId: profile.uid,
       userNickname: profile.parentNickname,
       userAvatar: profile.avatarIcon,
       text,
-      createdAt: new Date().toISOString()
+      createdAt: now
     };
     try {
       await updateDoc(doc(db, "marketItems", itemId), {
         comments: arrayUnion(comment),
-        lastUpdated: new Date().toISOString()
+        lastUpdated: now
       });
+      // Immediate acknowledgment
+      const nextMap = { ...acknowledgedMarketMap, [itemId]: now };
+      setAcknowledgedMarketMap(nextMap);
+      store.setAcknowledgedMarket(nextMap);
     } catch (e: any) { alert(e.message); }
   };
 
@@ -646,7 +657,32 @@ export const App: React.FC = () => {
           </div>
         )}
         {activeTab === 'PROFILE' && profile && (
-          <ProfilePage profile={profile} currentUser={profile} activities={activities} marketItems={marketItems} skills={skills} wantedItems={wantedItems} onLogout={handleLogout} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onDeleteMarket={handleMarketDelete} onMarketStatusChange={handleMarketStatusChange} onAddPlay={() => setShowCheckIn(true)} onAddMarket={() => setShowMarketForm(true)} onAddSkill={() => setShowSkillForm(true)} onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDeleteSkill={handleSkillDelete} onAddMarketComment={handleMarketComment} onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} />
+          <ProfilePage 
+            profile={profile} 
+            currentUser={profile} 
+            activities={activities} 
+            marketItems={marketItems} 
+            skills={skills} 
+            wantedItems={wantedItems} 
+            onLogout={handleLogout} 
+            onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} 
+            onDelete={handleDeleteActivity} 
+            onUpdateProfile={setProfile} 
+            onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
+            onDeleteMarket={handleMarketDelete} 
+            onMarketStatusChange={handleMarketStatusChange} 
+            onAddPlay={() => setShowCheckIn(true)} 
+            onAddMarket={() => setShowMarketForm(true)} 
+            onAddSkill={() => setShowSkillForm(true)} 
+            onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} 
+            onDeleteSkill={handleSkillDelete} 
+            onAddMarketComment={handleMarketComment} 
+            onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} 
+            onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} 
+            acknowledgedMarketMap={acknowledgedMarketMap}
+            acknowledgedSkillMap={acknowledgedSkillMap}
+            acknowledgedWantedMap={acknowledgedWantedMap}
+          />
         )}
       </main>
 

@@ -122,6 +122,30 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
     }
   };
 
+  const handleRequestCancellation = (skill: Skill) => {
+    const isMine = skill.userId === profile.uid;
+    const msg = isMine ? "Request to cancel this exchange as a provider?" : "Request to cancel this exchange as a requester?";
+    if (confirm(msg)) {
+      const updates = isMine ? { sellerRequestedCancellation: true } : { requesterRequestedCancellation: true };
+      onStatusChange(skill.id, 'RESERVED', undefined, undefined, updates);
+    }
+  };
+
+  const handleConfirmCancellation = (skill: Skill) => {
+    if (confirm("Both parties agree to cancel. Return this skill to AVAILABLE status?")) {
+      onStatusChange(skill.id, 'AVAILABLE', undefined, undefined, { 
+        requesterId: '', 
+        requesterNickname: '', 
+        requesterAvatarIcon: '', 
+        requestStatus: 'NONE',
+        requesterRequestedCancellation: false,
+        sellerRequestedCancellation: false
+      });
+      setViewingSkill(null);
+      if (onChatClose) onChatClose();
+    }
+  };
+
   const handleItemClick = (skill: Skill) => {
     if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
       alert("Access Restricted: This interaction is now private.");
@@ -155,6 +179,42 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         </div>
 
         <SkillStatusBanner skill={viewingSkill} profile={profile} />
+
+        {viewingSkill.status === 'RESERVED' && (
+          <div className="bg-white p-6 rounded-[32px] border-2 border-orange-50 shadow-lg mb-6 animate-fade-in">
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">Exchange Management</h4>
+              {viewingSkill.requesterRequestedCancellation && viewingSkill.sellerRequestedCancellation ? (
+                <button onClick={() => handleConfirmCancellation(viewingSkill)} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Finalize Cancellation</button>
+              ) : (
+                <>
+                  {isRequester && (
+                    viewingSkill.requesterRequestedCancellation ? (
+                      <div className="text-center py-3 bg-orange-50 rounded-2xl border border-orange-100">
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleRequestCancellation(viewingSkill)} className="w-full py-4 bg-white text-red-400 border border-red-100 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition-all">
+                        {viewingSkill.sellerRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
+                      </button>
+                    )
+                  )}
+                  {isMine && (
+                    viewingSkill.sellerRequestedCancellation ? (
+                      <div className="text-center py-3 bg-orange-50 rounded-2xl border border-orange-100">
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
+                      </div>
+                    ) : (
+                      <button onClick={() => handleRequestCancellation(viewingSkill)} className="w-full py-4 bg-white text-red-400 border border-red-100 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition-all">
+                        {viewingSkill.requesterRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
+                      </button>
+                    )
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="bg-white p-6 rounded-[32px] border-2 border-indigo-50 shadow-lg space-y-6 animate-slide-down">
           {!isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
@@ -381,7 +441,6 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                       <Flame size={8}/> DISCOUNT
                     </span>
                   )}
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Unit {skill.roomNumber}</span>
                   {skill.status === 'RESERVED' && <span className="bg-indigo-400 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase">Reserved</span>}
                 </div>
                 <h3 className="text-[15px] font-black text-gray-800 truncate tracking-tight">{skill.title}</h3>

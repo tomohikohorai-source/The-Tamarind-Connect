@@ -146,9 +146,6 @@ const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onC
       </div>
       <div className="p-3 space-y-1">
         <h3 className="text-[11px] font-black text-gray-800 line-clamp-1 uppercase tracking-tight">{item.title}</h3>
-        <div className="flex items-center gap-1">
-          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Unit {item.roomNumber}</span>
-        </div>
       </div>
     </button>
   );
@@ -275,6 +272,32 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
   const handleSellerCompletion = (item: MarketItem) => {
     if (confirm("Buyer has confirmed receipt. End this transaction and mark as SOLD?")) {
       onStatusChange(item.id, 'SOLD', undefined, undefined, { sellerConfirmedCompletion: true });
+      setViewingItem(null);
+      if (onChatClose) onChatClose();
+    }
+  };
+
+  const handleRequestCancellation = (item: MarketItem) => {
+    const isSeller = item.userId === profile.uid;
+    const msg = isSeller ? "Request to cancel this trade as a seller?" : "Request to cancel this trade as a buyer?";
+    if (confirm(msg)) {
+      const updates = isSeller ? { sellerRequestedCancellation: true } : { buyerRequestedCancellation: true };
+      onStatusChange(item.id, 'RESERVED', undefined, undefined, updates);
+    }
+  };
+
+  const handleConfirmCancellation = (item: MarketItem) => {
+    if (confirm("Both parties agree to cancel. Return this item to AVAILABLE status?")) {
+      onStatusChange(item.id, 'AVAILABLE', undefined, undefined, { 
+        buyerId: '', 
+        buyerNickname: '', 
+        buyerAvatarIcon: '', 
+        requestStatus: 'NONE',
+        buyerRequestedCancellation: false,
+        sellerRequestedCancellation: false,
+        buyerConfirmedCompletion: false,
+        sellerConfirmedCompletion: false
+      });
       setViewingItem(null);
       if (onChatClose) onChatClose();
     }
@@ -422,15 +445,51 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItem
                   </div>
                </div>
                {viewingItem.status === 'RESERVED' && (
-                 isBuyer ? (
-                    !viewingItem.buyerConfirmedCompletion && (
-                      <button onClick={() => handleBuyerCompletion(viewingItem)} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">I've picked up the item</button>
-                    )
-                 ) : (
-                    isSeller && viewingItem.buyerConfirmedCompletion && (
-                      <button onClick={() => handleSellerCompletion(viewingItem)} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Complete Transaction</button>
-                    )
-                 )
+                 <div className="space-y-4">
+                   {isBuyer ? (
+                      !viewingItem.buyerConfirmedCompletion && (
+                        <button onClick={() => handleBuyerCompletion(viewingItem)} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">I've picked up the item</button>
+                      )
+                   ) : (
+                      isSeller && viewingItem.buyerConfirmedCompletion && (
+                        <button onClick={() => handleSellerCompletion(viewingItem)} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Complete Transaction</button>
+                      )
+                   )}
+
+                   {/* Cancellation Section */}
+                   <div className="pt-2 border-t border-orange-200/50">
+                     <div className="space-y-2">
+                       {viewingItem.buyerRequestedCancellation && viewingItem.sellerRequestedCancellation ? (
+                         <button onClick={() => handleConfirmCancellation(viewingItem)} className="w-full py-3 bg-red-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">Finalize Cancellation</button>
+                       ) : (
+                         <>
+                           {isBuyer && (
+                             viewingItem.buyerRequestedCancellation ? (
+                               <div className="text-center py-2 bg-orange-100/50 rounded-xl border border-orange-200">
+                                 <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
+                               </div>
+                             ) : (
+                               <button onClick={() => handleRequestCancellation(viewingItem)} className="w-full py-3 bg-white text-red-400 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">
+                                 {viewingItem.sellerRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
+                               </button>
+                             )
+                           )}
+                           {isSeller && (
+                             viewingItem.sellerRequestedCancellation ? (
+                               <div className="text-center py-2 bg-orange-100/50 rounded-xl border border-orange-200">
+                                 <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
+                               </div>
+                             ) : (
+                               <button onClick={() => handleRequestCancellation(viewingItem)} className="w-full py-3 bg-white text-red-400 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">
+                                 {viewingItem.buyerRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
+                               </button>
+                             )
+                           )}
+                         </>
+                       )}
+                     </div>
+                   </div>
+                 </div>
                )}
             </div>
           )}

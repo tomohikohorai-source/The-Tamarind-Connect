@@ -29,6 +29,9 @@ interface Props {
   onGoToTransaction: (itemId: string) => void;
   onGoToSkill: (skillId: string) => void;
   onClose?: () => void; 
+  acknowledgedMarketMap?: Record<string, string>;
+  acknowledgedSkillMap?: Record<string, string>;
+  acknowledgedWantedMap?: Record<string, string>;
 }
 
 const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }: { title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }) => (
@@ -63,7 +66,8 @@ interface AppNotification {
 export const ProfilePage: React.FC<Props> = ({ 
   profile, currentUser, activities, marketItems, skills, wantedItems, onLogout, onEdit, onDelete, onUpdateProfile, 
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddPlay, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
-  onAddMarketComment, onGoToTransaction, onGoToSkill, onClose
+  onAddMarketComment, onGoToTransaction, onGoToSkill, onClose,
+  acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {}
 }) => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -104,6 +108,12 @@ export const ProfilePage: React.FC<Props> = ({
       const lastComment = item.comments.length > 0 ? item.comments[item.comments.length - 1] : null;
       const lastUpdate = item.lastUpdated || 'initial';
       const checkIsDismissed = (id: string) => dismissedNotifIds.includes(id);
+      
+      const isSold = item.status === 'SOLD';
+      const isAcknowledged = acknowledgedMarketMap[item.id] === lastUpdate;
+      
+      // If item is SOLD and already acknowledged, don't show any notifications for it
+      if (isSold && isAcknowledged) return;
 
       if (isOwner && item.requestStatus === 'PENDING') {
         list.push({ id: `${item.id}-req`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request received!', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-req`), timestamp: lastUpdate });
@@ -123,6 +133,13 @@ export const ProfilePage: React.FC<Props> = ({
       const isOwner = skill.userId === profile.uid;
       const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
       const lastComment = skill.comments.length > 0 ? skill.comments[skill.comments.length - 1] : null;
+      const lastUpdate = skill.lastUpdated || 'initial';
+
+      const isClosed = skill.status === 'CLOSED';
+      const isAcknowledged = acknowledgedSkillMap[skill.id] === lastUpdate;
+
+      if (isClosed && isAcknowledged) return;
+
       if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
         list.push({ id: `${skill.id}-cmt`, type: 'SKILL', itemId: skill.id, title: skill.title, message: `New reply: ${lastComment.text}`, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${skill.id}-cmt`), timestamp: skill.lastUpdated });
       }
@@ -204,7 +221,6 @@ export const ProfilePage: React.FC<Props> = ({
           <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-5xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
           <div className="min-w-0">
             <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate leading-none mb-2">{profile.parentNickname}</h2>
-            <p className="text-gray-400 flex items-center gap-1.5 font-black text-[10px] uppercase tracking-widest"><Home size={12} className="text-pink-300" /> Block {profile.roomNumber}</p>
           </div>
         </div>
         {isOwnProfile && (

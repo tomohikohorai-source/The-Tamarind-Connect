@@ -56,9 +56,6 @@ const WantedItemCard = memo(({ item, onClick }: { item: WantedItem, onClick: () 
       </div>
       <div className="p-3 space-y-1">
         <h3 className="text-[11px] font-black text-gray-800 line-clamp-1 uppercase tracking-tight">{item.title}</h3>
-        <div className="flex items-center gap-1">
-          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Unit {item.roomNumber}</span>
-        </div>
       </div>
     </button>
   );
