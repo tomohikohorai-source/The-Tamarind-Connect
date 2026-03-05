@@ -6,12 +6,9 @@ import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 
 import { enUS } from 'date-fns/locale';
 import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles } from 'lucide-react';
 
-import { Language, translations } from '../translations';
-
 interface Props {
   activities: Activity[];
   profile: UserProfile | null;
-  language?: Language;
   acknowledgedMap: Record<string, string>;
   onEdit: (activity: Activity) => void;
   onDelete: (id: string) => void;
@@ -19,7 +16,7 @@ interface Props {
   onViewProfile?: (userId: string) => void;
 }
 
-const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, onDelete, onViewProfile, language = 'en' }: { 
+const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, onDelete, onViewProfile }: { 
   a: Activity, 
   profile: UserProfile | null, 
   meta: any, 
@@ -27,11 +24,9 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
   isNew: boolean, 
   isUpdated: boolean,
   onEdit: (a: Activity) => void,
-  onDelete: (a: string) => void,
-  onViewProfile?: (userId: string) => void,
-  language?: Language
+  onDelete: (id: string) => void,
+  onViewProfile?: (userId: string) => void
 }) => {
-  const t = translations[language];
   const isMine = profile && a.userId === profile.uid;
 
   return (
@@ -39,7 +34,7 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
       {(isNew || isUpdated) && (
         <div className="absolute -top-1 -left-1 flex z-10">
           <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter text-white shadow-lg animate-bounce flex items-center gap-1 ${isNew ? 'bg-pink-400' : 'bg-blue-400'}`}>
-            <Sparkles size={8} /> {isNew ? t.new : t.updated}
+            <Sparkles size={8} /> {isNew ? 'NEW' : 'UPDATED'}
           </div>
         </div>
       )}
@@ -62,7 +57,7 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
         {isMine && (
           <div className="flex gap-2 mr-10">
             <button onClick={() => onEdit(a)} className="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-pink-50 hover:text-pink-400 border border-gray-100 transition-colors"><Edit3 size={14} /></button>
-            <button onClick={() => { if(confirm(t.deleteItem)) onDelete(a.id); }} className="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 border border-gray-100 transition-colors"><Trash2 size={14} /></button>
+            <button onClick={() => { if(confirm('Delete?')) onDelete(a.id); }} className="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 border border-gray-100 transition-colors"><Trash2 size={14} /></button>
           </div>
         )}
       </div>
@@ -73,7 +68,7 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
           ))}
         </div>
         <div className="flex-grow min-w-0">
-          <div className="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-1 opacity-80">{t.players}</div>
+          <div className="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-1 opacity-80">Players</div>
           <div className="text-[15px] font-black text-gray-800 truncate">{a.childNicknames.join(', ')}</div>
         </div>
       </div>
@@ -94,7 +89,7 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
               <p className="text-[11px] text-gray-400 font-medium truncate italic">{a.message}</p>
             </div>
           ) : (
-             <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">{t.noMessage}</p>
+             <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">No Message</p>
           )}
         </div>
       </div>
@@ -102,8 +97,7 @@ const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, 
   );
 });
 
-export const Timeline: React.FC<Props> = ({ activities, profile, language = 'en', acknowledgedMap, onEdit, onDelete, onViewProfile }) => {
-  const t = translations[language];
+export const Timeline: React.FC<Props> = ({ activities, profile, acknowledgedMap, onEdit, onDelete, onViewProfile }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchY, setTouchY] = useState<number | null>(null);
@@ -201,13 +195,12 @@ export const Timeline: React.FC<Props> = ({ activities, profile, language = 'en'
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onViewProfile={onViewProfile}
-                  language={language}
                 />
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-300 text-[10px] font-black border-2 border-dashed border-gray-100 rounded-[32px] uppercase tracking-[0.2em] bg-gray-50/30">{t.emptySchedule}</div>
+          <div className="text-center py-12 text-gray-300 text-[10px] font-black border-2 border-dashed border-gray-100 rounded-[32px] uppercase tracking-[0.2em] bg-gray-50/30">Empty Schedule</div>
         )}
       </div>
     );
@@ -244,7 +237,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, language = 'en'
                   <span className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/50 z-10 whitespace-nowrap transition-colors ${
                     isSelected ? 'bg-white text-pink-500' : 'bg-pink-50 text-white'
                   }`}>
-                    {t.today}
+                    Today
                   </span>
                 </>
               )}

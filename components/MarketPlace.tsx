@@ -5,12 +5,9 @@ import { MARKET_GENRES, GENRE_ICONS } from '../constants';
 import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
-import { Language, translations } from '../translations';
-
 interface Props {
   items: MarketItem[];
   profile: UserProfile;
-  language?: Language;
   initialActiveItemId?: string | null;
   onEdit: (item: MarketItem) => void;
   onStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
@@ -20,8 +17,7 @@ interface Props {
   onChatClose?: () => void;
 }
 
-const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: MarketItem, profile: UserProfile, language?: Language }) => {
-  const t = translations[language];
+const InstructionBanner = memo(({ item, profile }: { item: MarketItem, profile: UserProfile }) => {
   const isSeller = item.userId === profile.uid;
   const isBuyer = item.buyerId === profile.uid;
 
@@ -30,8 +26,8 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
       <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
         <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{item.buyerAvatarIcon || <AlertTriangle size={24} />}</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.buyer}: {item.buyerNickname}</div>
-          <div className="text-[13px] font-bold leading-tight">{t.wantsToBuyMsg}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Buyer: {item.buyerNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Wants to buy this! Review and "Approve" below.</div>
         </div>
       </div>
     );
@@ -39,8 +35,8 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
       <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
         <div className="bg-white/20 p-2 rounded-xl"><Clock size={24} /></div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.applicationSent}</div>
-          <div className="text-[13px] font-bold leading-tight">{t.sellerReviewingMsg}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Request Sent</div>
+          <div className="text-[13px] font-bold leading-tight">Seller is reviewing your request. We'll notify you here!</div>
         </div>
       </div>
     );
@@ -52,8 +48,8 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
         <div className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
           <div className="bg-white/20 p-2 rounded-xl"><Handshake size={24} /></div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.itemsReserved}</div>
-            <div className="text-[13px] font-bold leading-tight">{t.pickupInstruction}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Items Reserved</div>
+            <div className="text-[13px] font-bold leading-tight">Use chat to meet! Tap "Picked Up" once you have the item.</div>
           </div>
         </div>
       );
@@ -61,8 +57,8 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
         <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
           <div className="bg-white/20 p-2 rounded-xl"><CheckCircle size={24} /></div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.pickupConfirmed}</div>
-            <div className="text-[13px] font-bold leading-tight">{t.waitingSellerFinalize}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Pickup Confirmed</div>
+            <div className="text-[13px] font-bold leading-tight">Waiting for seller to finalize the deal. Almost there!</div>
           </div>
         </div>
       );
@@ -72,8 +68,8 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
         <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-bounce border-2 border-white shadow-xl">
           <div className="bg-white/20 p-2 rounded-xl"><PackageCheck size={24} /></div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.buyerConfirmed}</div>
-            <div className="text-[13px] font-bold leading-tight">{t.handoverCompleteMsg}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Buyer Confirmed</div>
+            <div className="text-[13px] font-bold leading-tight">Handover complete! Tap "Complete Transaction" below.</div>
           </div>
         </div>
       );
@@ -81,8 +77,8 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
         <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
           <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{item.buyerAvatarIcon || <MessageCircle size={24} />}</div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.reservedFor} {item.buyerNickname}</div>
-            <div className="text-[13px] font-bold leading-tight">{t.arrangePickupMsg}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Reserved for {item.buyerNickname}</div>
+            <div className="text-[13px] font-bold leading-tight">Chat with neighbor to arrange pickup time/location.</div>
           </div>
         </div>
       );
@@ -157,12 +153,11 @@ const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onC
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onViewProfile, onChatClose }) => {
-  const t = translations[language];
+export const MarketPlace: React.FC<Props> = ({ items, profile, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onViewProfile, onChatClose }) => {
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
-  const [selectedCondition, setSelectedCondition] = useState<string>(t.anyCondition);
+  const [selectedGenre, setSelectedGenre] = useState<string>('All Genres');
+  const [selectedCondition, setSelectedCondition] = useState<string>('Any Condition');
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -178,13 +173,13 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       if (item) {
         // Validation for deep linking - restrict access to RESERVED and SOLD items
         if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
-           alert(t.transactionPrivateMsg);
+           alert("This item detail is currently private to the parties involved in the transaction.");
            return;
         }
         setViewingItem(item);
       }
     }
-  }, [initialActiveItemId, items, profile.uid, t.transactionPrivateMsg]);
+  }, [initialActiveItemId, items, profile.uid]);
 
   useEffect(() => {
     if (viewingItem) {
@@ -211,8 +206,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       }
 
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (selectedGenre !== t.allGenres && item.genre !== selectedGenre) return false;
-      if (selectedCondition !== t.anyCondition && item.condition !== selectedCondition) return false;
+      if (selectedGenre !== 'All Genres' && item.genre !== selectedGenre) return false;
+      if (selectedCondition !== 'Any Condition' && item.condition !== selectedCondition) return false;
       if (minPrice && item.price < Number(minPrice)) return false;
       if (maxPrice && item.price > Number(maxPrice)) return false;
       
@@ -225,7 +220,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       if (sortBy === 'price_high') return b.price - a.price;
       return 0;
     });
-  }, [items, filterStatus, searchQuery, selectedGenre, selectedCondition, minPrice, maxPrice, sortBy, t.allGenres, t.anyCondition]);
+  }, [items, filterStatus, searchQuery, selectedGenre, selectedCondition, minPrice, maxPrice, sortBy]);
 
   const handleSendComment = (itemId: string) => {
     const text = commentInputs[itemId];
@@ -269,13 +264,13 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
   };
 
   const handleBuyerCompletion = (item: MarketItem) => {
-    if (confirm(t.confirmReceipt)) {
+    if (confirm("Confirm that you have received the item?")) {
       onStatusChange(item.id, 'RESERVED', undefined, undefined, { buyerConfirmedCompletion: true });
     }
   };
 
   const handleSellerCompletion = (item: MarketItem) => {
-    if (confirm(t.endTransactionMsg)) {
+    if (confirm("Buyer has confirmed receipt. End this transaction and mark as SOLD?")) {
       onStatusChange(item.id, 'SOLD', undefined, undefined, { sellerConfirmedCompletion: true });
       setViewingItem(null);
       if (onChatClose) onChatClose();
@@ -284,7 +279,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
 
   const handleRequestCancellation = (item: MarketItem) => {
     const isSeller = item.userId === profile.uid;
-    const msg = isSeller ? t.cancelTradeSeller : t.cancelTradeBuyer;
+    const msg = isSeller ? "Request to cancel this trade as a seller?" : "Request to cancel this trade as a buyer?";
     if (confirm(msg)) {
       const updates = isSeller ? { sellerRequestedCancellation: true } : { buyerRequestedCancellation: true };
       onStatusChange(item.id, 'RESERVED', undefined, undefined, updates);
@@ -292,7 +287,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
   };
 
   const handleConfirmCancellation = (item: MarketItem) => {
-    if (confirm(t.returnAvailableMsg)) {
+    if (confirm("Both parties agree to cancel. Return this item to AVAILABLE status?")) {
       onStatusChange(item.id, 'AVAILABLE', undefined, undefined, { 
         buyerId: '', 
         buyerNickname: '', 
@@ -311,7 +306,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
   const handleItemClick = (item: MarketItem) => {
     // Check privacy for TRADE (RESERVED) and SOLD items
     if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
-      alert(t.transactionPrivateMsg);
+      alert("Access Restricted: This transaction details are now private to the parties involved.");
       return;
     }
     setViewingItem(item);
@@ -324,12 +319,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
         <div className="flex items-center justify-between">
-            <button 
-              onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
-              className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
-            >
-              <ChevronLeft size={16} /> {t.market}
-            </button>
+           <button 
+             onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
+             className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+           >
+             <ChevronLeft size={16} /> Market List
+           </button>
            <button 
              onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} 
              className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-teal-50 shadow-sm active:scale-90 transition-all shrink-0"
@@ -341,7 +336,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
            </button>
         </div>
 
-        <InstructionBanner item={viewingItem} profile={profile} language={language} />
+        <InstructionBanner item={viewingItem} profile={profile} />
 
         {viewingItem.status !== 'SOLD' && (
           <div className="bg-white p-6 rounded-[32px] border-2 border-teal-50 shadow-lg animate-slide-down">
@@ -350,16 +345,16 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                   onClick={() => setConfirmRequestItem(viewingItem)} 
                   className="w-full py-5 bg-teal-400 text-white rounded-[28px] font-black uppercase tracking-[0.2em] text-[14px] shadow-xl shadow-teal-100 active:scale-[0.97] transition-all border-4 border-white block"
                 >
-                  {t.requesting}
+                  REQUEST TO BUY
                 </button>
               )}
 
               {isSeller && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">{t.buyerApplicationReceived}</p>
+                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">Buyer Application Received</p>
                   <div className="flex gap-3">
-                    <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-4.5 bg-green-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">{t.confirm}</button>
-                    <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-4.5 bg-red-50 text-red-500 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-red-100 active:scale-95 transition-all">{t.cancel}</button>
+                    <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-4.5 bg-green-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">Approve Sale</button>
+                    <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-4.5 bg-red-50 text-red-500 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-red-100 active:scale-95 transition-all">Decline</button>
                   </div>
                 </div>
               )}
@@ -368,18 +363,18 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                 <div className="flex gap-4">
                   {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
                     <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
-                      <Edit2 size={14}/> {t.edit}
+                      <Edit2 size={14}/> Edit
                     </button>
                   )}
-                  <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
-                    <Trash2 size={14}/> {t.delete}
+                  <button onClick={() => { if(confirm('Permanently delete this item?')) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+                    <Trash2 size={14}/> Delete Item
                   </button>
                 </div>
               )}
 
               {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && !isSeller && (
                 <div className="bg-teal-50 text-teal-600 px-4 py-3.5 rounded-full text-[12px] font-black uppercase tracking-widest text-center border border-teal-100 shadow-inner flex items-center justify-center gap-2">
-                  <PackageCheck size={18}/> {t.waitingForSeller}
+                  <PackageCheck size={18}/> Application Sent - Waiting for Seller
                 </div>
               )}
           </div>
@@ -409,25 +404,25 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <div className="flex gap-2">
-                <span className="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-teal-100">{t.rank} {viewingItem.condition}</span>
+                <span className="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-teal-100">Rank {viewingItem.condition}</span>
                 <span className="bg-gray-50 text-gray-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-gray-100">{viewingItem.type}</span>
               </div>
               <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter pt-2 leading-tight">{viewingItem.title}</h1>
               <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingItem.description}</p>
             </div>
             <div className="text-right shrink-0">
-              <div className="text-2xl font-black text-teal-600 tracking-tighter">{viewingItem.type === 'FREE' ? t.free : `RM ${viewingItem.price}`}</div>
-              <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{t.via} {viewingItem.paymentMethod}</div>
+              <div className="text-2xl font-black text-teal-600 tracking-tighter">{viewingItem.type === 'FREE' ? 'FREE' : `RM ${viewingItem.price}`}</div>
+              <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">via {viewingItem.paymentMethod}</div>
             </div>
           </div>
 
-            <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
-              <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.pickupLocation}</span></div>
+              <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">Location</span></div>
               <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{viewingItem.pickupLocation}</div>
             </div>
             <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
-              <div className="flex items-center gap-2 text-gray-400"><Clock size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.pickupTime}</span></div>
+              <div className="flex items-center gap-2 text-gray-400"><Clock size={12}/><span className="text-[8px] font-black uppercase tracking-widest">Timing</span></div>
               <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{viewingItem.pickupDateTime}</div>
             </div>
           </div>
@@ -439,14 +434,14 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                     <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${viewingItem.status === 'SOLD' || viewingItem.buyerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-orange-200'}`}>
                       {viewingItem.status === 'SOLD' || viewingItem.buyerConfirmedCompletion ? <Check size={20}/> : '1'}
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-widest">{t.received}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest">Received</span>
                   </div>
                   <div className={`w-12 h-px ${viewingItem.status === 'SOLD' ? 'bg-green-200' : 'bg-orange-200'}`}></div>
                   <div className={`flex flex-col items-center gap-1 ${viewingItem.status === 'SOLD' || viewingItem.sellerConfirmedCompletion ? 'text-green-500' : 'text-gray-300'}`}>
                     <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${viewingItem.status === 'SOLD' || viewingItem.sellerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-gray-100'}`}>
                       {viewingItem.status === 'SOLD' || viewingItem.sellerConfirmedCompletion ? <Check size={20}/> : '2'}
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-widest">{t.done}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest">Done</span>
                   </div>
                </div>
                {viewingItem.status === 'RESERVED' && (
@@ -504,7 +499,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
               <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
               <div className="flex-grow">
                 <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
-                  {viewingItem.status === 'RESERVED' ? t.trade : viewingItem.status === 'SOLD' ? t.available : t.all}
+                  {viewingItem.status === 'RESERVED' ? 'Transaction Chat' : viewingItem.status === 'SOLD' ? 'Q&A Archive' : 'Public Q&A'}
                 </h3>
                 {isSeller && viewingItem.status === 'RESERVED' && (
                   <p className="text-[8px] font-black text-teal-500 uppercase mt-0.5">Chatting with {viewingItem.buyerNickname}</p>
@@ -524,7 +519,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                     </div>
                     <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-teal-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                       <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-teal-50 text-right' : 'text-teal-500'}`}>
-                        {isItemSeller ? t.sell : t.all} • {format(new Date(c.createdAt), 'HH:mm')}
+                        {isItemSeller ? 'Seller' : 'Neighbor'} • {format(new Date(c.createdAt), 'HH:mm')}
                       </div>
                       <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
                     </div>
@@ -532,19 +527,18 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                 );
               })}
               {viewingItem.comments.length === 0 && (
-                <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">{t.noMessage}</div>
+                <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">No Messages Yet</div>
               )}
             </div>
 
             {viewingItem.status !== 'SOLD' ? (
               <div className="pt-6">
-                 <p className="text-[9px] text-gray-400 font-bold px-4 italic mb-2">{t.translationNotice}</p>
-                  <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all shadow-sm">
+                 <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all shadow-sm">
                     <input 
                       type="text" 
                       value={commentInputs[viewingItem.id] || ''}
                       onChange={e => setCommentInputs(prev => ({ ...prev, [viewingItem.id]: e.target.value }))}
-                      placeholder="..."
+                      placeholder={viewingItem.status === 'RESERVED' ? "Message neighbor..." : "Ask a question..."}
                       className="flex-grow bg-transparent border-none px-4 py-3 text-sm font-bold outline-none placeholder:text-gray-300"
                       onKeyDown={e => e.key === 'Enter' && handleSendComment(viewingItem.id)}
                     />
@@ -553,7 +547,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                       disabled={!(commentInputs[viewingItem.id] || '').trim()}
                       className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingItem.id] || '').trim() ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-300'}`}
                     >
-                      <span className="sr-only">{t.send}</span>
+                      <span className="sr-only">Send</span>
                       <Send size={18} />
                     </button>
                   </div>
@@ -561,7 +555,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
             ) : (
               <div className="py-6 flex items-center justify-center gap-4 bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200">
                 <Lock size={18} className="text-gray-300" />
-                <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">{t.close}</span>
+                <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">Chat Closed</span>
               </div>
             )}
           </div>
@@ -572,11 +566,11 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
             <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-teal-400">
               <div className="text-center space-y-5">
                 <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 mx-auto border-4 border-white shadow-lg"><AlertTriangle size={40} /></div>
-                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">{t.requesting}</h3>
-                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">{t.confirm} "{confirmRequestItem.title}"?</p>
+                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Apply to Buy</h3>
+                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">Send interest for "{confirmRequestItem.title}"?</p>
                 <div className="flex gap-4 pt-6">
-                  <button onClick={() => setConfirmRequestItem(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">{t.back}</button>
-                  <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-teal-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.send}</button>
+                  <button onClick={() => setConfirmRequestItem(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
+                  <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-teal-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Send</button>
                 </div>
               </div>
             </div>
@@ -587,17 +581,17 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
           <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
             <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-red-400">
               <div className="space-y-6">
-                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">{t.cancel}</h3>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center leading-relaxed">{t.description}</p>
+                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">Deny Request</h3>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center leading-relaxed">State a reason for the neighbor</p>
                 <textarea 
                   value={rejectionReason} 
                   onChange={e => setRejectionReason(e.target.value)}
-                  placeholder="..."
+                  placeholder="Reason..."
                   className="w-full p-5 bg-gray-50 border-none rounded-3xl font-bold text-sm h-32 resize-none outline-none focus:ring-4 ring-red-50"
                 />
                 <div className="flex gap-4 pt-4">
-                  <button onClick={() => { setRejectRequestItem(null); setRejectionReason(''); }} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest transition-all">{t.back}</button>
-                  <button onClick={handleConfirmReject} disabled={!rejectionReason.trim()} className={`flex-1 py-5 rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl transition-all ${rejectionReason.trim() ? 'bg-red-500 text-white shadow-red-100 active:scale-95' : 'bg-gray-100 text-gray-300 opacity-50 cursor-not-allowed'}`}>{t.cancel}</button>
+                  <button onClick={() => { setRejectRequestItem(null); setRejectionReason(''); }} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest transition-all">Back</button>
+                  <button onClick={handleConfirmReject} disabled={!rejectionReason.trim()} className={`flex-1 py-5 rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl transition-all ${rejectionReason.trim() ? 'bg-red-500 text-white shadow-red-100 active:scale-95' : 'bg-gray-100 text-gray-300 opacity-50 cursor-not-allowed'}`}>Deny</button>
                 </div>
               </div>
             </div>
@@ -611,11 +605,11 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
     <div className="p-4 pb-32 space-y-4 relative">
       <div className="space-y-3 sticky top-0 bg-[#fdfbf7] z-30 pt-2 pb-4">
         <div className="flex gap-2">
-            <div className="relative flex-grow">
+          <div className="relative flex-grow">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
             <input 
               type="text" 
-              placeholder={t.searchPlaceholder} 
+              placeholder="Search items..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-teal-100 shadow-sm"
@@ -632,37 +626,36 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         {showFilters && (
           <div className="bg-white p-6 rounded-[32px] border border-teal-50 shadow-xl space-y-5 animate-fade-in">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">{t.sortAndFilters}</h4>
-              <button onClick={() => { setSearchQuery(''); setSelectedGenre(t.allGenres); setSelectedCondition(t.anyCondition); setMinPrice(''); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">{t.resetAll}</button>
+              <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Sort & Filters</h4>
+              <button onClick={() => { setSearchQuery(''); setSelectedGenre('All Genres'); setSelectedCondition('Any Condition'); setMinPrice(''); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">Reset All</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.genre}</label>
-                <select value={selectedGenre} onChange={e => setSelectedGenre(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>{t.allGenres}</option>{MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select>
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Genre</label>
+                <select value={selectedGenre} onChange={e => setSelectedGenre(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>All Genres</option>{MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condition}</label>
-                <select value={selectedCondition} onChange={e => setSelectedCondition(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>{t.anyCondition}</option><option value="S">{t.rankS}</option><option value="A">{t.rankA}</option><option value="B">{t.rankB}</option><option value="C">{t.rankC}</option></select>
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Condition</label>
+                <select value={selectedCondition} onChange={e => setSelectedCondition(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>Any Condition</option><option value="S">Rank S</option><option value="A">Rank A</option><option value="B">Rank B</option><option value="C">Rank C</option></select>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.minPrice}</label>
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Min Price (RM)</label>
                 <div className="relative">
                   <Coins className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
                   <input 
                     type="number" 
                     placeholder="Min" 
                     value={minPrice}
-                    min="0"
                     onChange={e => setMinPrice(e.target.value)}
                     className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.maxPrice}</label>
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Max Price (RM)</label>
                 <div className="relative">
                   <Coins className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
                   <input 
@@ -677,7 +670,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.sortBy}</label>
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Sort By</label>
               <div className="relative">
                 <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
                 <select 
@@ -685,9 +678,9 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                   onChange={e => setSortBy(e.target.value as SortOption)} 
                   className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none appearance-none"
                 >
-                  <option value="newest">{t.newestFirst}</option>
-                  <option value="price_low">{t.priceLowToHigh}</option>
-                  <option value="price_high">{t.priceHighToLow}</option>
+                  <option value="newest">Newest First</option>
+                  <option value="price_low">Price: Low to High</option>
+                  <option value="price_high">Price: High to Low</option>
                 </select>
               </div>
             </div>
@@ -697,7 +690,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
           {['ALL', 'AVAILABLE', 'RESERVED', 'SOLD'].map((f) => (
             <button key={f} onClick={() => setFilterStatus(f as any)} className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterStatus === f ? 'bg-teal-400 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
-              {f === 'RESERVED' ? t.trade : f === 'ALL' ? t.all : t[f.toLowerCase() as keyof typeof t] || f}
+              {f === 'RESERVED' ? 'TRADE' : f === 'ALL' ? 'EVERYTHING' : f}
             </button>
           ))}
         </div>
@@ -711,7 +704,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       {filteredItems.length === 0 && (
         <div className="py-20 text-center">
           <div className="text-gray-200 mb-4 flex justify-center"><ShoppingBag size={48}/></div>
-          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">{t.noMatchingItems}</p>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">No matching items found</p>
         </div>
       )}
     </div>

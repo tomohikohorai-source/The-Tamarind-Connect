@@ -5,18 +5,14 @@ import { LOCATION_METADATA } from '../constants';
 import { addDays, format, isAfter } from 'date-fns';
 import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
 
-import { Language, translations } from '../translations';
-
 interface Props {
   profile: UserProfile;
-  language?: Language;
   initialActivity?: Activity;
   onSubmit: (activity: Activity) => void;
   onCancel: () => void;
 }
 
-export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initialActivity, onSubmit, onCancel }) => {
-  const t = translations[language];
+export const CheckInForm: React.FC<Props> = ({ profile, initialActivity, onSubmit, onCancel }) => {
   const [location, setLocation] = useState<LocationType>(initialActivity?.location || LocationType.POOL);
   const [type, setType] = useState<'NOW' | 'FUTURE'>(initialActivity ? 'FUTURE' : 'NOW');
   const [selectedChildren, setSelectedChildren] = useState<string[]>(initialActivity?.childNicknames || profile.children.map(c => c.nickname));
@@ -91,10 +87,10 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
           onClick={onCancel}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-black text-xs bg-gray-50 px-4 py-2.5 rounded-2xl transition-all active:scale-95 border border-gray-100 uppercase tracking-widest shadow-sm"
         >
-          <ChevronLeft size={18} /> {t.back}
+          <ChevronLeft size={18} /> Back
         </button>
         <h2 className="text-xl font-black text-gray-800 tracking-tighter uppercase pr-2">
-          {initialActivity ? t.edit : t.checkIn}
+          {initialActivity ? 'Edit Plan' : 'Check-In'}
         </h2>
         <button onClick={onCancel} className="text-gray-300 hover:text-gray-500">
            <X size={24} />
@@ -110,7 +106,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
         )}
 
         <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.location}</label>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Select Area</label>
           <div className="grid grid-cols-3 gap-3">
             {(Object.keys(LocationType) as LocationType[]).map(loc => (
               <button
@@ -132,11 +128,11 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
 
         {!initialActivity && (
           <div>
-            <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.today}</label>
+            <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Schedule</label>
             <div className="flex gap-3">
               {[
-                { id: 'NOW', label: t.live },
-                { id: 'FUTURE', label: t.specificTime }
+                { id: 'NOW', label: 'Play Now' },
+                { id: 'FUTURE', label: 'Book Future' }
               ].map(t => (
                 <button
                   key={t.id}
@@ -156,7 +152,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
         <div className="space-y-4">
           {(type === 'FUTURE' || initialActivity) && (
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Calendar size={14}/> {t.targetDate}</label>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Calendar size={14}/> Date</label>
               <input
                 type="date"
                 min={format(new Date(), 'yyyy-MM-dd')}
@@ -170,7 +166,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> {t.startDate}</label>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> From</label>
               <input
                 type="time"
                 value={startTime}
@@ -180,7 +176,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> {t.endDate}</label>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> Until</label>
               <input
                 type="time"
                 max="20:00"
@@ -193,7 +189,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
         </div>
 
         <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.players}</label>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Who's playing?</label>
           <div className="flex flex-wrap gap-3">
             {profile.children.map(child => (
               <button
@@ -216,14 +212,13 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
         </div>
 
         <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.memo}</label>
-          <p className="text-[9px] text-gray-400 font-bold italic mb-2">{t.translationNotice}</p>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">Memo (Optional)</label>
           <div className="relative">
             <MessageSquare className="absolute left-4 top-4 text-gray-300" size={18} />
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
-              placeholder="..."
+              placeholder="e.g. Bringing some snacks! / Let's play tag!"
               rows={3}
               className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-3xl border-none outline-none font-medium text-sm text-gray-700 resize-none focus:ring-2 ring-pink-100"
             />
@@ -236,8 +231,8 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
               <Megaphone size={24} className="animate-pulse" />
             </div>
             <div>
-              <div className="font-black text-[13px] uppercase tracking-widest">{t.inviteNeighbors}</div>
-              <div className="text-[10px] font-bold opacity-80">{t.invite}</div>
+              <div className="font-black text-[13px] uppercase tracking-widest">Invite Neighbors</div>
+              <div className="text-[10px] font-bold opacity-80">Add INVITE badge to card</div>
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -258,7 +253,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
             selectedChildren.length > 0 ? 'bg-pink-400 text-white shadow-pink-200' : 'bg-gray-200 text-gray-400'
           }`}
         >
-          {initialActivity ? t.save : t.confirm}
+          {initialActivity ? 'Save Changes' : 'Confirm Check-In'}
         </button>
       </form>
     </div>

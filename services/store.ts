@@ -6,17 +6,10 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'play_share_user_profile',
   ACKNOWLEDGED_ACTIVITIES: 'play_share_seen_activities',
   ACKNOWLEDGED_MARKET: 'play_share_seen_market',
-  ACKNOWLEDGED_SKILLS: 'play_share_seen_skills',
-  LANGUAGE: 'play_share_language'
+  ACKNOWLEDGED_SKILLS: 'play_share_seen_skills'
 };
 
 export const store = {
-  getLanguage: (): any => {
-    return localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'en';
-  },
-  setLanguage: (lang: string) => {
-    localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
-  },
   isVerified: (): boolean => {
     return localStorage.getItem(STORAGE_KEYS.PASSCODE_VERIFIED) === 'true';
   },

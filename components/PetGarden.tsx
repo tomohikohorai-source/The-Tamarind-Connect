@@ -3,11 +3,8 @@ import React, { useMemo } from 'react';
 import { UserProfile } from '../types';
 import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock, TrendingUp } from 'lucide-react';
 
-import { Language, translations } from '../translations';
-
 interface Props {
   profile: UserProfile;
-  language?: Language;
 }
 
 interface PetStage {
@@ -27,8 +24,7 @@ interface EvolutionInfo {
   accentColor: string;
 }
 
-export const PetGarden: React.FC<Props> = ({ profile, language = 'en' }) => {
-  const t = translations[language];
+export const PetGarden: React.FC<Props> = ({ profile }) => {
   const days = profile.totalLoginDays || 1;
 
   // Stable hash based on UID
@@ -182,7 +178,7 @@ export const PetGarden: React.FC<Props> = ({ profile, language = 'en' }) => {
               
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2 px-1">
-                  <span className={`text-[8px] font-black uppercase tracking-widest ${evolution.textColor} opacity-60`}>{t.growthProgress}</span>
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${evolution.textColor} opacity-60`}>Growth Progress</span>
                   <span className={`text-[9px] font-black ${evolution.textColor}`}>{Math.round(progress)}%</span>
                 </div>
                 <div className="flex-grow h-3 bg-white/60 rounded-full overflow-hidden border border-white p-0.5 shadow-inner">
@@ -202,9 +198,9 @@ export const PetGarden: React.FC<Props> = ({ profile, language = 'en' }) => {
               <TrendingUp size={12} className={`${evolution.textColor} opacity-60`} />
               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">
                 {evolution.next ? (
-                  <><span className={evolution.textColor}>{remainingDays} {language === 'ja' ? '日' : 'days'}</span> {t.nextEvolution}</>
+                  <><span className={evolution.textColor}>{remainingDays} days</span> to next evolution</>
                 ) : (
-                  <>{t.ultimateForm}</>
+                  <>Ultimate Form Reached!</>
                 )}
               </span>
             </div>

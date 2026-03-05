@@ -1,7 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
-import { Language, translations } from '../translations';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
@@ -16,10 +15,9 @@ interface Props {
   onAddComment: (skillId: string, text: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
-  language?: Language;
 }
 
-const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile, t: any }) => {
+const SkillStatusBanner = memo(({ skill, profile }: { skill: Skill, profile: UserProfile }) => {
   const isOwner = skill.userId === profile.uid;
   const isRequester = skill.requesterId === profile.uid;
 
@@ -28,8 +26,8 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
       <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
         <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{skill.requesterAvatarIcon || <AlertTriangle size={24} />}</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.requestFrom}: {skill.requesterNickname}</div>
-          <div className="text-[13px] font-bold leading-tight">{t.exchangeRequestMsg}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Request from: {skill.requesterNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Neighbor wants to exchange skills! Review below.</div>
         </div>
       </div>
     );
@@ -37,8 +35,8 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
       <div className="bg-gradient-to-r from-indigo-400 to-indigo-600 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
         <div className="bg-white/20 p-2 rounded-xl"><Clock size={24} /></div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.applicationSent}</div>
-          <div className="text-[13px] font-bold leading-tight">{t.waitingApproval}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Application Sent</div>
+          <div className="text-[13px] font-bold leading-tight">Waiting for neighbor to approve your request.</div>
         </div>
       </div>
     );
@@ -49,8 +47,8 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
       <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
         <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{skill.requesterAvatarIcon || <Handshake size={24} />}</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.partner}: {skill.requesterNickname}</div>
-          <div className="text-[13px] font-bold leading-tight">{t.sessionReservedMsg}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Partner: {skill.requesterNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Session Reserved! Use chat below to discuss details.</div>
         </div>
       </div>
     );
@@ -58,8 +56,8 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
       <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
         <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{skill.parentAvatarIcon || <CheckCircle size={24} />}</div>
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.partner}: {skill.parentNickname}</div>
-          <div className="text-[13px] font-bold leading-tight">{t.requestApprovedMsg}</div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">Partner: {skill.parentNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">Request Approved! Start chatting with your neighbor.</div>
         </div>
       </div>
     );
@@ -67,11 +65,10 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onViewProfile, onChatClose, language = 'en' }) => {
-  const t = translations[language];
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onViewProfile, onChatClose }) => {
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>(t.allCategories);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
   const [showFilters, setShowFilters] = useState(false);
   
   const [viewingSkill, setViewingSkill] = useState<Skill | null>(null);
@@ -83,13 +80,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       if (skill) {
         // Access gate for private reserved/closed sessions
         if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
-           alert(t.privateSessionMsg);
+           alert("This skill session is currently private to the parties involved.");
            return;
         }
         setViewingSkill(skill);
       }
     }
-  }, [initialActiveSkillId, skills, profile.uid, t.privateSessionMsg]);
+  }, [initialActiveSkillId, skills, profile.uid]);
 
   useEffect(() => {
     if (viewingSkill) {
@@ -104,10 +101,10 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
     return skills.filter(skill => {
       if (filterType !== 'ALL' && skill.type !== filterType) return false;
       if (searchQuery && !skill.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (selectedCategory !== t.allCategories && skill.category !== selectedCategory) return false;
+      if (selectedCategory !== 'All Categories' && skill.category !== selectedCategory) return false;
       return true;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [skills, filterType, searchQuery, selectedCategory, t.allCategories]);
+  }, [skills, filterType, searchQuery, selectedCategory]);
 
   const handleSendComment = (skillId: string) => {
     const text = commentInputs[skillId];
@@ -127,7 +124,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
   const handleRequestCancellation = (skill: Skill) => {
     const isMine = skill.userId === profile.uid;
-    const msg = isMine ? t.cancelExchangeProvider : t.cancelExchangeRequester;
+    const msg = isMine ? "Request to cancel this exchange as a provider?" : "Request to cancel this exchange as a requester?";
     if (confirm(msg)) {
       const updates = isMine ? { sellerRequestedCancellation: true } : { requesterRequestedCancellation: true };
       onStatusChange(skill.id, 'RESERVED', undefined, undefined, updates);
@@ -135,7 +132,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   };
 
   const handleConfirmCancellation = (skill: Skill) => {
-    if (confirm(t.confirmCancelStatus)) {
+    if (confirm("Both parties agree to cancel. Return this skill to AVAILABLE status?")) {
       onStatusChange(skill.id, 'AVAILABLE', undefined, undefined, { 
         requesterId: '', 
         requesterNickname: '', 
@@ -151,7 +148,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
   const handleItemClick = (skill: Skill) => {
     if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
-      alert(t.accessRestrictedMsg);
+      alert("Access Restricted: This interaction is now private.");
       return;
     }
     setViewingSkill(skill);
@@ -168,7 +165,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
              onClick={() => { setViewingSkill(null); if(onChatClose) onChatClose(); }} 
              className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
            >
-             <ChevronLeft size={16} /> {t.skill}
+             <ChevronLeft size={16} /> Skill Board
            </button>
            <button 
              onClick={() => onViewProfile && onViewProfile(viewingSkill.userId)} 
@@ -181,35 +178,35 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
            </button>
         </div>
 
-        <SkillStatusBanner skill={viewingSkill} profile={profile} t={t} />
+        <SkillStatusBanner skill={viewingSkill} profile={profile} />
 
         {viewingSkill.status === 'RESERVED' && (
           <div className="bg-white p-6 rounded-[32px] border-2 border-orange-50 shadow-lg mb-6 animate-fade-in">
             <div className="space-y-3">
-              <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">{t.exchangeManagement}</h4>
+              <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">Exchange Management</h4>
               {viewingSkill.requesterRequestedCancellation && viewingSkill.sellerRequestedCancellation ? (
-                <button onClick={() => handleConfirmCancellation(viewingSkill)} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.finalizeCancellation}</button>
+                <button onClick={() => handleConfirmCancellation(viewingSkill)} className="w-full py-4 bg-red-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Finalize Cancellation</button>
               ) : (
                 <>
                   {isRequester && (
                     viewingSkill.requesterRequestedCancellation ? (
                       <div className="text-center py-3 bg-orange-50 rounded-2xl border border-orange-100">
-                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">{t.cancellationRequested}</p>
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
                       </div>
                     ) : (
                       <button onClick={() => handleRequestCancellation(viewingSkill)} className="w-full py-4 bg-white text-red-400 border border-red-100 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition-all">
-                        {viewingSkill.sellerRequestedCancellation ? t.agreeToCancel : t.requestCancellation}
+                        {viewingSkill.sellerRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
                       </button>
                     )
                   )}
                   {isMine && (
                     viewingSkill.sellerRequestedCancellation ? (
                       <div className="text-center py-3 bg-orange-50 rounded-2xl border border-orange-100">
-                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">{t.cancellationRequested}</p>
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
                       </div>
                     ) : (
                       <button onClick={() => handleRequestCancellation(viewingSkill)} className="w-full py-4 bg-white text-red-400 border border-red-100 rounded-2xl font-black uppercase text-[11px] tracking-widest active:scale-95 transition-all">
-                        {viewingSkill.requesterRequestedCancellation ? t.agreeToCancel : t.requestCancellation}
+                        {viewingSkill.requesterRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
                       </button>
                     )
                   )}
@@ -225,16 +222,16 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               onClick={() => setConfirmRequestSkill(viewingSkill)} 
               className="w-full py-5 bg-indigo-500 text-white rounded-[28px] font-black uppercase tracking-[0.2em] text-[14px] shadow-xl shadow-indigo-100 active:scale-[0.97] transition-all border-4 border-white block"
             >
-              {t.requesting}
+              EXPRESS INTEREST
             </button>
           )}
 
           {isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus === 'PENDING' && (
             <div className="space-y-3">
-              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">{t.inquiryReceived} {viewingSkill.requesterNickname}</p>
+              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">Inquiry Received from {viewingSkill.requesterNickname}</p>
               <div className="flex gap-3">
-                <button onClick={() => onStatusChange(viewingSkill.id, 'RESERVED')} className="flex-1 py-4.5 bg-indigo-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">{t.confirm}</button>
-                <button onClick={() => onStatusChange(viewingSkill.id, 'AVAILABLE', undefined, 'declined')} className="flex-1 py-4.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-gray-100 active:scale-95 transition-all">{t.cancel}</button>
+                <button onClick={() => onStatusChange(viewingSkill.id, 'RESERVED')} className="flex-1 py-4.5 bg-indigo-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">Start Exchange</button>
+                <button onClick={() => onStatusChange(viewingSkill.id, 'AVAILABLE', undefined, 'declined')} className="flex-1 py-4.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-gray-100 active:scale-95 transition-all">Not Now</button>
               </div>
             </div>
           )}
@@ -242,7 +239,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${viewingSkill.type === 'OFFER' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
-                {viewingSkill.type === 'OFFER' ? t.skillProvider : t.requestingHelp}
+                {viewingSkill.type === 'OFFER' ? 'Skill Provider' : 'Requesting Help'}
               </span>
               <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter pt-2 leading-tight">{viewingSkill.title}</h1>
               <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
@@ -258,9 +255,9 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
           {isMine && (
             <div className="flex gap-4 pt-2">
               {viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
-                <button onClick={() => onEdit(viewingSkill)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-gray-100 shadow-sm active:scale-95 transition-all">{t.edit}</button>
+                <button onClick={() => onEdit(viewingSkill)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-gray-100 shadow-sm active:scale-95 transition-all">Edit Info</button>
               )}
-              <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingSkill.id); setViewingSkill(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-red-50 shadow-sm active:scale-95 transition-all">{t.delete}</button>
+              <button onClick={() => { if(confirm('Delete?')) { onDelete(viewingSkill.id); setViewingSkill(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-red-50 shadow-sm active:scale-95 transition-all">Delete Post</button>
             </div>
           )}
         </div>
@@ -270,13 +267,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             <div className="bg-indigo-100 text-indigo-600 p-2 rounded-xl"><MessageSquare size={14}/></div>
             <div className="flex-grow">
               <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
-                {viewingSkill.status === 'RESERVED' ? t.privateDiscussion : t.interestAndChat}
+                {viewingSkill.status === 'RESERVED' ? 'Private Discussion' : 'Interest & Chat'}
               </h3>
               {isMine && viewingSkill.status === 'RESERVED' && (
-                <p className="text-[8px] font-black text-indigo-500 uppercase mt-0.5">{t.partner}: {viewingSkill.requesterNickname}</p>
+                <p className="text-[8px] font-black text-indigo-500 uppercase mt-0.5">Partner: {viewingSkill.requesterNickname}</p>
               )}
               {isRequester && viewingSkill.status === 'RESERVED' && (
-                <p className="text-[8px] font-black text-indigo-500 uppercase mt-0.5">{t.partner}: {viewingSkill.parentNickname}</p>
+                <p className="text-[8px] font-black text-indigo-500 uppercase mt-0.5">Partner: {viewingSkill.parentNickname}</p>
               )}
             </div>
           </div>
@@ -300,30 +297,27 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               );
             })}
             {viewingSkill.comments.length === 0 && (
-              <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">{t.noMessagesYet}</div>
+              <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">No messages yet. Say hello!</div>
             )}
           </div>
 
           <div className="pt-6">
-             <div className="flex flex-col gap-2">
-               <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-indigo-50 focus-within:border-indigo-400 focus-within:ring-4 ring-indigo-50 transition-all shadow-sm">
-                  <input 
-                    type="text" 
-                    value={commentInputs[viewingSkill.id] || ''}
-                    onChange={e => setCommentInputs(prev => ({ ...prev, [viewingSkill.id]: e.target.value }))}
-                    placeholder={t.askDetailsPlaceholder}
-                    className="flex-grow bg-transparent border-none px-4 py-3 text-sm font-bold outline-none placeholder:text-gray-300"
-                    onKeyDown={e => e.key === 'Enter' && handleSendComment(viewingSkill.id)}
-                  />
-                  <button 
-                    onClick={() => handleSendComment(viewingSkill.id)} 
-                    disabled={!(commentInputs[viewingSkill.id] || '').trim()}
-                    className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingSkill.id] || '').trim() ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-300'}`}
-                  >
-                    <Send size={18} />
-                  </button>
-                </div>
-                <p className="text-[9px] text-gray-400 font-bold px-4 italic">{t.translationNotice}</p>
+             <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-indigo-50 focus-within:border-indigo-400 focus-within:ring-4 ring-indigo-50 transition-all shadow-sm">
+                <input 
+                  type="text" 
+                  value={commentInputs[viewingSkill.id] || ''}
+                  onChange={e => setCommentInputs(prev => ({ ...prev, [viewingSkill.id]: e.target.value }))}
+                  placeholder="Ask for details or express interest..."
+                  className="flex-grow bg-transparent border-none px-4 py-3 text-sm font-bold outline-none placeholder:text-gray-300"
+                  onKeyDown={e => e.key === 'Enter' && handleSendComment(viewingSkill.id)}
+                />
+                <button 
+                  onClick={() => handleSendComment(viewingSkill.id)} 
+                  disabled={!(commentInputs[viewingSkill.id] || '').trim()}
+                  className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingSkill.id] || '').trim() ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-300'}`}
+                >
+                  <Send size={18} />
+                </button>
               </div>
           </div>
         </div>
@@ -333,11 +327,11 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-indigo-400">
               <div className="text-center space-y-5">
                 <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 mx-auto border-4 border-white shadow-lg"><Star size={40} /></div>
-                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">{t.expressInterest}</h3>
-                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">{t.contactNeighborAbout} "{confirmRequestSkill.title}"?</p>
+                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">Express Interest</h3>
+                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">Contact neighbor about "{confirmRequestSkill.title}"?</p>
                 <div className="flex gap-4 pt-6">
-                  <button onClick={() => setConfirmRequestSkill(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">{t.back}</button>
-                  <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-indigo-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.send}</button>
+                  <button onClick={() => setConfirmRequestSkill(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">Back</button>
+                  <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-indigo-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Send</button>
                 </div>
               </div>
             </div>
@@ -355,7 +349,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
             <input 
               type="text" 
-              placeholder={t.searchPlaceholder} 
+              placeholder="Search skills..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-indigo-100 shadow-sm"
@@ -372,13 +366,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         {showFilters && (
           <div className="bg-white p-6 rounded-[32px] border border-indigo-50 shadow-xl space-y-4 animate-fade-in">
             <div className="flex justify-between items-center">
-              <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">{t.exchangeFilters}</h4>
-              <button onClick={() => { setSearchQuery(''); setSelectedCategory(t.allCategories); setFilterType('ALL'); }} className="text-[9px] font-black text-indigo-500 uppercase">{t.resetAll}</button>
+              <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">Exchange Filters</h4>
+              <button onClick={() => { setSearchQuery(''); setSelectedCategory('All Categories'); setFilterType('ALL'); }} className="text-[9px] font-black text-indigo-500 uppercase">Reset</button>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.category}</label>
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">Category</label>
               <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[11px] font-black outline-none appearance-none">
-                <option>{t.allCategories}</option>
+                <option>All Categories</option>
                 {SKILL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -388,7 +382,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
           {['ALL', 'OFFER', 'REQUEST'].map((f) => (
             <button key={f} onClick={() => setFilterType(f as any)} className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterType === f ? 'bg-indigo-400 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
-              {f === 'ALL' ? t.all : f === 'OFFER' ? t.offer : t.request}
+              {f === 'ALL' ? 'ALL SKILLS' : f === 'OFFER' ? 'PROVIDERS' : 'RESOURCES NEEDED'}
             </button>
           ))}
         </div>
@@ -420,7 +414,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               {isClosed && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
                   <div className="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-4 border-white -rotate-12 animate-pulse">
-                    {t.soldLabel}
+                    SOLD
                   </div>
                 </div>
               )}
@@ -435,19 +429,19 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               <div className="flex-grow min-w-0 pr-8">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${skill.type === 'OFFER' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
-                    {skill.type === 'OFFER' ? t.offer : t.wantedLabel}
+                    {skill.type}
                   </span>
                   {isNew && (
                     <span className="bg-gradient-to-r from-teal-400 to-cyan-400 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-0.5">
-                      <Sparkles size={8}/> {t.new}
+                      <Sparkles size={8}/> NEW
                     </span>
                   )}
                   {isDiscounted && (
                     <span className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase flex items-center gap-0.5">
-                      <Flame size={8}/> {t.discount}
+                      <Flame size={8}/> DISCOUNT
                     </span>
                   )}
-                  {skill.status === 'RESERVED' && <span className="bg-indigo-400 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase">{t.reserved}</span>}
+                  {skill.status === 'RESERVED' && <span className="bg-indigo-400 text-white px-1.5 py-0.5 rounded text-[7px] font-black uppercase">Reserved</span>}
                 </div>
                 <h3 className="text-[15px] font-black text-gray-800 truncate tracking-tight">{skill.title}</h3>
                 <div className="text-[10px] font-bold text-indigo-400 line-clamp-1">{skill.price} • {skill.category}</div>
@@ -464,7 +458,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       {filteredSkills.length === 0 && (
         <div className="py-24 text-center">
           <div className="text-gray-100 mb-4 flex justify-center"><Star size={64}/></div>
-          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">{t.noSkillFound}</p>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">No skill listings found</p>
         </div>
       )}
     </div>

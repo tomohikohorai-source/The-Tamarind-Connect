@@ -2,16 +2,9 @@ import React, { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
 import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info, Mail } from 'lucide-react';
 
-import { Language, translations } from '../translations';
-
 type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
 
-interface Props {
-  language: Language;
-}
-
-export const AuthScreen: React.FC<Props> = ({ language }) => {
-  const t = translations[language];
+export const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('CHOICE');
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -29,12 +22,12 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
     setError('');
 
     if (!validateFormat(userId)) {
-      setError(t.idError);
+      setError('User ID must be 6-12 characters (alphanumeric/symbols)');
       return;
     }
 
     if (!validateFormat(password)) {
-      setError(t.pwError);
+      setError('Password must be 6-12 characters (alphanumeric/symbols)');
       return;
     }
 
@@ -57,10 +50,10 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
         case 'auth/invalid-credential':
-          setError(t.invalidAuth);
+          setError('Invalid User ID or Password');
           break;
         case 'auth/email-already-in-use':
-          setError(t.idTaken);
+          setError('This User ID is already taken');
           break;
         default:
           setError(`Error: ${err.message || 'Something went wrong'}`);
@@ -76,7 +69,7 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
         <div className="flex items-start gap-2">
           <Info size={14} className="text-orange-400 shrink-0 mt-0.5" />
           <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest text-left leading-relaxed">
-            <span className="text-orange-700">{t.warning}:</span> {t.authWarning}
+            <span className="text-orange-700">Warning:</span> If you forget your User ID or Password, you cannot recover your account. You will need to create a new one. Please keep your credentials safe.
           </p>
         </div>
       </div>
@@ -84,7 +77,7 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
         <div className="flex items-start gap-2">
           <Mail size={14} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest text-left leading-relaxed">
-            {t.support}: {t.supportText} <span className="underline select-all lowercase">nearbyexchange@gmail.com</span>
+            Support: For inquiries or questions, please email <span className="underline select-all lowercase">nearbyexchange@gmail.com</span>
           </p>
         </div>
       </div>
@@ -92,7 +85,7 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
         <div className="flex items-start gap-2">
           <ShieldAlert size={14} className="text-gray-300 shrink-0 mt-0.5" />
           <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest text-left leading-relaxed">
-            <span className="text-gray-400">{t.notice}:</span> {t.disclaimer}
+            <span className="text-gray-400">Notice:</span> This community platform is for internal resident communication only. Developers and condominium management are not liable for any transaction disputes, items sold, or accidents occurring during playground play. Use at your own responsibility.
           </p>
         </div>
       </div>
@@ -104,26 +97,26 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
       <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50 text-center">
         <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-10 border border-pink-100 animate-fade-in">
           <div className="text-6xl mb-6">🏘️</div>
-          <h1 className="text-2xl font-black text-pink-500 mb-2 tracking-tighter uppercase">{t.appName}</h1>
-          <p className="text-gray-400 mb-10 font-black text-[10px] uppercase tracking-widest leading-loose">{t.appTagline}</p>
+          <h1 className="text-2xl font-black text-pink-500 mb-2 tracking-tighter uppercase">Nearby Exchange</h1>
+          <p className="text-gray-400 mb-10 font-black text-[10px] uppercase tracking-widest leading-loose">Play Together • Trade Together</p>
           
           <div className="space-y-4">
             <button
               onClick={() => setMode('SIGNUP')}
               className="w-full py-5 bg-pink-400 text-white rounded-3xl font-black shadow-lg shadow-pink-100 flex items-center justify-center gap-3 active:scale-95 transition-all text-sm uppercase tracking-widest"
             >
-              <UserPlus size={20} /> {t.newUser}
+              <UserPlus size={20} /> New User? Sign Up
             </button>
             <div className="flex items-center gap-4 py-2">
               <div className="flex-grow h-px bg-gray-100"></div>
-              <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{t.or}</span>
+              <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">OR</span>
               <div className="flex-grow h-px bg-gray-100"></div>
             </div>
             <button
               onClick={() => setMode('LOGIN')}
               className="w-full py-5 bg-white border-2 border-pink-100 text-pink-400 rounded-3xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all text-sm uppercase tracking-widest"
             >
-              <LogIn size={20} /> {t.alreadyMember}
+              <LogIn size={20} /> Already a member?
             </button>
           </div>
           <Disclaimer />
@@ -139,19 +132,16 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
           onClick={() => { setMode('CHOICE'); setError(''); setShowPassword(false); }}
           className="mb-6 flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-pink-400 transition-colors"
         >
-          <ChevronLeft size={14} /> {t.back}
+          <ChevronLeft size={14} /> Back
         </button>
 
         <h2 className="text-xl font-black text-gray-800 mb-6 uppercase tracking-tighter">
-          {mode === 'LOGIN' ? t.welcomeBack : t.createAccount}
+          {mode === 'LOGIN' ? 'Welcome Back' : 'Create Account'}
         </h2>
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex justify-between items-center ml-1">
-              <span>{t.userId}</span>
-              <span className="text-[8px] opacity-60 font-bold">{t.charLimit}</span>
-            </label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">User ID</label>
             <div className="relative">
               <User className="absolute left-4 top-3.5 text-pink-200" size={18} />
               <input
@@ -159,17 +149,14 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
                 required
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                placeholder={t.charLimit}
+                placeholder="6-12 characters"
                 className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 ring-pink-200 font-bold text-sm"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex justify-between items-center ml-1">
-              <span>{t.password}</span>
-              <span className="text-[8px] opacity-60 font-bold">{t.charLimit}</span>
-            </label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-3.5 text-pink-200" size={18} />
               <input
@@ -177,7 +164,7 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={t.charLimit}
+                placeholder="6-12 characters"
                 className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 ring-pink-200 font-bold text-sm"
               />
               <button
@@ -204,7 +191,7 @@ export const AuthScreen: React.FC<Props> = ({ language }) => {
               loading ? 'bg-gray-200 text-gray-400' : 'bg-pink-400 text-white shadow-pink-200'
             }`}
           >
-            {loading ? t.processing : mode === 'LOGIN' ? <><LogIn size={18}/> {t.login}</> : <><UserPlus size={18}/> {t.signup}</>}
+            {loading ? 'Processing...' : mode === 'LOGIN' ? <><LogIn size={18}/> Login</> : <><UserPlus size={18}/> Sign Up</>}
           </button>
         </form>
         <Disclaimer />

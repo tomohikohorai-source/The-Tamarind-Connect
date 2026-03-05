@@ -1,12 +1,10 @@
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import { UserProfile, Activity, Child, MarketItem, Skill, WantedItem, PrivacySettings, LocationType } from '../types';
 import { LOCATION_METADATA, AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS } from '../constants';
-import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages } from 'lucide-react';
+import { Home, Calendar, Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, History, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc, updateDoc } from '../firebase';
 import { PetGarden } from './PetGarden';
-import { Language, translations } from '../translations';
-import { translateText } from '../services/geminiService';
 
 interface Props {
   profile: UserProfile; 
@@ -34,7 +32,6 @@ interface Props {
   acknowledgedMarketMap?: Record<string, string>;
   acknowledgedSkillMap?: Record<string, string>;
   acknowledgedWantedMap?: Record<string, string>;
-  language: Language;
 }
 
 const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }: { title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }) => (
@@ -70,10 +67,8 @@ export const ProfilePage: React.FC<Props> = ({
   profile, currentUser, activities, marketItems, skills, wantedItems, onLogout, onEdit, onDelete, onUpdateProfile, 
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddPlay, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
   onAddMarketComment, onGoToTransaction, onGoToSkill, onClose,
-  acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {},
-  language
+  acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {}
 }) => {
-  const t = translations[language];
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
@@ -217,7 +212,7 @@ export const ProfilePage: React.FC<Props> = ({
     <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
       {onClose && (
         <button onClick={onClose} className="flex items-center gap-2 text-gray-400 font-black text-[11px] uppercase tracking-widest bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm mb-6 active:scale-95 transition-all">
-          <ChevronLeft size={16} /> {t.back}
+          <ChevronLeft size={16} /> Community Hub
         </button>
       )}
 
@@ -241,19 +236,19 @@ export const ProfilePage: React.FC<Props> = ({
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
           <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.settings}</h2>
+              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Community Settings</h2>
               <button onClick={() => setShowSettings(false)} className="p-2 text-gray-400"><X size={24}/></button>
             </div>
             
             <div className="space-y-4">
-              <h3 className="text-[10px] font-black text-pink-400 uppercase tracking-widest ml-1">{t.privacy}</h3>
+              <h3 className="text-[10px] font-black text-pink-400 uppercase tracking-widest ml-1">Privacy Controls</h3>
               <div className="space-y-2">
                 {[
-                  { key: 'showChildren', label: t.players, icon: <User size={16}/> },
-                  { key: 'showListings', label: t.all, icon: <ShoppingBag size={16}/> },
-                  { key: 'showWanted', label: t.wishlist, icon: <Heart size={16}/> },
-                  { key: 'showSkills', label: t.skills, icon: <BookOpen size={16}/> },
-                  { key: 'showPlayHistory', label: t.today, icon: <History size={16}/> }
+                  { key: 'showChildren', label: 'Visible Children Profile', icon: <User size={16}/> },
+                  { key: 'showListings', label: 'Visible Marketplace Items', icon: <ShoppingBag size={16}/> },
+                  { key: 'showWanted', label: 'Visible Wishlist (Wanted)', icon: <Heart size={16}/> },
+                  { key: 'showSkills', label: 'Visible Shared Skills', icon: <BookOpen size={16}/> },
+                  { key: 'showPlayHistory', label: 'Visible Play History', icon: <History size={16}/> }
                 ].map(opt => (
                   <button key={opt.key} onClick={() => togglePrivacy(opt.key as any)} className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-2xl transition-all active:scale-[0.98]">
                     <div className="flex items-center gap-3">
@@ -268,7 +263,7 @@ export const ProfilePage: React.FC<Props> = ({
               </div>
             </div>
 
-            <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-gray-800 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest">{t.confirm}</button>
+            <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-gray-800 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest">Done</button>
           </div>
         </div>
       )}
@@ -278,18 +273,18 @@ export const ProfilePage: React.FC<Props> = ({
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditingProfile(false)} />
           <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
              <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-4 z-10">
-              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.edit}</h2>
+              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Edit My Profile</h2>
               <button onClick={() => setIsEditingProfile(false)} className="p-2 text-gray-400"><X size={24}/></button>
             </div>
             
             <div className="space-y-6">
                <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.nickname}</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Parent Nickname</label>
                 <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl mt-1 font-bold outline-none border-2 border-transparent focus:border-pink-100" />
                </div>
 
                <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.location}</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Your Block</label>
                 <div className="flex gap-2 mt-2">
                   {['3A', '3B'].map(b => (
                     <button
@@ -304,7 +299,7 @@ export const ProfilePage: React.FC<Props> = ({
                </div>
                
                <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.avatar}</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Avatar</label>
                 <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
                   {AVATAR_ICONS.PARENTS.map(ico => (
                     <button key={ico} onClick={() => setEditAvatar(ico)} className={`w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center text-2xl border-2 transition-all ${editAvatar === ico ? 'border-pink-400 bg-pink-50' : 'border-gray-100'}`}>{ico}</button>
@@ -314,8 +309,8 @@ export const ProfilePage: React.FC<Props> = ({
 
                <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">{t.players}</h3>
-                  <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest flex items-center gap-1"><PlusCircle size={14}/> {t.add}</button>
+                  <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">Children</h3>
+                  <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest flex items-center gap-1"><PlusCircle size={14}/> Add</button>
                 </div>
                 {editChildren.map((child, index) => (
                   <div key={child.id} className="p-4 bg-gray-50 border border-gray-100 rounded-[28px] relative space-y-4">
@@ -328,7 +323,7 @@ export const ProfilePage: React.FC<Props> = ({
                     </div>
 
                     <div className="flex gap-2">
-                      <input type="text" value={child.nickname} onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder="..." className="flex-grow p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none" />
+                      <input type="text" value={child.nickname} onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder="Name" className="flex-grow p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none" />
                       <div className="relative">
                         <select 
                           value={child.age} 
@@ -337,7 +332,7 @@ export const ProfilePage: React.FC<Props> = ({
                         >
                           {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
-                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">{t.yrs}</div>
+                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">YRS</div>
                       </div>
                     </div>
 
@@ -353,7 +348,7 @@ export const ProfilePage: React.FC<Props> = ({
                               : 'bg-white border-white text-gray-400 shadow-sm'
                           }`}
                         >
-                          {t[g as keyof typeof t] || g}
+                          {g}
                         </button>
                       ))}
                     </div>
@@ -363,8 +358,8 @@ export const ProfilePage: React.FC<Props> = ({
             </div>
 
             <div className="flex gap-3 pt-6 pb-32">
-              <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px]">{t.back}</button>
-              <button onClick={handleSaveProfile} className="flex-1 py-4 bg-pink-400 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg">{t.save}</button>
+              <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px]">Cancel</button>
+              <button onClick={handleSaveProfile} className="flex-1 py-4 bg-pink-400 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg">Save Profile</button>
             </div>
           </div>
         </div>
@@ -374,7 +369,7 @@ export const ProfilePage: React.FC<Props> = ({
         <section className="space-y-4 animate-fade-in">
           <div className="flex items-center gap-2.5">
             <div className="bg-pink-100 text-pink-500 p-2 rounded-xl"><User size={16} /></div>
-            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{t.players}</h3>
+            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">Children Info</h3>
           </div>
           <div className="flex gap-3 overflow-x-auto hide-scrollbar">
             {profile.children.map(child => (
@@ -382,7 +377,7 @@ export const ProfilePage: React.FC<Props> = ({
                 <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl">{child.avatarIcon}</div>
                 <div>
                   <div className="text-[11px] font-black text-gray-800 uppercase">{child.nickname}</div>
-                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} {t.yrs} • {t[child.gender as keyof typeof t] || child.gender}</div>
+                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} yrs • {child.gender}</div>
                 </div>
               </div>
             ))}
@@ -392,7 +387,7 @@ export const ProfilePage: React.FC<Props> = ({
 
       {isOwnProfile && notifications.length > 0 && (
         <div className="bg-white rounded-[32px] border border-pink-100 overflow-hidden shadow-sm">
-          <CollapsibleHeader title={t.chat} icon={<Bell size={18}/>} count={activeUnreadCount} isOpen={openSections.notifications} onToggle={() => toggleSection('notifications')} hasBadge={notifications.some(n => !n.isDismissed && n.isActionRequired)} badgeLabel={t.urgent} />
+          <CollapsibleHeader title="Notifications" icon={<Bell size={18}/>} count={activeUnreadCount} isOpen={openSections.notifications} onToggle={() => toggleSection('notifications')} hasBadge={notifications.some(n => !n.isDismissed && n.isActionRequired)} badgeLabel="Urgent" />
           {openSections.notifications && (
             <div className="px-4 pb-4 space-y-2 animate-fade-in">
                {(showAllNotifications ? notifications : notifications.slice(0, 5)).map(n => (
@@ -414,7 +409,7 @@ export const ProfilePage: React.FC<Props> = ({
       <div className="space-y-4">
         {(isOwnProfile || privacy.showListings) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.sell} icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} />
+            <CollapsibleHeader title="Items For Sale" icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} />
             {openSections.activeSales && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myActiveSales.map(item => (
@@ -433,7 +428,7 @@ export const ProfilePage: React.FC<Props> = ({
 
         {(isOwnProfile || privacy.showBuying) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.all} icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} />
+            <CollapsibleHeader title="Shopping & Interest" icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} />
             {openSections.buying && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myPurchases.map(item => (
@@ -453,7 +448,7 @@ export const ProfilePage: React.FC<Props> = ({
         {/* WANTED SECTION */}
         {(isOwnProfile || privacy.showWanted) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.wishlist} icon={<Heart size={18}/>} count={myWanted.length} isOpen={openSections.wanted} onToggle={() => toggleSection('wanted')} />
+            <CollapsibleHeader title="Wishlist (Wanted)" icon={<Heart size={18}/>} count={myWanted.length} isOpen={openSections.wanted} onToggle={() => toggleSection('wanted')} />
             {openSections.wanted && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myWanted.map(wanted => (
@@ -474,7 +469,7 @@ export const ProfilePage: React.FC<Props> = ({
 
         {(isOwnProfile || privacy.showSkills) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.skills} icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} />
+            <CollapsibleHeader title="Skills & Help" icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} />
             {openSections.skills && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {mySkills.map(skill => (
@@ -493,7 +488,7 @@ export const ProfilePage: React.FC<Props> = ({
 
         {(isOwnProfile || privacy.showPlayHistory) && (
           <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.today} icon={<History size={18}/>} count={myActivities.length} isOpen={openSections.play} onToggle={() => toggleSection('play')} />
+            <CollapsibleHeader title="Play History" icon={<History size={18}/>} count={myActivities.length} isOpen={openSections.play} onToggle={() => toggleSection('play')} />
             {openSections.play && (
               <div className="px-4 pb-4 space-y-3 animate-fade-in">
                 {myActivities.map(a => (
@@ -531,7 +526,7 @@ export const ProfilePage: React.FC<Props> = ({
 
         {isOwnProfile && (
           <button onClick={onLogout} className="w-full py-5 bg-white border-2 border-red-50 text-red-400 rounded-[32px] font-black uppercase text-[11px] tracking-[0.2em] shadow-sm active:bg-red-50 transition-all mt-4">
-            {t.logout}
+            Logout of Community
           </button>
         )}
       </div>

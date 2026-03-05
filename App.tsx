@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment } from './types';
-import { Language, translations } from './translations';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
 import { Timeline } from './components/Timeline';
@@ -16,7 +15,7 @@ import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
 import { store } from './services/store';
-import { Palmtree, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
+import { Home, PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -34,13 +33,6 @@ export const App: React.FC = () => {
   const [wantedItems, setWantedItems] = useState<WantedItem[]>([]);
   
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
-  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'en');
-  const t = translations[language];
-
-  const handleLanguageChange = (lang: Language) => {
-    setLanguage(lang);
-    localStorage.setItem('app_language', lang);
-  };
   
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | undefined>(undefined);
@@ -112,7 +104,7 @@ export const App: React.FC = () => {
       else if (hash === '#market' || hash === '') setActiveTab('MARKET');
       else if (hash === '#wanted') setActiveTab('WANTED');
       else if (hash === '#skills') setActiveTab('SKILLS');
-      else if (hash === '#home' || hash === '#play') setActiveTab('PLAY');
+      else if (hash === '#home' || hash === '#play') setActiveTab('HOME');
       
       if (hash === '#checkin') setShowCheckIn(true);
       else if (hash === '#sell') setShowMarketForm(true);
@@ -301,7 +293,7 @@ export const App: React.FC = () => {
       localStorage.setItem('play_share_seen_wanted', JSON.stringify(newWantedMapping));
     }
     
-    if (activeTab === 'PLAY' && profile && activities.length > 0) {
+    if (activeTab === 'HOME' && profile && activities.length > 0) {
       const newMapping = { ...acknowledgedMap };
       activities.forEach(a => { newMapping[a.id] = a.lastUpdated || 'initial'; });
       setAcknowledgedMap(newMapping);
@@ -311,7 +303,7 @@ export const App: React.FC = () => {
 
   const changeTab = (tab: AppTab) => {
     setActiveTab(tab);
-    window.location.hash = tab === 'PLAY' ? 'play' : tab.toLowerCase();
+    window.location.hash = tab === 'HOME' ? 'play' : tab.toLowerCase();
   };
 
   const handleActionClick = () => {
@@ -339,7 +331,7 @@ export const App: React.FC = () => {
     setEditingMarketItem(undefined);
     setEditingSkill(undefined);
     setEditingWantedItem(undefined);
-    window.location.hash = activeTab === 'PLAY' ? 'play' : activeTab.toLowerCase();
+    window.location.hash = activeTab === 'HOME' ? 'play' : activeTab.toLowerCase();
   };
 
   const handlePasscodeSuccess = () => { 
@@ -366,7 +358,7 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteActivity = async (id: string) => {
-    if (confirm(t.deleteConfirm)) {
+    if (confirm('Delete this plan permanently?')) {
       try { await deleteDoc(doc(db, "activities", id)); } catch (e: any) { alert(e.message); }
     }
   };
@@ -565,7 +557,7 @@ export const App: React.FC = () => {
   };
 
   const handleLogout = async () => { 
-    if (confirm(t.logout)) { 
+    if (confirm('Logout?')) { 
       try {
         await signOut(auth); 
         store.clearAll(); 
@@ -588,7 +580,7 @@ export const App: React.FC = () => {
     switch (platform) {
       case 'copy':
         navigator.clipboard.writeText(shareData.url);
-        alert(t.copyLink);
+        alert('Link copied to clipboard!');
         break;
       case 'whatsapp':
         window.open(`https://wa.me/?text=${encodeURIComponent(fullText)}`, '_blank');
@@ -607,18 +599,18 @@ export const App: React.FC = () => {
     setShowShareMenu(false);
   };
 
-  if (!isVerified) return <PasscodeGate language={language} onSuccess={handlePasscodeSuccess} />;
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">{t.loading}</div>;
-  if (appState === 'AUTH') return <AuthScreen language={language} />;
-  if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup language={language} onComplete={handleProfileComplete} />;
+  if (!isVerified) return <PasscodeGate onSuccess={handlePasscodeSuccess} />;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">Loading community...</div>;
+  if (appState === 'AUTH') return <AuthScreen />;
+  if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup onComplete={handleProfileComplete} />;
 
   const isMarket = activeTab === 'MARKET';
   const isWanted = activeTab === 'WANTED';
   const isSkills = activeTab === 'SKILLS';
   const isProfile = activeTab === 'PROFILE';
-  const isPlay = activeTab === 'PLAY';
+  const isHome = activeTab === 'HOME';
   
-  const themeColor = isMarket ? 'text-teal-500' : isWanted ? 'text-amber-500' : isSkills ? 'text-indigo-500' : isPlay ? 'text-pink-500' : 'text-pink-500';
+  const themeColor = isMarket ? 'text-teal-500' : isWanted ? 'text-amber-500' : isSkills ? 'text-indigo-500' : isHome ? 'text-pink-500' : 'text-pink-500';
   const themeBg = (isMarket || isProfile) ? 'bg-teal-400' : isWanted ? 'bg-amber-400' : isSkills ? 'bg-indigo-400' : 'bg-pink-400';
   const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isWanted ? 'shadow-amber-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
@@ -637,44 +629,31 @@ export const App: React.FC = () => {
            </button>
         </div>
         <div className="flex flex-col items-center">
-          <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>{t.appName}</h1>
-          <div className="flex gap-2 mt-1">
-            <button 
-              onClick={() => setShowShareMenu(true)} 
-              className="flex items-center gap-1.5 bg-pink-500 text-white px-3 py-1 rounded-full shadow-lg shadow-pink-100 active:scale-90 transition-all hover:bg-pink-600 z-10"
-            >
-              <Share2 size={12} className="animate-bounce" />
-              <span className="text-[9px] font-black uppercase tracking-tight">{t.shareApp}</span>
-            </button>
-            <div className="flex gap-1 bg-white/50 backdrop-blur-sm p-0.5 rounded-full border border-gray-100 shadow-sm">
-              {(['ja', 'en', 'zh', 'ko'] as Language[]).map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => handleLanguageChange(lang)}
-                  className={`px-2 py-0.5 text-[8px] font-black rounded-full transition-all ${language === lang ? 'bg-pink-500 text-white shadow-sm' : 'text-gray-400 hover:text-pink-400'}`}
-                >
-                  {lang.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
+          <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>Nearby Exchange</h1>
+          <button 
+            onClick={() => setShowShareMenu(true)} 
+            className="mt-1 flex items-center gap-1.5 bg-pink-500 text-white px-3 py-1 rounded-full shadow-lg shadow-pink-100 active:scale-90 transition-all hover:bg-pink-600 z-10"
+          >
+            <Share2 size={12} className="animate-bounce" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Share App</span>
+          </button>
         </div>
       </header>
 
       <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'MARKET' && profile && (
-          <MarketPlace items={marketItems} profile={profile} language={language} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
+          <MarketPlace items={marketItems} profile={profile} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
         )}
         {activeTab === 'WANTED' && profile && (
-          <WantedList items={wantedItems} profile={profile} language={language} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={handleWantedDelete} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
+          <WantedList items={wantedItems} profile={profile} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={handleWantedDelete} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
         )}
         {activeTab === 'SKILLS' && profile && (
-          <SkillExchange skills={skills} profile={profile} language={language} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={handleSkillDelete} onStatusChange={handleSkillStatusChange} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+          <SkillExchange skills={skills} profile={profile} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={handleSkillDelete} onStatusChange={handleSkillStatusChange} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
         )}
-        {activeTab === 'PLAY' && profile && (
+        {activeTab === 'HOME' && profile && (
           <div className="animate-fade-in">
-            <PetGarden profile={profile} language={language} />
-            <Timeline activities={activities} profile={profile} language={language} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onViewProfile={handleViewProfile} />
+            <PetGarden profile={profile} />
+            <Timeline activities={activities} profile={profile} acknowledgedMap={acknowledgedMap} onEdit={(a) => { setEditingActivity(a); setShowCheckIn(true); }} onDelete={handleDeleteActivity} onUpdateProfile={setProfile} onViewProfile={handleViewProfile} />
           </div>
         )}
         {activeTab === 'PROFILE' && profile && (
@@ -703,7 +682,6 @@ export const App: React.FC = () => {
             acknowledgedMarketMap={acknowledgedMarketMap}
             acknowledgedSkillMap={acknowledgedSkillMap}
             acknowledgedWantedMap={acknowledgedWantedMap}
-            language={language}
           />
         )}
       </main>
@@ -732,7 +710,6 @@ export const App: React.FC = () => {
           onGoToTransaction={(id) => { setTargetMarketId(id); setViewingProfile(null); setActiveTab('MARKET'); }} 
           onGoToSkill={(id) => { setTargetSkillId(id); setViewingProfile(null); setActiveTab('SKILLS'); }}
           onClose={() => setViewingProfile(null)} 
-          language={language}
         />
       )}
 
@@ -740,7 +717,7 @@ export const App: React.FC = () => {
         <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
-            <CheckInForm profile={profile} language={language} initialActivity={editingActivity} onSubmit={handleAddActivity} onCancel={closeModals} />
+            <CheckInForm profile={profile} initialActivity={editingActivity} onSubmit={handleAddActivity} onCancel={closeModals} />
           </div>
         </div>
       )}
@@ -749,7 +726,7 @@ export const App: React.FC = () => {
         <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
-            <MarketItemForm profile={profile} language={language} initialItem={editingMarketItem} onSubmit={handleMarketSubmit} onCancel={closeModals} />
+            <MarketItemForm profile={profile} initialItem={editingMarketItem} onSubmit={handleMarketSubmit} onCancel={closeModals} />
           </div>
         </div>
       )}
@@ -758,7 +735,7 @@ export const App: React.FC = () => {
         <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
-            <SkillForm profile={profile} language={language} initialSkill={editingSkill} onSubmit={handleSkillSubmit} onCancel={closeModals} />
+            <SkillForm profile={profile} initialSkill={editingSkill} onSubmit={handleSkillSubmit} onCancel={closeModals} />
           </div>
         </div>
       )}
@@ -767,7 +744,7 @@ export const App: React.FC = () => {
         <div className="fixed inset-0 z-[500] flex items-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModals} />
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
-            <WantedItemForm profile={profile} language={language} initialItem={editingWantedItem} onSubmit={handleWantedSubmit} onCancel={closeModals} />
+            <WantedItemForm profile={profile} initialItem={editingWantedItem} onSubmit={handleWantedSubmit} onCancel={closeModals} />
           </div>
         </div>
       )}
@@ -780,30 +757,30 @@ export const App: React.FC = () => {
                 <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center text-pink-500 mx-auto border-4 border-white shadow-lg mb-2">
                   <Share2 size={32} />
                 </div>
-                <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">{t.spreadWord}</h3>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{t.inviteNeighbors}</p>
+                <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">Spread the Word</h3>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Invite your neighbors to join!</p>
               </div>
               
               <div className="grid grid-cols-1 gap-3">
                 <button onClick={() => handleShare('copy')} className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all group active:scale-95">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><ExternalLink size={20} className="text-gray-400" /></div>
-                  <span className="font-black text-gray-700 uppercase text-xs tracking-widest">{t.copyLink}</span>
+                  <span className="font-black text-gray-700 uppercase text-xs tracking-widest">Copy Link</span>
                 </button>
                 <button onClick={() => handleShare('whatsapp')} className="flex items-center gap-4 p-4 bg-green-50 hover:bg-green-100 rounded-2xl transition-all group active:scale-95">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><MessageCircle size={20} className="text-green-500" /></div>
-                  <span className="font-black text-green-700 uppercase text-xs tracking-widest">{t.whatsapp}</span>
+                  <span className="font-black text-green-700 uppercase text-xs tracking-widest">WhatsApp</span>
                 </button>
                 <button onClick={() => handleShare('line')} className="flex items-center gap-4 p-4 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all group active:scale-95">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><Send size={20} className="text-emerald-500" /></div>
-                  <span className="font-black text-emerald-700 uppercase text-xs tracking-widest">{t.line}</span>
+                  <span className="font-black text-emerald-700 uppercase text-xs tracking-widest">LINE</span>
                 </button>
                 <button onClick={() => handleShare('airdrop')} className="flex items-center gap-4 p-4 bg-blue-50 hover:bg-blue-100 rounded-2xl transition-all group active:scale-95">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all"><RefreshCw size={20} className="text-blue-500" /></div>
-                  <span className="font-black text-blue-700 uppercase text-xs tracking-widest">{t.airdrop}</span>
+                  <span className="font-black text-blue-700 uppercase text-xs tracking-widest">AirDrop</span>
                 </button>
               </div>
               
-              <button onClick={() => setShowShareMenu(false)} className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">{t.close}</button>
+              <button onClick={() => setShowShareMenu(false)} className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">Close</button>
             </div>
           </div>
         </div>
@@ -812,25 +789,25 @@ export const App: React.FC = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-1 relative">
           <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
-            <ShoppingBag size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.market}</span>
+            <ShoppingBag size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Market</span>
           </button>
           <button onClick={() => changeTab('WANTED')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'WANTED' ? 'text-amber-400' : 'text-gray-300'}`}>
-            <Heart size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.wanted}</span>
+            <Heart size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Wanted</span>
           </button>
           
           <button onClick={handleActionClick} className={`flex items-center justify-center ${themeBg} text-white w-12 h-12 rounded-2xl font-black shadow-xl ${themeShadow} border-4 border-white -translate-y-4 active:scale-95 transition-all flex-shrink-0 mx-1`}><PlusCircle size={24} /></button>
 
           <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
-            <BookOpen size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.skills}</span>
+            <BookOpen size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Skills</span>
           </button>
 
-          <button onClick={() => changeTab('PLAY')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'PLAY' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <Palmtree size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.play}</span>
-            {(activeTab !== 'PLAY' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-50 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{unseenCount}</span>}
+          <button onClick={() => changeTab('HOME')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'HOME' ? 'text-pink-400' : 'text-gray-300'}`}>
+            <Home size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Play</span>
+            {(activeTab !== 'HOME' && unseenCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-orange-50 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{unseenCount}</span>}
           </button>
 
           <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
-            <UserCircle size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.profile}</span>
+            <UserCircle size={20} /><span className="text-[7px] font-black uppercase tracking-wider">Me</span>
             {(activeTab !== 'PROFILE' && profileActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{profileActionsCount}</span>}
           </button>
         </div>
