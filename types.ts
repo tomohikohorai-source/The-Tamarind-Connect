@@ -159,5 +159,5 @@ export interface WantedItem {
   lastUpdated: string;
 }
 
-export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'HOME' | 'PROFILE';
+export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'PLAY' | 'PROFILE';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';
