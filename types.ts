@@ -19,7 +19,6 @@ export interface PrivacySettings {
   showListings: boolean;
   showPastSales: boolean;
   showBuying: boolean;
-  showPlayHistory: boolean;
   showSkills?: boolean;
   showWanted?: boolean;
 }
@@ -159,5 +158,5 @@ export interface WantedItem {
   lastUpdated: string;
 }
 
-export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'HOME' | 'PROFILE';
+export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'PROFILE';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';
