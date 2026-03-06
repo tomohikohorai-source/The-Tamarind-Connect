@@ -31,7 +31,7 @@ export const App: React.FC = () => {
   const [wantedItems, setWantedItems] = useState<WantedItem[]>([]);
   
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
-  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'ja');
+  const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'en');
   const t = translations[language];
 
   const handleLanguageChange = (lang: Language) => {

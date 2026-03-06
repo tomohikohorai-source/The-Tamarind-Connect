@@ -243,8 +243,8 @@ export const translations = {
     idTaken: "This User ID is already taken",
     warning: "Warning",
     authWarning: "Do not use sensitive passwords. This app is for community exchange and does not have enterprise-grade security.",
-    support: "Support",
-    supportText: "If you forget your password, contact",
+    support: "Contact",
+    supportText: "",
     notice: "Notice"
   },
   zh: {
@@ -488,8 +488,8 @@ export const translations = {
     idTaken: "此用户ID已被占用",
     warning: "警告",
     authWarning: "请勿使用敏感密码。本应用用于社区交流，不具备企业级安全性。",
-    support: "支持",
-    supportText: "如果您忘记密码，请联系",
+    support: "联系方式",
+    supportText: "",
     notice: "通知"
   },
   ko: {
@@ -734,8 +734,8 @@ export const translations = {
     idTaken: "이미 사용 중인 사용자 ID입니다",
     warning: "경고",
     authWarning: "중요한 비밀번호를 사용하지 마십시오. 이 앱은 커뮤니티 교환용이며 기업 수준의 보안을 갖추고 있지 않습니다.",
-    support: "지원",
-    supportText: "비밀번호를 잊어버린 경우 다음으로 문의하십시오",
+    support: "문의처",
+    supportText: "",
     notice: "공지"
   },
   ja: {
@@ -980,8 +980,8 @@ export const translations = {
     idTaken: "このユーザーIDは既に使用されています",
     warning: "警告",
     authWarning: "重要なパスワードは使用しないでください。このアプリはコミュニティ交換用であり、企業レベルのセキュリティは備えていません。",
-    support: "サポート",
-    supportText: "パスワードを忘れた場合は、こちらまでご連絡ください：",
+    support: "問い合わせ先",
+    supportText: "",
     notice: "お知らせ"
   }
 };

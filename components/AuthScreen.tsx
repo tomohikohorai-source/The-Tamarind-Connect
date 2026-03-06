@@ -85,7 +85,7 @@ export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange }) => {
         <div className="flex items-start gap-2">
           <Mail size={14} className="text-blue-400 shrink-0 mt-0.5" />
           <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest text-left leading-relaxed">
-            {t.support}: {t.supportText} <span className="underline select-all lowercase">nearbyexchange@gmail.com</span>
+            {t.support}: <span className="underline select-all lowercase">nearbyexchange@gmail.com</span>
           </p>
         </div>
       </div>
