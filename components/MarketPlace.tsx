@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
 import { Language, translations } from '../translations';
@@ -16,6 +16,7 @@ interface Props {
   onStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
   onDelete: (id: string) => void;
   onAddComment: (itemId: string, text: string) => void;
+  onLike: (itemId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
 }
@@ -91,7 +92,7 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
   return null;
 });
 
-const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onClick: () => void, profile: UserProfile }) => {
+const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketItem, onClick: () => void, profile: UserProfile, onLike: (e: React.MouseEvent) => void }) => {
   const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
   const isDiscounted = item.priceUpdatedAt && 
                       item.previousPrice !== undefined && 
@@ -100,6 +101,7 @@ const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onC
 
   const isSold = item.status === 'SOLD';
   const canClick = !isSold || item.userId === profile.uid || item.buyerId === profile.uid;
+  const isLiked = item.likes?.includes(profile.uid);
 
   return (
     <button 
@@ -139,6 +141,16 @@ const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onC
           )}
         </div>
 
+        <div className="absolute top-2 right-2 z-10">
+          <div 
+            onClick={onLike}
+            className={`p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 ${isLiked ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+          >
+            <Heart size={10} fill={isLiked ? "currentColor" : "none"} />
+            {item.likes && item.likes.length > 0 && <span className="text-[8px] font-black">{item.likes.length}</span>}
+          </div>
+        </div>
+
         <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl shadow-sm border border-teal-50">
           <div className="flex flex-col items-end">
             {isDiscounted && item.previousPrice && (
@@ -157,7 +169,7 @@ const MarketItemCard = memo(({ item, onClick, profile }: { item: MarketItem, onC
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onViewProfile, onChatClose }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -324,12 +336,21 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
         <div className="flex items-center justify-between">
-            <button 
-              onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
-              className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
-            >
-              <ChevronLeft size={16} /> {t.market}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
+                className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+              >
+                <ChevronLeft size={16} /> {t.market}
+              </button>
+              <button 
+                onClick={() => onLike(viewingItem.id)} 
+                className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+              >
+                <Heart size={16} fill={viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+                {viewingItem.likes && viewingItem.likes.length > 0 && <span>{viewingItem.likes.length}</span>}
+              </button>
+            </div>
            <button 
              onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} 
              className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-teal-50 shadow-sm active:scale-90 transition-all shrink-0"
@@ -705,7 +726,13 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
 
       <div className="grid grid-cols-2 gap-4">
         {filteredItems.map((item) => (
-          <MarketItemCard key={item.id} item={item} onClick={() => handleItemClick(item)} profile={profile} />
+          <MarketItemCard 
+            key={item.id} 
+            item={item} 
+            onClick={() => handleItemClick(item)} 
+            profile={profile} 
+            onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
+          />
         ))}
       </div>
       {filteredItems.length === 0 && (

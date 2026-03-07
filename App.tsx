@@ -17,7 +17,7 @@ import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove
 } from './firebase';
 
 export const App: React.FC = () => {
@@ -419,6 +419,42 @@ export const App: React.FC = () => {
     } catch (e: any) { alert("Update failed: " + e.message); }
   };
 
+  const handleMarketLike = async (itemId: string) => {
+    if (!profile) return;
+    const item = marketItems.find(i => i.id === itemId);
+    if (!item) return;
+    const isLiked = item.likes?.includes(profile.uid);
+    try {
+      await updateDoc(doc(db, "marketItems", itemId), {
+        likes: isLiked ? arrayRemove(profile.uid) : arrayUnion(profile.uid)
+      });
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleSkillLike = async (skillId: string) => {
+    if (!profile) return;
+    const skill = skills.find(s => s.id === skillId);
+    if (!skill) return;
+    const isLiked = skill.likes?.includes(profile.uid);
+    try {
+      await updateDoc(doc(db, "skills", skillId), {
+        likes: isLiked ? arrayRemove(profile.uid) : arrayUnion(profile.uid)
+      });
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleWantedLike = async (wantedId: string) => {
+    if (!profile) return;
+    const item = wantedItems.find(i => i.id === wantedId);
+    if (!item) return;
+    const isLiked = item.likes?.includes(profile.uid);
+    try {
+      await updateDoc(doc(db, "wantedItems", wantedId), {
+        likes: isLiked ? arrayRemove(profile.uid) : arrayUnion(profile.uid)
+      });
+    } catch (e: any) { alert(e.message); }
+  };
+
   const handleMarketComment = async (itemId: string, text: string) => {
     if (!profile) return;
     const now = new Date().toISOString();
@@ -645,13 +681,48 @@ export const App: React.FC = () => {
 
       <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'MARKET' && profile && (
-          <MarketPlace items={marketItems} profile={profile} language={language} initialActiveItemId={targetMarketId} onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} onStatusChange={handleMarketStatusChange} onDelete={handleMarketDelete} onAddComment={handleMarketComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetMarketId(null)} />
+          <MarketPlace 
+            items={marketItems} 
+            profile={profile} 
+            language={language} 
+            initialActiveItemId={targetMarketId} 
+            onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
+            onStatusChange={handleMarketStatusChange} 
+            onDelete={handleMarketDelete} 
+            onAddComment={handleMarketComment} 
+            onLike={handleMarketLike}
+            onViewProfile={handleViewProfile} 
+            onChatClose={() => setTargetMarketId(null)} 
+          />
         )}
         {activeTab === 'WANTED' && profile && (
-          <WantedList items={wantedItems} profile={profile} language={language} initialActiveItemId={targetWantedId} onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} onDelete={handleWantedDelete} onAddComment={handleWantedComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetWantedId(null)} />
+          <WantedList 
+            items={wantedItems} 
+            profile={profile} 
+            language={language} 
+            initialActiveItemId={targetWantedId} 
+            onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} 
+            onDelete={handleWantedDelete} 
+            onAddComment={handleWantedComment} 
+            onLike={handleWantedLike}
+            onViewProfile={handleViewProfile} 
+            onChatClose={() => setTargetWantedId(null)} 
+          />
         )}
         {activeTab === 'SKILLS' && profile && (
-          <SkillExchange skills={skills} profile={profile} language={language} initialActiveSkillId={targetSkillId} onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} onDelete={handleSkillDelete} onStatusChange={handleSkillStatusChange} onAddComment={handleSkillComment} onViewProfile={handleViewProfile} onChatClose={() => setTargetSkillId(null)} />
+          <SkillExchange 
+            skills={skills} 
+            profile={profile} 
+            language={language} 
+            initialActiveSkillId={targetSkillId} 
+            onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} 
+            onDelete={handleSkillDelete} 
+            onStatusChange={handleSkillStatusChange} 
+            onAddComment={handleSkillComment} 
+            onLike={handleSkillLike}
+            onViewProfile={handleViewProfile} 
+            onChatClose={() => setTargetSkillId(null)} 
+          />
         )}
         {activeTab === 'PROFILE' && profile && (
           <ProfilePage 
@@ -672,6 +743,7 @@ export const App: React.FC = () => {
             onAddMarketComment={handleMarketComment} 
             onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} 
             onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} 
+            onGoToWanted={(id) => { setTargetWantedId(id); setActiveTab('WANTED'); }}
             acknowledgedMarketMap={acknowledgedMarketMap}
             acknowledgedSkillMap={acknowledgedSkillMap}
             acknowledgedWantedMap={acknowledgedWantedMap}
@@ -698,7 +770,8 @@ export const App: React.FC = () => {
           onDeleteSkill={() => {}}
           onAddMarketComment={() => {}} 
           onGoToTransaction={(id) => { setTargetMarketId(id); setViewingProfile(null); setActiveTab('MARKET'); }} 
-          onGoToSkill={(id) => { setTargetSkillId(id); setViewingProfile(null); setActiveTab('SKILLS'); }}
+          onGoToSkill={(id) => { setTargetSkillId(id); setViewingProfile(null); setActiveTab('SKILLS'); }} 
+          onGoToWanted={(id) => { setTargetWantedId(id); setViewingProfile(null); setActiveTab('WANTED'); }}
           onClose={() => setViewingProfile(null)} 
           language={language}
         />

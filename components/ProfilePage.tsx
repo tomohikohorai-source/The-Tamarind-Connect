@@ -25,6 +25,7 @@ interface Props {
   onAddMarketComment: (itemId: string, text: string) => void;
   onGoToTransaction: (itemId: string) => void;
   onGoToSkill: (skillId: string) => void;
+  onGoToWanted: (wantedId: string) => void;
   onClose?: () => void; 
   acknowledgedMarketMap?: Record<string, string>;
   acknowledgedSkillMap?: Record<string, string>;
@@ -64,7 +65,7 @@ interface AppNotification {
 export const ProfilePage: React.FC<Props> = ({ 
   profile, currentUser, marketItems, skills, wantedItems, onLogout, onUpdateProfile, 
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
-  onAddMarketComment, onGoToTransaction, onGoToSkill, onClose,
+  onAddMarketComment, onGoToTransaction, onGoToSkill, onGoToWanted, onClose,
   acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {},
   language
 }) => {
@@ -83,7 +84,8 @@ export const ProfilePage: React.FC<Props> = ({
     buying: true,
     wanted: true,
     skills: true,
-    notifications: true
+    notifications: true,
+    likes: true
   });
 
   const toggleSection = useCallback((key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] })), []);
@@ -162,6 +164,17 @@ export const ProfilePage: React.FC<Props> = ({
   const myPurchases = useMemo(() => marketItems.filter(i => (i.buyerId === profile.uid || (i.comments.some(c => c.userId === profile.uid) && i.userId !== profile.uid))), [marketItems, profile.uid]);
   const mySkills = useMemo(() => skills.filter(s => (s.userId === profile.uid || s.comments.some(c => c.userId === profile.uid))), [skills, profile.uid]);
   const myWanted = useMemo(() => wantedItems.filter(w => (w.userId === profile.uid || w.comments.some(c => c.userId === profile.uid))), [wantedItems, profile.uid]);
+  const myLikes = useMemo(() => {
+    const likedMarket = marketItems.filter(i => i.likes?.includes(profile.uid));
+    const likedSkills = skills.filter(s => s.likes?.includes(profile.uid));
+    const likedWanted = wantedItems.filter(w => w.likes?.includes(profile.uid));
+    
+    return [
+      ...likedMarket.map(i => ({ ...i, itemType: 'MARKET' as const })),
+      ...likedSkills.map(s => ({ ...s, itemType: 'SKILL' as const })),
+      ...likedWanted.map(w => ({ ...w, itemType: 'WANTED' as const }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [marketItems, skills, wantedItems, profile.uid]);
 
   const handleNotificationJump = (notif: AppNotification) => {
     if (!notif.isDismissed) {
@@ -475,6 +488,44 @@ export const ProfilePage: React.FC<Props> = ({
                     <ChevronRight size={14} className="text-gray-300"/>
                   </button>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isOwnProfile && (
+          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+            <CollapsibleHeader title={t.likedPosts} icon={<Heart size={18} fill="currentColor" className="text-rose-500" />} count={myLikes.length} isOpen={openSections.likes} onToggle={() => toggleSection('likes')} />
+            {openSections.likes && (
+              <div className="px-4 pb-4 space-y-3 animate-fade-in">
+                {myLikes.map(item => (
+                  <button 
+                    key={item.id} 
+                    onClick={() => {
+                      if (item.itemType === 'MARKET') onGoToTransaction(item.id);
+                      else if (item.itemType === 'SKILL') onGoToSkill(item.id);
+                      else if (item.itemType === 'WANTED') onGoToWanted(item.id);
+                    }} 
+                    className="w-full p-4 rounded-[28px] border border-rose-50 flex items-center justify-between bg-white text-left shadow-sm"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border ${item.itemType === 'MARKET' ? 'bg-teal-50 border-teal-100' : item.itemType === 'SKILL' ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
+                         {item.itemType === 'MARKET' ? (GENRE_ICONS[(item as MarketItem).genre] || '📦') : item.itemType === 'SKILL' ? (SKILL_ICONS[(item as Skill).category] || '🌟') : (GENRE_ICONS[(item as WantedItem).genre] || '🔍')}
+                       </div>
+                       <div className="flex flex-col min-w-0">
+                         <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
+                         <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{item.itemType}</div>
+                       </div>
+                    </div>
+                    <ChevronRight size={14} className="text-gray-300"/>
+                  </button>
+                ))}
+                {myLikes.length === 0 && (
+                  <div className="py-8 text-center space-y-2">
+                    <Heart size={32} className="mx-auto text-gray-100" />
+                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No liked posts yet</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

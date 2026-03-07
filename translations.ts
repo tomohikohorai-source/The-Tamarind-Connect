@@ -245,7 +245,9 @@ export const translations = {
     authWarning: "Do not use sensitive passwords. This app is for community exchange and does not have enterprise-grade security.",
     support: "Contact",
     supportText: "",
-    notice: "Notice"
+    notice: "Notice",
+    likesTitle: "Likes",
+    likedPosts: "Liked Posts"
   },
   zh: {
     appName: "邻里交换",
@@ -490,7 +492,9 @@ export const translations = {
     authWarning: "请勿使用敏感密码。本应用用于社区交流，不具备企业级安全性。",
     support: "联系方式",
     supportText: "",
-    notice: "通知"
+    notice: "通知",
+    likesTitle: "点赞",
+    likedPosts: "点赞的帖子"
   },
   ko: {
     appName: "이웃 교환",
@@ -736,7 +740,9 @@ export const translations = {
     authWarning: "중요한 비밀번호를 사용하지 마십시오. 이 앱은 커뮤니티 교환용이며 기업 수준의 보안을 갖추고 있지 않습니다.",
     support: "문의처",
     supportText: "",
-    notice: "공지"
+    notice: "공지",
+    likesTitle: "좋아요",
+    likedPosts: "좋아요 표시한 게시물"
   },
   ja: {
     appName: "Nearby Exchange",
@@ -982,6 +988,8 @@ export const translations = {
     authWarning: "重要なパスワードは使用しないでください。このアプリはコミュニティ交換用であり、企業レベルのセキュリティは備えていません。",
     support: "問い合わせ先",
     supportText: "",
-    notice: "お知らせ"
+    notice: "お知らせ",
+    likesTitle: "いいね",
+    likedPosts: "いいねした投稿"
   }
 };

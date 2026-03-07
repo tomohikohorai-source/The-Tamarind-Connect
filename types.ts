@@ -87,6 +87,7 @@ export interface MarketItem {
   images: string[]; 
   createdAt: string;
   lastUpdated: string;
+  likes?: string[];
   // Transaction flow flags
   buyerConfirmedCompletion?: boolean;
   sellerConfirmedCompletion?: boolean;
@@ -124,6 +125,7 @@ export interface Skill {
   comments: SkillComment[];
   createdAt: string;
   lastUpdated: string;
+  likes?: string[];
   requesterRequestedCancellation?: boolean;
   sellerRequestedCancellation?: boolean;
 }
@@ -156,6 +158,7 @@ export interface WantedItem {
   status: 'OPEN' | 'CLOSED';
   createdAt: string;
   lastUpdated: string;
+  likes?: string[];
 }
 
 export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'PROFILE';

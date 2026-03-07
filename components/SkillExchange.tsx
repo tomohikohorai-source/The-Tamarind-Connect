@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { Language, translations } from '../translations';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string) => void;
   onAddComment: (skillId: string, text: string) => void;
+  onLike: (skillId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
   language?: Language;
@@ -67,7 +68,7 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onViewProfile, onChatClose, language = 'en' }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, language = 'en' }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,12 +165,21 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
     return (
       <div className="animate-fade-in space-y-6 pb-32 px-4 pt-4">
         <div className="flex items-center justify-between">
-           <button 
-             onClick={() => { setViewingSkill(null); if(onChatClose) onChatClose(); }} 
-             className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
-           >
-             <ChevronLeft size={16} /> {t.skill}
-           </button>
+           <div className="flex gap-2">
+             <button 
+               onClick={() => { setViewingSkill(null); if(onChatClose) onChatClose(); }} 
+               className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+             >
+               <ChevronLeft size={16} /> {t.skill}
+             </button>
+             <button 
+               onClick={() => onLike(viewingSkill.id)} 
+               className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingSkill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+             >
+               <Heart size={16} fill={viewingSkill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+               {viewingSkill.likes && viewingSkill.likes.length > 0 && <span>{viewingSkill.likes.length}</span>}
+             </button>
+           </div>
            <button 
              onClick={() => onViewProfile && onViewProfile(viewingSkill.userId)} 
              className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-indigo-50 shadow-sm active:scale-90 transition-all shrink-0"
@@ -417,6 +427,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               disabled={!canClick}
               className={`bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group ${!canClick ? 'opacity-80 grayscale-[0.5]' : ''}`}
             >
+              <button 
+                onClick={(e) => { e.stopPropagation(); onLike(skill.id); }}
+                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 ${skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+              >
+                <Heart size={10} fill={skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+                {skill.likes && skill.likes.length > 0 && <span className="text-[8px] font-black">{skill.likes.length}</span>}
+              </button>
               {isClosed && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
                   <div className="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-4 border-white -rotate-12 animate-pulse">

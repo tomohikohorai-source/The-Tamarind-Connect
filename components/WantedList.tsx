@@ -15,17 +15,19 @@ interface Props {
   onEdit: (item: WantedItem) => void;
   onDelete: (id: string) => void;
   onAddComment: (itemId: string, text: string) => void;
+  onLike: (itemId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
 }
 
-const WantedItemCard = memo(({ item, onClick, language = 'en' }: { item: WantedItem, onClick: () => void, language?: Language }) => {
+const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }: { item: WantedItem, onClick: () => void, profile: UserProfile, onLike: (e: React.MouseEvent) => void, language?: Language }) => {
   const t = translations[language];
   const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
   const isDiscounted = item.hopePriceUpdatedAt && 
                       item.previousHopePrice !== undefined && 
                       item.hopePrice > item.previousHopePrice && 
                       differenceInHours(new Date(), new Date(item.hopePriceUpdatedAt)) <= 72;
+  const isLiked = item.likes?.includes(profile.uid);
 
   return (
     <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative group">
@@ -54,6 +56,16 @@ const WantedItemCard = memo(({ item, onClick, language = 'en' }: { item: WantedI
           )}
         </div>
 
+        <div className="absolute top-2 right-2 z-10">
+          <div 
+            onClick={onLike}
+            className={`p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 ${isLiked ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+          >
+            <Heart size={10} fill={isLiked ? "currentColor" : "none"} />
+            {item.likes && item.likes.length > 0 && <span className="text-[8px] font-black">{item.likes.length}</span>}
+          </div>
+        </div>
+
         <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl shadow-sm border border-amber-50">
           <span className="text-amber-600 font-black text-[10px]">Hope: RM{item.hopePrice}</span>
         </div>
@@ -65,7 +77,7 @@ const WantedItemCard = memo(({ item, onClick, language = 'en' }: { item: WantedI
   );
 });
 
-export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onDelete, onAddComment, onViewProfile, onChatClose }) => {
+export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
   const t = translations[language];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
@@ -108,12 +120,21 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', i
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
         <div className="flex items-center justify-between">
-           <button 
-             onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
-             className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
-           >
-             <ChevronLeft size={16} /> {t.wanted}
-           </button>
+           <div className="flex gap-2">
+             <button 
+               onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
+               className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+             >
+               <ChevronLeft size={16} /> {t.wanted}
+             </button>
+             <button 
+               onClick={() => onLike(viewingItem.id)} 
+               className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+             >
+               <Heart size={16} fill={viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+               {viewingItem.likes && viewingItem.likes.length > 0 && <span>{viewingItem.likes.length}</span>}
+             </button>
+           </div>
            <button 
              onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} 
              className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-amber-50 shadow-sm active:scale-90 transition-all shrink-0"
@@ -281,7 +302,14 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', i
 
       <div className="grid grid-cols-2 gap-4">
         {filteredItems.map((item) => (
-          <WantedItemCard key={item.id} item={item} onClick={() => setViewingItem(item)} language={language} />
+          <WantedItemCard 
+            key={item.id} 
+            item={item} 
+            onClick={() => setViewingItem(item)} 
+            profile={profile}
+            onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
+            language={language} 
+          />
         ))}
       </div>
 
