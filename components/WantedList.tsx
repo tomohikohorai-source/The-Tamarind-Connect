@@ -11,6 +11,7 @@ interface Props {
   items: WantedItem[];
   profile: UserProfile;
   language?: Language;
+  loading?: boolean;
   initialActiveItemId?: string | null;
   onEdit: (item: WantedItem) => void;
   onDelete: (id: string) => void;
@@ -77,7 +78,7 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
   );
 });
 
-export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
+export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
   const t = translations[language];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
@@ -313,7 +314,12 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', i
         ))}
       </div>
 
-      {filteredItems.length === 0 && (
+      {loading ? (
+        <div className="py-24 text-center">
+          <div className="w-12 h-12 border-4 border-amber-100 border-t-amber-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Loading...</p>
+        </div>
+      ) : filteredItems.length === 0 && (
         <div className="py-24 text-center">
           <div className="text-gray-100 mb-4 flex justify-center"><Heart size={64}/></div>
           <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">{t.noWishlistFound}</p>

@@ -11,6 +11,7 @@ interface Props {
   items: MarketItem[];
   profile: UserProfile;
   language?: Language;
+  loading?: boolean;
   initialActiveItemId?: string | null;
   onEdit: (item: MarketItem) => void;
   onStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
@@ -169,7 +170,7 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -735,7 +736,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
           />
         ))}
       </div>
-      {filteredItems.length === 0 && (
+      {loading ? (
+        <div className="py-20 text-center">
+          <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Loading...</p>
+        </div>
+      ) : filteredItems.length === 0 && (
         <div className="py-20 text-center">
           <div className="text-gray-200 mb-4 flex justify-center"><ShoppingBag size={48}/></div>
           <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">{t.noMatchingItems}</p>

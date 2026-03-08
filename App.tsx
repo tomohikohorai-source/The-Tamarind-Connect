@@ -55,6 +55,9 @@ export const App: React.FC = () => {
   const [targetWantedId, setTargetWantedId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [marketLoading, setMarketLoading] = useState(true);
+  const [skillsLoading, setSkillsLoading] = useState(true);
+  const [wantedLoading, setWantedLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLive, setIsLive] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -66,6 +69,7 @@ export const App: React.FC = () => {
 
   const [showShareMenu, setShowShareMenu] = useState(false);
   const touchStartRef = useRef<number | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
   const [pullDistance, setPullDistance] = useState(0);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -90,6 +94,12 @@ export const App: React.FC = () => {
     setIsRefreshing(true);
     setTimeout(() => { window.location.reload(); }, 500);
   };
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTo(0, 0);
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -176,6 +186,7 @@ export const App: React.FC = () => {
         const data: MarketItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as MarketItem));
         setMarketItems(data);
+        setMarketLoading(false);
       });
 
       const qSkills = query(collection(db, "skills"), orderBy("createdAt", "desc"));
@@ -183,6 +194,7 @@ export const App: React.FC = () => {
         const data: Skill[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Skill));
         setSkills(data);
+        setSkillsLoading(false);
       });
 
       const qWanted = query(collection(db, "wantedItems"), orderBy("createdAt", "desc"));
@@ -190,6 +202,7 @@ export const App: React.FC = () => {
         const data: WantedItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as WantedItem));
         setWantedItems(data);
+        setWantedLoading(false);
       });
 
       return () => { unsubAct(); unsubMarket(); unsubSkills(); unsubWanted(); setIsLive(false); };
@@ -679,12 +692,13 @@ export const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
+      <main ref={mainRef} className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'MARKET' && profile && (
           <MarketPlace 
             items={marketItems} 
             profile={profile} 
             language={language} 
+            loading={marketLoading}
             initialActiveItemId={targetMarketId} 
             onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
             onStatusChange={handleMarketStatusChange} 
@@ -700,6 +714,7 @@ export const App: React.FC = () => {
             items={wantedItems} 
             profile={profile} 
             language={language} 
+            loading={wantedLoading}
             initialActiveItemId={targetWantedId} 
             onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} 
             onDelete={handleWantedDelete} 
@@ -714,6 +729,7 @@ export const App: React.FC = () => {
             skills={skills} 
             profile={profile} 
             language={language} 
+            loading={skillsLoading}
             initialActiveSkillId={targetSkillId} 
             onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} 
             onDelete={handleSkillDelete} 

@@ -18,6 +18,7 @@ interface Props {
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
   language?: Language;
+  loading?: boolean;
 }
 
 const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile, t: any }) => {
@@ -68,7 +69,7 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, language = 'en' }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, language = 'en', loading = false }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -478,7 +479,12 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         })}
       </div>
 
-      {filteredSkills.length === 0 && (
+      {loading ? (
+        <div className="py-24 text-center">
+          <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Loading...</p>
+        </div>
+      ) : filteredSkills.length === 0 && (
         <div className="py-24 text-center">
           <div className="text-gray-100 mb-4 flex justify-center"><Star size={64}/></div>
           <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">{t.noSkillFound}</p>

@@ -53,6 +53,20 @@ export const PasscodeGate: React.FC<Props> = ({ onSuccess, language, onLanguageC
             {t.enterApp}
           </button>
         </form>
+
+        <div className="mt-12 pt-8 border-t border-pink-50">
+          <div className="flex items-start gap-3 text-left">
+            <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center text-pink-400 shrink-0">
+              <span className="text-xs">✉️</span>
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-pink-300 uppercase tracking-widest">Support & Inquiries</p>
+              <p className="text-[10px] font-bold text-gray-500 leading-relaxed mt-1">
+                For inquiries or questions, please email <a href="mailto:nearbyexchange@gmail.com" className="text-pink-500 underline">nearbyexchange@gmail.com</a>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
