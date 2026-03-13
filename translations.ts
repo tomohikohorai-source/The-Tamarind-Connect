@@ -247,7 +247,12 @@ export const translations = {
     supportText: "",
     notice: "Notice",
     likesTitle: "Likes",
-    likedPosts: "Liked Posts"
+    likedPosts: "Liked Posts",
+    notifNewComment: "New Message",
+    notifRequestReceived: "Purchase Request",
+    notifRequestApproved: "Request Approved",
+    notifPickupReported: "Pickup Reported",
+    notifDiscussion: "New Reply"
   },
   zh: {
     appName: "邻里交换",
@@ -494,7 +499,12 @@ export const translations = {
     supportText: "",
     notice: "通知",
     likesTitle: "点赞",
-    likedPosts: "点赞的帖子"
+    likedPosts: "点赞的帖子",
+    notifNewComment: "新消息",
+    notifRequestReceived: "购买请求",
+    notifRequestApproved: "请求已批准",
+    notifPickupReported: "已报告取货",
+    notifDiscussion: "新回复"
   },
   ko: {
     appName: "이웃 교환",
@@ -742,7 +752,12 @@ export const translations = {
     supportText: "",
     notice: "공지",
     likesTitle: "좋아요",
-    likedPosts: "좋아요 표시한 게시물"
+    likedPosts: "좋아요 표시한 게시물",
+    notifNewComment: "새 메시지",
+    notifRequestReceived: "구매 요청",
+    notifRequestApproved: "요청 승인됨",
+    notifPickupReported: "수령 보고됨",
+    notifDiscussion: "새 답글"
   },
   ja: {
     appName: "Nearby Exchange",
@@ -990,6 +1005,11 @@ export const translations = {
     supportText: "",
     notice: "お知らせ",
     likesTitle: "いいね",
-    likedPosts: "いいねした投稿"
+    likedPosts: "いいねした投稿",
+    notifNewComment: "新着メッセージ",
+    notifRequestReceived: "購入リクエスト",
+    notifRequestApproved: "リクエスト承認",
+    notifPickupReported: "受取報告あり",
+    notifDiscussion: "新着返信"
   }
 };

@@ -13,6 +13,8 @@ import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
 import { store } from './services/store';
+import { DEMO_PASSCODE } from './constants';
+import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
 import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { 
@@ -185,7 +187,12 @@ export const App: React.FC = () => {
       const unsubMarket = onSnapshot(qMarket, (snapshot) => {
         const data: MarketItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as MarketItem));
-        setMarketItems(data);
+        
+        if (store.getPasscode() === DEMO_PASSCODE) {
+          setMarketItems([...SAMPLE_MARKET_ITEMS, ...data]);
+        } else {
+          setMarketItems(data);
+        }
         setMarketLoading(false);
       });
 
@@ -193,7 +200,12 @@ export const App: React.FC = () => {
       const unsubSkills = onSnapshot(qSkills, (snapshot) => {
         const data: Skill[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Skill));
-        setSkills(data);
+        
+        if (store.getPasscode() === DEMO_PASSCODE) {
+          setSkills([...SAMPLE_SKILLS, ...data]);
+        } else {
+          setSkills(data);
+        }
         setSkillsLoading(false);
       });
 
@@ -201,7 +213,12 @@ export const App: React.FC = () => {
       const unsubWanted = onSnapshot(qWanted, (snapshot) => {
         const data: WantedItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as WantedItem));
-        setWantedItems(data);
+        
+        if (store.getPasscode() === DEMO_PASSCODE) {
+          setWantedItems([...SAMPLE_WANTED_ITEMS, ...data]);
+        } else {
+          setWantedItems(data);
+        }
         setWantedLoading(false);
       });
 
@@ -349,8 +366,9 @@ export const App: React.FC = () => {
     window.location.hash = activeTab === 'PLAY' ? 'play' : activeTab.toLowerCase();
   };
 
-  const handlePasscodeSuccess = () => { 
+  const handlePasscodeSuccess = (code: string) => { 
     store.setVerified(true); 
+    store.setPasscode(code);
     setIsVerified(true); 
   };
   

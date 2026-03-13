@@ -1,7 +1,8 @@
 
 import React, { useState, useRef } from 'react';
 import { UserProfile, MarketItem } from '../types';
-import { MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES } from '../constants';
+import { MARKET_LOCATIONS, DEMO_MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES, DEMO_PASSCODE } from '../constants';
+import { store } from '../services/store';
 import { ChevronLeft, X, Package, Tag, Info, MapPin, CreditCard, Clock, Calendar, MessageSquare, Camera, Trash2, Coins, Layers, ShieldAlert } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
@@ -68,7 +69,8 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
   const [isCompresing, setIsCompressing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [pickupLocation, setPickupLocation] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? 'Other (Specify)' : initialItem?.pickupLocation || MARKET_LOCATIONS[0]);
+  const locations = store.getPasscode() === DEMO_PASSCODE ? DEMO_MARKET_LOCATIONS : MARKET_LOCATIONS;
+  const [pickupLocation, setPickupLocation] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? 'Other (Specify)' : initialItem?.pickupLocation || locations[0]);
   const [otherLocationText, setOtherLocationText] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? initialItem.pickupLocation.replace('Other: ', '') : '');
 
   const [pickupMode, setPickupMode] = useState<PickupMode>(initialItem?.pickupDateTime?.includes('Between') ? 'PERIOD' : initialItem?.pickupDateTime?.includes('On') ? (initialItem.pickupDateTime.split(' ').length > 2 ? 'DATETIME' : 'DATE') : 'NONE');
@@ -295,7 +297,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
         <div className="space-y-4">
           <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest flex items-center gap-2"><MapPin size={14} className="text-teal-400"/> {t.pickupLocation}</label>
           <div className="grid grid-cols-1 gap-2">
-            {MARKET_LOCATIONS.map(loc => (
+            {locations.map(loc => (
               <button key={loc} type="button" onClick={() => setPickupLocation(loc)} className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-3 ${pickupLocation === loc ? 'border-teal-400 bg-teal-50 shadow-sm' : 'border-gray-50 bg-white text-gray-400'}`}>
                 <span className="text-[10px] font-black uppercase tracking-tight">{loc === 'Other (Specify)' ? t.otherSpecify : loc}</span>
               </button>

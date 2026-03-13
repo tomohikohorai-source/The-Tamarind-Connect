@@ -7,7 +7,8 @@ const STORAGE_KEYS = {
   ACKNOWLEDGED_ACTIVITIES: 'play_share_seen_activities',
   ACKNOWLEDGED_MARKET: 'play_share_seen_market',
   ACKNOWLEDGED_SKILLS: 'play_share_seen_skills',
-  LANGUAGE: 'play_share_language'
+  LANGUAGE: 'play_share_language',
+  USED_PASSCODE: 'play_share_used_passcode'
 };
 
 export const store = {
@@ -22,6 +23,12 @@ export const store = {
   },
   setVerified: (v: boolean) => {
     localStorage.setItem(STORAGE_KEYS.PASSCODE_VERIFIED, v.toString());
+  },
+  getPasscode: (): string | null => {
+    return localStorage.getItem(STORAGE_KEYS.USED_PASSCODE);
+  },
+  setPasscode: (code: string) => {
+    localStorage.setItem(STORAGE_KEYS.USED_PASSCODE, code);
   },
   getUserProfile: (): UserProfile | null => {
     const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);

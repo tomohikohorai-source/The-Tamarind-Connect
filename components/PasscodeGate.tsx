@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { RESIDENT_PASSCODE } from '../constants';
+import { RESIDENT_PASSCODE, DEMO_PASSCODE } from '../constants';
 import { Language, translations } from '../translations';
 
 interface Props {
-  onSuccess: () => void;
+  onSuccess: (code: string) => void;
   language: Language;
   onLanguageChange: (lang: Language) => void;
 }
@@ -16,8 +16,8 @@ export const PasscodeGate: React.FC<Props> = ({ onSuccess, language, onLanguageC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code === RESIDENT_PASSCODE) {
-      onSuccess();
+    if (code === RESIDENT_PASSCODE || code === DEMO_PASSCODE) {
+      onSuccess(code);
     } else {
       setError(true);
       setCode('');

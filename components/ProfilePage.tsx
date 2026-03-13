@@ -57,6 +57,7 @@ interface AppNotification {
   itemId: string;
   title: string;
   message: string;
+  reason: string;
   isActionRequired: boolean;
   isDismissed: boolean;
   timestamp: string;
@@ -117,16 +118,16 @@ export const ProfilePage: React.FC<Props> = ({
       if (isSold && isAcknowledged) return;
 
       if (isOwner && item.requestStatus === 'PENDING') {
-        list.push({ id: `${item.id}-req`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request received!', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-req`), timestamp: lastUpdate });
+        list.push({ id: `${item.id}-req`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request received!', reason: t.notifRequestReceived, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-req`), timestamp: lastUpdate });
       }
       if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion) {
-        list.push({ id: `${item.id}-conf`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Buyer reported pickup!', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-conf`), timestamp: lastUpdate });
+        list.push({ id: `${item.id}-conf`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Buyer reported pickup!', reason: t.notifPickupReported, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-conf`), timestamp: lastUpdate });
       }
       if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion) {
-        list.push({ id: `${item.id}-appr`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request approved!', isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-appr`), timestamp: lastUpdate });
+        list.push({ id: `${item.id}-appr`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request approved!', reason: t.notifRequestApproved, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-appr`), timestamp: lastUpdate });
       }
       if ((isOwner || isBuyer || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${item.id}-cmt`, type: 'MARKET', itemId: item.id, title: item.title, message: `New message: ${lastComment.text}`, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-cmt`), timestamp: lastUpdate });
+        list.push({ id: `${item.id}-cmt`, type: 'MARKET', itemId: item.id, title: item.title, message: lastComment.text, reason: t.notifNewComment, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-cmt`), timestamp: lastUpdate });
       }
     });
 
@@ -142,7 +143,7 @@ export const ProfilePage: React.FC<Props> = ({
       if (isClosed && isAcknowledged) return;
 
       if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${skill.id}-cmt`, type: 'SKILL', itemId: skill.id, title: skill.title, message: `New reply: ${lastComment.text}`, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${skill.id}-cmt`), timestamp: skill.lastUpdated });
+        list.push({ id: `${skill.id}-cmt`, type: 'SKILL', itemId: skill.id, title: skill.title, message: lastComment.text, reason: t.notifNewComment, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${skill.id}-cmt`), timestamp: skill.lastUpdated });
       }
     });
 
@@ -151,7 +152,7 @@ export const ProfilePage: React.FC<Props> = ({
       const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
       const lastComment = wanted.comments.length > 0 ? wanted.comments[wanted.comments.length - 1] : null;
       if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${wanted.id}-cmt`, type: 'WANTED', itemId: wanted.id, title: wanted.title, message: `Discussion reply: ${lastComment.text}`, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${wanted.id}-cmt`), timestamp: wanted.lastUpdated });
+        list.push({ id: `${wanted.id}-cmt`, type: 'WANTED', itemId: wanted.id, title: wanted.title, message: lastComment.text, reason: t.notifDiscussion, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${wanted.id}-cmt`), timestamp: wanted.lastUpdated });
       }
     });
 
@@ -403,8 +404,16 @@ export const ProfilePage: React.FC<Props> = ({
                      {n.type === 'MARKET' ? <ShoppingBag size={16}/> : n.type === 'SKILL' ? <BookOpen size={16}/> : <Heart size={16}/>}
                    </div>
                    <div className="min-w-0 flex-grow">
+                     <div className="flex items-center gap-2 mb-1">
+                       <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${n.isDismissed ? 'bg-gray-200 text-gray-500' : 'bg-pink-500 text-white'}`}>
+                         {n.reason}
+                       </span>
+                       <span className="text-[7px] font-black text-gray-300 uppercase tracking-widest">
+                         {n.type}
+                       </span>
+                     </div>
                      <h4 className="text-[11px] font-black uppercase truncate text-gray-800">{n.title}</h4>
-                     <p className="text-[10px] leading-relaxed font-bold text-gray-500">{n.message}</p>
+                     <p className="text-[10px] leading-relaxed font-bold text-gray-500 line-clamp-1">{n.message}</p>
                    </div>
                  </button>
                ))}

@@ -2,6 +2,7 @@
 import { LocationType } from './types';
 
 export const RESIDENT_PASSCODE = '1234';
+export const DEMO_PASSCODE = '1111';
 
 export const LOCATION_METADATA = {
   [LocationType.POOL]: {
@@ -31,6 +32,13 @@ export const MARKET_LOCATIONS = [
   "Central Red Bench, G Floor Lobby",
   "Lobby 3A Lounge Entrance",
   "5F Gym Entrance",
+  "Other (Specify)"
+];
+
+export const DEMO_MARKET_LOCATIONS = [
+  "Demo Tower A Lobby",
+  "Sky Garden Level 25",
+  "Parcel Room B1",
   "Other (Specify)"
 ];
 
