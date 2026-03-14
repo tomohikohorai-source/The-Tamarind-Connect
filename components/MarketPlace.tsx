@@ -20,6 +20,7 @@ interface Props {
   onLike: (itemId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
+  tabResetToggle?: boolean;
 }
 
 const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: MarketItem, profile: UserProfile, language?: Language }) => {
@@ -170,7 +171,7 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, tabResetToggle }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -184,6 +185,10 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
   const [viewingItem, setViewingItem] = useState<MarketItem | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setViewingItem(null);
+  }, [tabResetToggle]);
 
   useEffect(() => {
     if (initialActiveItemId) {

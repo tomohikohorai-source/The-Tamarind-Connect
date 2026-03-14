@@ -31,6 +31,7 @@ interface Props {
   acknowledgedSkillMap?: Record<string, string>;
   acknowledgedWantedMap?: Record<string, string>;
   language: Language;
+  tabResetToggle?: boolean;
 }
 
 const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }: { title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }) => (
@@ -68,7 +69,7 @@ export const ProfilePage: React.FC<Props> = ({
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
   onAddMarketComment, onGoToTransaction, onGoToSkill, onGoToWanted, onClose,
   acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {},
-  language
+  language, tabResetToggle
 }) => {
   const t = translations[language];
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -97,6 +98,12 @@ export const ProfilePage: React.FC<Props> = ({
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
   const isOwnProfile = profile.uid === currentUser.uid;
+
+  useEffect(() => {
+    setIsEditingProfile(false);
+    setShowSettings(false);
+  }, [tabResetToggle]);
+
   const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showSkills: true, showWanted: true };
 
   const notifications = useMemo(() => {

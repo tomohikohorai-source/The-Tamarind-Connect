@@ -19,6 +19,7 @@ interface Props {
   onLike: (itemId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
+  tabResetToggle?: boolean;
 }
 
 const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }: { item: WantedItem, onClick: () => void, profile: UserProfile, onLike: (e: React.MouseEvent) => void, language?: Language }) => {
@@ -78,7 +79,7 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
   );
 });
 
-export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose }) => {
+export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, tabResetToggle }) => {
   const t = translations[language];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
@@ -86,6 +87,10 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
   const [viewingItem, setViewingItem] = useState<WantedItem | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setViewingItem(null);
+  }, [tabResetToggle]);
 
   useEffect(() => {
     if (initialActiveItemId) {

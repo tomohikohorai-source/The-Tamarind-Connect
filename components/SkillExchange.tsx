@@ -19,6 +19,7 @@ interface Props {
   onChatClose?: () => void;
   language?: Language;
   loading?: boolean;
+  tabResetToggle?: boolean;
 }
 
 const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile, t: any }) => {
@@ -69,7 +70,7 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, language = 'en', loading = false }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, language = 'en', loading = false, tabResetToggle }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,6 +79,10 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   
   const [viewingSkill, setViewingSkill] = useState<Skill | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setViewingSkill(null);
+  }, [tabResetToggle]);
 
   useEffect(() => {
     if (initialActiveSkillId) {

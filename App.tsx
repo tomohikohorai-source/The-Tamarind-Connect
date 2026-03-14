@@ -33,6 +33,7 @@ export const App: React.FC = () => {
   const [wantedItems, setWantedItems] = useState<WantedItem[]>([]);
   
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
+  const [tabResetToggle, setTabResetToggle] = useState(false);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'en');
   const t = translations[language];
 
@@ -393,6 +394,9 @@ export const App: React.FC = () => {
   }, [activeTab, activities, marketItems, skills, wantedItems, profile]);
 
   const changeTab = (tab: AppTab) => {
+    if (activeTab === tab) {
+      setTabResetToggle(prev => !prev);
+    }
     setActiveTab(tab);
     setTargetMarketId(null);
     setTargetSkillId(null);
@@ -803,6 +807,7 @@ export const App: React.FC = () => {
             language={language} 
             loading={marketLoading}
             initialActiveItemId={targetMarketId} 
+            tabResetToggle={tabResetToggle}
             onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
             onStatusChange={handleMarketStatusChange} 
             onDelete={handleMarketDelete} 
@@ -819,6 +824,7 @@ export const App: React.FC = () => {
             language={language} 
             loading={wantedLoading}
             initialActiveItemId={targetWantedId} 
+            tabResetToggle={tabResetToggle}
             onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} 
             onDelete={handleWantedDelete} 
             onAddComment={handleWantedComment} 
@@ -834,6 +840,7 @@ export const App: React.FC = () => {
             language={language} 
             loading={skillsLoading}
             initialActiveSkillId={targetSkillId} 
+            tabResetToggle={tabResetToggle}
             onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} 
             onDelete={handleSkillDelete} 
             onStatusChange={handleSkillStatusChange} 
@@ -850,6 +857,7 @@ export const App: React.FC = () => {
             marketItems={marketItems} 
             skills={skills} 
             wantedItems={wantedItems} 
+            tabResetToggle={tabResetToggle}
             onLogout={handleLogout} 
             onUpdateProfile={setProfile} 
             onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
