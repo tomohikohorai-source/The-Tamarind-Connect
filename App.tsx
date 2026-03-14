@@ -185,7 +185,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     if (appState === 'READY' && profile) {
-      const condoCode = profile.condoCode || store.getPasscode() || '';
+      const condoCode = store.getPasscode() || profile.condoCode || '';
       
       const qAct = query(
         collection(db, "activities")
@@ -394,6 +394,16 @@ export const App: React.FC = () => {
 
   const changeTab = (tab: AppTab) => {
     setActiveTab(tab);
+    setTargetMarketId(null);
+    setTargetSkillId(null);
+    setTargetWantedId(null);
+    setViewingProfile(null);
+    setShowMarketForm(false);
+    setShowSkillForm(false);
+    setShowWantedForm(false);
+    setEditingMarketItem(undefined);
+    setEditingSkill(undefined);
+    setEditingWantedItem(undefined);
     window.location.hash = tab.toLowerCase();
   };
 
@@ -446,7 +456,7 @@ export const App: React.FC = () => {
         const { id, ...data } = activity;
         await addDoc(collection(db, "activities"), {
           ...data,
-          condoCode: profile.condoCode || store.getPasscode() || ''
+          condoCode: store.getPasscode() || profile.condoCode || ''
         });
       }
       closeModals();
@@ -469,7 +479,7 @@ export const App: React.FC = () => {
         const { id, ...data } = item;
         await addDoc(collection(db, "marketItems"), {
           ...data,
-          condoCode: profile.condoCode || store.getPasscode() || ''
+          condoCode: store.getPasscode() || profile.condoCode || ''
         });
       }
       closeModals();
@@ -586,7 +596,7 @@ export const App: React.FC = () => {
         const { id, ...data } = skill;
         await addDoc(collection(db, "skills"), {
           ...data,
-          condoCode: profile.condoCode || store.getPasscode() || ''
+          condoCode: store.getPasscode() || profile.condoCode || ''
         });
       }
       closeModals();
@@ -649,7 +659,7 @@ export const App: React.FC = () => {
         const { id, ...data } = wanted;
         await addDoc(collection(db, "wantedItems"), {
           ...data,
-          condoCode: profile.condoCode || store.getPasscode() || ''
+          condoCode: store.getPasscode() || profile.condoCode || ''
         });
       }
       closeModals();
