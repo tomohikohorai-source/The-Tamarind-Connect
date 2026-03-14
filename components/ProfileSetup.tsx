@@ -4,6 +4,7 @@ import { UserProfile, Child } from '../types';
 import { Language, translations } from '../translations';
 import { AVATAR_ICONS, AGE_OPTIONS } from '../constants';
 import { auth, db, doc, setDoc } from '../firebase';
+import { store } from '../services/store';
 import { Trash2, PlusCircle } from 'lucide-react';
 
 interface Props {
@@ -40,6 +41,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
         customUserId: auth.currentUser.displayName || 'unknown_user',
         parentNickname,
         roomNumber: block,
+        condoCode: store.getPasscode() || '',
         children,
         avatarIcon: parentAvatar,
         totalLoginDays: 1,

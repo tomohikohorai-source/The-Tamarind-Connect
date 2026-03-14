@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { UserProfile, Skill } from '../types';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
+import { store } from '../services/store';
 import { ChevronLeft, X, BookOpen, MessageSquare, ShieldAlert, Award, CreditCard, Layers } from 'lucide-react';
 
 import { Language, translations } from '../translations';
@@ -39,6 +40,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
     const skillData: any = {
       id: initialSkill?.id || crypto.randomUUID(),
       userId: profile.uid,
+      condoCode: profile.condoCode || store.getPasscode() || '',
       parentNickname: profile.parentNickname,
       parentAvatarIcon: profile.avatarIcon,
       roomNumber: profile.roomNumber,

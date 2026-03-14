@@ -28,6 +28,7 @@ export interface UserProfile {
   customUserId: string;
   parentNickname: string;
   roomNumber: string;
+  condoCode: string;
   children: Child[];
   avatarIcon: string;
   totalLoginDays: number;
@@ -38,6 +39,7 @@ export interface UserProfile {
 export interface Activity {
   id: string;
   userId: string;
+  condoCode: string;
   parentNickname: string;
   roomNumber: string;
   parentAvatarIcon: string;
@@ -63,6 +65,7 @@ export interface MarketComment {
 export interface MarketItem {
   id: string;
   userId: string;
+  condoCode: string;
   parentNickname: string;
   roomNumber: string;
   parentAvatarIcon: string;
@@ -107,6 +110,7 @@ export interface SkillComment {
 export interface Skill {
   id: string;
   userId: string;
+  condoCode: string;
   parentNickname: string;
   parentAvatarIcon: string;
   roomNumber: string;
@@ -142,6 +146,7 @@ export interface WantedComment {
 export interface WantedItem {
   id: string;
   userId: string;
+  condoCode: string;
   parentNickname: string;
   roomNumber: string;
   parentAvatarIcon: string;

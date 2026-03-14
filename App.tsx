@@ -19,7 +19,7 @@ import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where
 } from './firebase';
 
 export const App: React.FC = () => {
@@ -159,6 +159,16 @@ export const App: React.FC = () => {
             userData = { ...userData, totalLoginDays: newTotalDays, lastLoginDate: todayStr };
             try { await updateDoc(doc(db, "users", user.uid), { totalLoginDays: newTotalDays, lastLoginDate: todayStr }); } catch (e) { console.error(e); }
           }
+          
+          // Migration: Add condoCode if missing
+          if (!userData.condoCode) {
+            const currentPasscode = store.getPasscode();
+            if (currentPasscode) {
+              userData.condoCode = currentPasscode;
+              try { await updateDoc(doc(db, "users", user.uid), { condoCode: currentPasscode }); } catch (e) { console.error(e); }
+            }
+          }
+
           setProfile(userData);
           setAppState('READY');
         } else {
@@ -174,57 +184,106 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (appState === 'READY') {
-      const qAct = query(collection(db, "activities"), orderBy("startTime", "asc"));
+    if (appState === 'READY' && profile) {
+      const condoCode = profile.condoCode || store.getPasscode() || '';
+      
+      const qAct = query(
+        collection(db, "activities")
+      );
       const unsubAct = onSnapshot(qAct, (snapshot) => {
         setIsLive(true);
         const data: Activity[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Activity));
-        setActivities(data);
+        
+        const filtered = condoCode === DEMO_PASSCODE 
+          ? data.filter(item => item.condoCode === DEMO_PASSCODE)
+          : data.filter(item => item.condoCode !== DEMO_PASSCODE);
+
+        filtered.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+        setActivities(filtered);
       }, (error) => { setIsLive(false); });
 
-      const qMarket = query(collection(db, "marketItems"), orderBy("createdAt", "desc"));
+      const qMarket = query(
+        collection(db, "marketItems")
+      );
       const unsubMarket = onSnapshot(qMarket, (snapshot) => {
         const data: MarketItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as MarketItem));
         
-        if (store.getPasscode() === DEMO_PASSCODE) {
-          setMarketItems([...SAMPLE_MARKET_ITEMS, ...data]);
+        const filtered = condoCode === DEMO_PASSCODE 
+          ? data.filter(item => item.condoCode === DEMO_PASSCODE)
+          : data.filter(item => item.condoCode !== DEMO_PASSCODE);
+
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        if (condoCode === DEMO_PASSCODE) {
+          const combined = [...SAMPLE_MARKET_ITEMS, ...filtered];
+          combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setMarketItems(combined);
         } else {
-          setMarketItems(data);
+          setMarketItems(filtered);
         }
+        setMarketLoading(false);
+      }, (error) => {
+        console.error("Market snapshot error:", error);
         setMarketLoading(false);
       });
 
-      const qSkills = query(collection(db, "skills"), orderBy("createdAt", "desc"));
+      const qSkills = query(
+        collection(db, "skills")
+      );
       const unsubSkills = onSnapshot(qSkills, (snapshot) => {
         const data: Skill[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Skill));
         
-        if (store.getPasscode() === DEMO_PASSCODE) {
-          setSkills([...SAMPLE_SKILLS, ...data]);
+        const filtered = condoCode === DEMO_PASSCODE 
+          ? data.filter(item => item.condoCode === DEMO_PASSCODE)
+          : data.filter(item => item.condoCode !== DEMO_PASSCODE);
+
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        if (condoCode === DEMO_PASSCODE) {
+          const combined = [...SAMPLE_SKILLS, ...filtered];
+          combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setSkills(combined);
         } else {
-          setSkills(data);
+          setSkills(filtered);
         }
+        setSkillsLoading(false);
+      }, (error) => {
+        console.error("Skills snapshot error:", error);
         setSkillsLoading(false);
       });
 
-      const qWanted = query(collection(db, "wantedItems"), orderBy("createdAt", "desc"));
+      const qWanted = query(
+        collection(db, "wantedItems")
+      );
       const unsubWanted = onSnapshot(qWanted, (snapshot) => {
         const data: WantedItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as WantedItem));
         
-        if (store.getPasscode() === DEMO_PASSCODE) {
-          setWantedItems([...SAMPLE_WANTED_ITEMS, ...data]);
+        const filtered = condoCode === DEMO_PASSCODE 
+          ? data.filter(item => item.condoCode === DEMO_PASSCODE)
+          : data.filter(item => item.condoCode !== DEMO_PASSCODE);
+
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        if (condoCode === DEMO_PASSCODE) {
+          const combined = [...SAMPLE_WANTED_ITEMS, ...filtered];
+          combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setWantedItems(combined);
         } else {
-          setWantedItems(data);
+          setWantedItems(filtered);
         }
+        setWantedLoading(false);
+      }, (error) => {
+        console.error("Wanted snapshot error:", error);
         setWantedLoading(false);
       });
 
       return () => { unsubAct(); unsubMarket(); unsubSkills(); unsubWanted(); setIsLive(false); };
     }
-  }, [appState]);
+  }, [appState, profile]);
 
   // One-time cleanup script for specific items as requested
   useEffect(() => {
@@ -378,13 +437,17 @@ export const App: React.FC = () => {
   };
 
   const handleAddActivity = async (activity: Activity) => {
+    if (!profile) return;
     try {
       if (editingActivity) {
         const { id, ...data } = activity;
         await updateDoc(doc(db, "activities", editingActivity.id), data);
       } else {
         const { id, ...data } = activity;
-        await addDoc(collection(db, "activities"), data);
+        await addDoc(collection(db, "activities"), {
+          ...data,
+          condoCode: profile.condoCode || store.getPasscode() || ''
+        });
       }
       closeModals();
     } catch (e: any) { alert(e.message); }
@@ -397,13 +460,17 @@ export const App: React.FC = () => {
   };
 
   const handleMarketSubmit = async (item: MarketItem) => {
+    if (!profile) return;
     try {
       if (editingMarketItem) {
         const { id, ...data } = item;
         await updateDoc(doc(db, "marketItems", editingMarketItem.id), data);
       } else {
         const { id, ...data } = item;
-        await addDoc(collection(db, "marketItems"), data);
+        await addDoc(collection(db, "marketItems"), {
+          ...data,
+          condoCode: profile.condoCode || store.getPasscode() || ''
+        });
       }
       closeModals();
     } catch (e: any) { alert(e.message); }
@@ -510,13 +577,17 @@ export const App: React.FC = () => {
   };
 
   const handleSkillSubmit = async (skill: Skill) => {
+    if (!profile) return;
     try {
       if (editingSkill) {
         const { id, ...data } = skill;
         await updateDoc(doc(db, "skills", editingSkill.id), data);
       } else {
         const { id, ...data } = skill;
-        await addDoc(collection(db, "skills"), data);
+        await addDoc(collection(db, "skills"), {
+          ...data,
+          condoCode: profile.condoCode || store.getPasscode() || ''
+        });
       }
       closeModals();
     } catch (e: any) { alert(e.message); }
@@ -569,13 +640,17 @@ export const App: React.FC = () => {
   };
 
   const handleWantedSubmit = async (wanted: WantedItem) => {
+    if (!profile) return;
     try {
       if (editingWantedItem) {
         const { id, ...data } = wanted;
         await updateDoc(doc(db, "wantedItems", editingWantedItem.id), data);
       } else {
         const { id, ...data } = wanted;
-        await addDoc(collection(db, "wantedItems"), data);
+        await addDoc(collection(db, "wantedItems"), {
+          ...data,
+          condoCode: profile.condoCode || store.getPasscode() || ''
+        });
       }
       closeModals();
     } catch (e: any) { alert(e.message); }

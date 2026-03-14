@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, LocationType, Activity, Child } from '../types';
 import { LOCATION_METADATA } from '../constants';
+import { store } from '../services/store';
 import { addDays, format, isAfter } from 'date-fns';
 import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
     const activity: Activity = {
       id: initialActivity?.id || crypto.randomUUID(),
       userId: profile.uid, 
+      condoCode: profile.condoCode || store.getPasscode() || '',
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       location,

@@ -4,6 +4,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
   {
     id: 'sample-m1',
     userId: 'demo-u1',
+    condoCode: '1111',
     parentNickname: 'Sarah',
     roomNumber: 'A-12-03',
     parentAvatarIcon: '👩',
@@ -19,7 +20,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Weekend afternoons',
     condition: 'A',
     comments: [],
-    images: ['https://picsum.photos/seed/stroller/400/400'],
+    images: ['https://images.unsplash.com/photo-1591084728795-1145f3631891?auto=format&fit=crop&q=80&w=400'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     likes: ['demo-u2']
@@ -27,6 +28,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
   {
     id: 'sample-m2',
     userId: 'demo-u2',
+    condoCode: '1111',
     parentNickname: 'David',
     roomNumber: 'B-05-10',
     parentAvatarIcon: '👨',
@@ -42,7 +44,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Anytime after 7pm',
     condition: 'B',
     comments: [],
-    images: ['https://picsum.photos/seed/table/400/400'],
+    images: ['https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=400'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     buyerId: 'demo-u1',
@@ -52,6 +54,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
   {
     id: 'sample-m3',
     userId: 'demo-u3',
+    condoCode: '1111',
     parentNickname: 'Linda',
     roomNumber: 'C-22-01',
     parentAvatarIcon: '👩🏻',
@@ -67,7 +70,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Friday morning',
     condition: 'S',
     comments: [],
-    images: ['https://picsum.photos/seed/plants/400/400'],
+    images: ['https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=400'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     buyerId: 'demo-u2',
@@ -77,6 +80,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
   {
     id: 'sample-m4',
     userId: 'demo-u4',
+    condoCode: '1111',
     parentNickname: 'Ken',
     roomNumber: 'A-08-05',
     parentAvatarIcon: '🧔',
@@ -92,13 +96,14 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Weekdays after 6pm',
     condition: 'S',
     comments: [],
-    images: ['https://picsum.photos/seed/kettle/400/400'],
+    images: ['https://images.unsplash.com/photo-1594213114663-d94db9b17125?auto=format&fit=crop&q=80&w=400'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString()
   },
   {
     id: 'sample-m5',
     userId: 'demo-u3',
+    condoCode: '1111',
     parentNickname: 'Linda',
     roomNumber: 'C-22-01',
     parentAvatarIcon: '👩🏻',
@@ -114,7 +119,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Saturday morning',
     condition: 'B',
     comments: [],
-    images: ['https://picsum.photos/seed/bike/400/400'],
+    images: ['https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&q=80&w=400'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     buyerId: 'demo-u4',
@@ -127,6 +132,7 @@ export const SAMPLE_SKILLS: Skill[] = [
   {
     id: 'sample-s1',
     userId: 'demo-u4',
+    condoCode: '1111',
     parentNickname: 'Ken',
     parentAvatarIcon: '🧔',
     roomNumber: 'A-08-05',
@@ -144,6 +150,7 @@ export const SAMPLE_SKILLS: Skill[] = [
   {
     id: 'sample-s2',
     userId: 'demo-u1',
+    condoCode: '1111',
     parentNickname: 'Sarah',
     parentAvatarIcon: '👩',
     roomNumber: 'A-12-03',
@@ -164,6 +171,7 @@ export const SAMPLE_SKILLS: Skill[] = [
   {
     id: 'sample-s3',
     userId: 'demo-u2',
+    condoCode: '1111',
     parentNickname: 'David',
     parentAvatarIcon: '👨',
     roomNumber: 'B-05-10',
@@ -184,6 +192,7 @@ export const SAMPLE_WANTED_ITEMS: WantedItem[] = [
   {
     id: 'sample-w1',
     userId: 'demo-u2',
+    condoCode: '1111',
     parentNickname: 'David',
     roomNumber: 'B-05-10',
     parentAvatarIcon: '👨',
@@ -202,6 +211,7 @@ export const SAMPLE_WANTED_ITEMS: WantedItem[] = [
   {
     id: 'sample-w2',
     userId: 'demo-u3',
+    condoCode: '1111',
     parentNickname: 'Linda',
     roomNumber: 'C-22-01',
     parentAvatarIcon: '👩🏻',

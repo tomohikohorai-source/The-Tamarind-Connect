@@ -136,6 +136,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
     const itemData: any = {
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
+      condoCode: profile.condoCode || store.getPasscode() || '',
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       parentAvatarIcon: profile.avatarIcon,

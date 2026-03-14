@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { UserProfile, WantedItem } from '../types';
 import { MARKET_GENRES } from '../constants';
+import { store } from '../services/store';
 import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -89,6 +90,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', init
     const itemData: any = {
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
+      condoCode: profile.condoCode || store.getPasscode() || '',
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       parentAvatarIcon: profile.avatarIcon,

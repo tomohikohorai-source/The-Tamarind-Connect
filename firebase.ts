@@ -1,6 +1,6 @@
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch, where } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -19,6 +19,6 @@ export const auth = getAuth(app);
 
 // Added getDocs and writeBatch to the export list to fix the error in App.tsx
 export { 
-  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch,
+  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch, where,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile
 };
