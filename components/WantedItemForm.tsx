@@ -132,7 +132,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', init
           <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
             {images.map((img, idx) => (
               <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-amber-100 shadow-sm shrink-0">
-                <img src={img} className="w-full h-full object-cover" alt="Preview" />
+                <img src={img} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
                 <button type="button" onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1.5 bg-red-500/80 text-white rounded-full backdrop-blur-sm"><X size={12} /></button>
               </div>
             ))}

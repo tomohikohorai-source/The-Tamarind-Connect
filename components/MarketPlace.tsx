@@ -113,7 +113,7 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
     >
       <div className="relative aspect-square">
         {item.images && item.images.length > 0 ? (
-          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
         ) : (
           <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={32} /></div>
         )}
@@ -417,7 +417,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
             <>
               <div ref={galleryRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
                 {viewingItem.images.map((img, i) => (
-                  <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} loading="lazy" />
+                  <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} loading="lazy" referrerPolicy="no-referrer" />
                 ))}
               </div>
               {viewingItem.images.length > 1 && (

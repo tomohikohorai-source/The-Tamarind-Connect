@@ -35,7 +35,7 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
     <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative group">
       <div className="relative aspect-square">
         {item.images && item.images.length > 0 ? (
-          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
+          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
         ) : (
           <div className="w-full h-full bg-amber-50 flex items-center justify-center text-amber-200">
             <Heart size={32} fill="currentColor" />
@@ -156,7 +156,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
           {viewingItem.images && viewingItem.images.length > 0 ? (
             <div ref={galleryRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
               {viewingItem.images.map((img, i) => (
-                <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} />
+                <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} referrerPolicy="no-referrer" />
               ))}
             </div>
           ) : (
