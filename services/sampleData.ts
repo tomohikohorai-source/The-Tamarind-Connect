@@ -19,8 +19,25 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupLocation: 'Central Red Bench, G Floor Lobby',
     pickupDateTime: 'Weekend afternoons',
     condition: 'A',
-    comments: [],
-    images: ['https://images.unsplash.com/photo-1585155770447-2f66e2a797b5?auto=format&fit=crop&q=80&w=400'],
+    comments: [
+      {
+        id: 'c1',
+        userId: 'demo-u2',
+        userNickname: 'David',
+        userAvatar: '👨',
+        text: 'Is this still available? My son would love this!',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        id: 'c2',
+        userId: 'demo-u1',
+        userNickname: 'Sarah',
+        userAvatar: '👩',
+        text: 'Yes, it is! It\'s in great condition. Let me know if you want to see more photos.',
+        createdAt: new Date(Date.now() - 43200000).toISOString()
+      }
+    ],
+    images: ['https://drive.google.com/uc?export=view&id=1xGjgNxcOu-Z5l9cNq6LWiR_p3fpArWNN'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     likes: ['demo-u2']
@@ -44,7 +61,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Anytime after 7pm',
     condition: 'B',
     comments: [],
-    images: ['https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=400'],
+    images: ['https://drive.google.com/uc?export=view&id=1l_GN4wB1m_FhJIKwuWtpCBlBaDKZQH4G'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     buyerId: 'demo-u1',
@@ -95,8 +112,17 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupLocation: 'Demo Tower A Lobby',
     pickupDateTime: 'Weekdays after 6pm',
     condition: 'S',
-    comments: [],
-    images: ['https://images.unsplash.com/photo-1594213114663-d94db9b17125?auto=format&fit=crop&q=80&w=400'],
+    comments: [
+      {
+        id: 'c3',
+        userId: 'demo-u3',
+        userNickname: 'Linda',
+        userAvatar: '👩🏻',
+        text: 'I\'m interested! Can I pick it up tomorrow evening around 7pm?',
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    ],
+    images: ['https://drive.google.com/uc?export=view&id=1nH8y39KCyNxxlM7mFZuiDZdqTOlN8fF5'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString()
   },
@@ -119,7 +145,7 @@ export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
     pickupDateTime: 'Saturday morning',
     condition: 'B',
     comments: [],
-    images: ['https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&q=80&w=400'],
+    images: ['https://drive.google.com/uc?export=view&id=1PSg6X1mu-TUM4GSHyhfW2kLL2GjAnzfZ'],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString(),
     buyerId: 'demo-u4',
@@ -143,7 +169,24 @@ export const SAMPLE_SKILLS: Skill[] = [
     status: 'AVAILABLE',
     requestStatus: 'NONE',
     price: 'RM 40/hr',
-    comments: [],
+    comments: [
+      {
+        id: 'sc1',
+        userId: 'demo-u1',
+        userNickname: 'Sarah',
+        userAvatar: '👩',
+        text: 'Hi Ken! My daughter needs some help with her algebra. Are you free this Saturday?',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
+      },
+      {
+        id: 'sc2',
+        userId: 'demo-u4',
+        userNickname: 'Ken',
+        userAvatar: '🧔',
+        text: 'Hi Sarah! Yes, I am free in the morning. Does 10am work for you?',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      }
+    ],
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString()
   },
@@ -202,8 +245,25 @@ export const SAMPLE_WANTED_ITEMS: WantedItem[] = [
     hopePrice: 50,
     pickupLocation: 'Anywhere in the condo',
     preferredTiming: 'Before next Wednesday',
-    images: ['https://images.unsplash.com/photo-1595435064212-c4817fb39968?auto=format&fit=crop&q=80&w=400'],
-    comments: [],
+    images: ['https://drive.google.com/uc?export=view&id=1FOnDddzSFSYpvXDtZb_0hMDL_iJS-j77'],
+    comments: [
+      {
+        id: 'wc1',
+        userId: 'demo-u4',
+        userNickname: 'Ken',
+        userAvatar: '🧔',
+        text: 'I have an old Wilson racket you can borrow. It\'s a bit heavy though.',
+        createdAt: new Date(Date.now() - 259200000).toISOString()
+      },
+      {
+        id: 'wc2',
+        userId: 'demo-u2',
+        userNickname: 'David',
+        userAvatar: '👨',
+        text: 'That would be great, Ken! Heavy is fine for my friend. I\'ll DM you.',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
+      }
+    ],
     status: 'OPEN',
     createdAt: new Date().toISOString(),
     lastUpdated: new Date().toISOString()
@@ -221,7 +281,7 @@ export const SAMPLE_WANTED_ITEMS: WantedItem[] = [
     hopePrice: 0,
     pickupLocation: 'Will pick up from your unit',
     preferredTiming: 'Anytime this week',
-    images: ['https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&q=80&w=400'],
+    images: ['https://drive.google.com/uc?export=view&id=1aiZZa-OlMKd3kuWOSNYc0S1ZjxCev4ax'],
     comments: [],
     status: 'OPEN',
     createdAt: new Date().toISOString(),
