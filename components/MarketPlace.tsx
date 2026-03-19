@@ -4,6 +4,7 @@ import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
 import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
+import { AffiliateBanner } from './AffiliateBanner';
 
 import { Language, translations } from '../translations';
 
@@ -731,14 +732,20 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {filteredItems.map((item) => (
-          <MarketItemCard 
-            key={item.id} 
-            item={item} 
-            onClick={() => handleItemClick(item)} 
-            profile={profile} 
-            onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
-          />
+        {filteredItems.map((item, index) => (
+          <React.Fragment key={item.id}>
+            {((index === 4) || (index > 4 && (index - 4) % 10 === 0)) && (
+              <div className="col-span-2">
+                <AffiliateBanner />
+              </div>
+            )}
+            <MarketItemCard 
+              item={item} 
+              onClick={() => handleItemClick(item)} 
+              profile={profile} 
+              onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
+            />
+          </React.Fragment>
         ))}
       </div>
       {loading ? (

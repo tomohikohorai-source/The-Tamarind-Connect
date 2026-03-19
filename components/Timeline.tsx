@@ -5,6 +5,7 @@ import { LOCATION_METADATA } from '../constants';
 import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles } from 'lucide-react';
+import { AffiliateBanner } from './AffiliateBanner';
 
 import { Language, translations } from '../translations';
 
@@ -261,6 +262,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, language = 'en'
         style={{ animation: 'day-slide 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         {renderSection(LocationType.POOL)}
+        <AffiliateBanner />
         {renderSection(LocationType.OUTDOOR)}
         {renderSection(LocationType.INDOOR)}
       </div>

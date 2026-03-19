@@ -64,6 +64,9 @@ export const PasscodeGate: React.FC<Props> = ({ onSuccess, language, onLanguageC
               <p className="text-[10px] font-bold text-gray-500 leading-relaxed mt-1">
                 For inquiries or questions, please email <a href="mailto:nearbyexchange@gmail.com" className="text-pink-500 underline">nearbyexchange@gmail.com</a>
               </p>
+              <p className="text-[9px] font-bold text-gray-400 leading-relaxed mt-3 border-t border-pink-50 pt-2 italic">
+                This application participates in affiliate programs, and the revenue generated is used to maintain community operations.
+              </p>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { WantedItem, UserProfile, WantedComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
 import { Heart, Search, SlidersHorizontal, ChevronLeft, ChevronRight, MessageCircle, Send, Sparkles, Flame, Image as ImageIcon, Edit2, Trash2, MapPin, Clock, Lock, ArrowUpDown, Coins, Info } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
+import { AffiliateBanner } from './AffiliateBanner';
 
 import { Language, translations } from '../translations';
 
@@ -307,15 +308,21 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {filteredItems.map((item) => (
-          <WantedItemCard 
-            key={item.id} 
-            item={item} 
-            onClick={() => setViewingItem(item)} 
-            profile={profile}
-            onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
-            language={language} 
-          />
+        {filteredItems.map((item, index) => (
+          <React.Fragment key={item.id}>
+            {((index === 4) || (index > 4 && (index - 4) % 10 === 0)) && (
+              <div className="col-span-2">
+                <AffiliateBanner />
+              </div>
+            )}
+            <WantedItemCard 
+              item={item} 
+              onClick={() => setViewingItem(item)} 
+              profile={profile}
+              onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
+              language={language} 
+            />
+          </React.Fragment>
         ))}
       </div>
 

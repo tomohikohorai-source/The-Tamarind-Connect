@@ -92,9 +92,14 @@ export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange }) => {
       <div className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
         <div className="flex items-start gap-2">
           <ShieldAlert size={14} className="text-gray-300 shrink-0 mt-0.5" />
-          <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest text-left leading-relaxed">
-            <span className="text-gray-400">{t.notice}:</span> {t.disclaimer}
-          </p>
+          <div className="space-y-2">
+            <p className="text-[8px] font-bold text-gray-300 uppercase tracking-widest text-left leading-relaxed">
+              <span className="text-gray-400">{t.notice}:</span> {t.disclaimer}
+            </p>
+            <p className="text-[8px] font-bold text-pink-300 uppercase tracking-widest text-left leading-relaxed italic border-t border-gray-100 pt-2">
+              This application participates in affiliate programs, and the revenue generated is used to maintain community operations.
+            </p>
+          </div>
         </div>
       </div>
     </div>
