@@ -17,7 +17,7 @@ export const AffiliateBanner: React.FC = () => {
       imageUrl: "https://lh3.googleusercontent.com/d/1lOe6eBWShInwWQ_0Zy1_lRdKTcrt4gVh",
       text: "Pickleball racket: Special Sale - Up to 95% OFF!",
       icon: "🎾",
-      link: "https://invl.me/clnc3qg" // Assuming same link for now unless specified
+      link: "https://invl.me/clncbf1"
     }
   };
 
