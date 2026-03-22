@@ -252,7 +252,9 @@ export const translations = {
     notifRequestReceived: "Purchase Request",
     notifRequestApproved: "Request Approved",
     notifPickupReported: "Pickup Reported",
-    notifDiscussion: "New Reply"
+    notifDiscussion: "New Reply",
+    adminMode: "Admin: Test Data Mode",
+    adminModeDesc: "Toggle between production and test data"
   },
   zh: {
     appName: "邻里交换",
@@ -504,7 +506,9 @@ export const translations = {
     notifRequestReceived: "购买请求",
     notifRequestApproved: "请求已批准",
     notifPickupReported: "已报告取货",
-    notifDiscussion: "新回复"
+    notifDiscussion: "新回复",
+    adminMode: "管理员：测试数据模式",
+    adminModeDesc: "在生产数据和测试数据之间切换"
   },
   ko: {
     appName: "이웃 교환",
@@ -757,7 +761,9 @@ export const translations = {
     notifRequestReceived: "구매 요청",
     notifRequestApproved: "요청 승인됨",
     notifPickupReported: "수령 보고됨",
-    notifDiscussion: "새 답글"
+    notifDiscussion: "새 답글",
+    adminMode: "관리자: 테스트 데이터 모드",
+    adminModeDesc: "운영 데이터와 테스트 데이터 간 전환"
   },
   ja: {
     appName: "Nearby Exchange",
@@ -1010,6 +1016,8 @@ export const translations = {
     notifRequestReceived: "購入リクエスト",
     notifRequestApproved: "リクエスト承認",
     notifPickupReported: "受取報告あり",
-    notifDiscussion: "新着返信"
+    notifDiscussion: "新着返信",
+    adminMode: "管理者：テストデータモード",
+    adminModeDesc: "本番用とテスト用データの表示を切り替えます"
   }
 };

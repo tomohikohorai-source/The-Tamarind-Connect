@@ -13,13 +13,13 @@ import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
 import { store } from './services/store';
-import { DEMO_PASSCODE } from './constants';
+import { DEMO_PASSCODE, TAMARIND_CONDO } from './constants';
 import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
 import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where, setDoc
 } from './firebase';
 
 export const App: React.FC = () => {
@@ -64,6 +64,11 @@ export const App: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isLive, setIsLive] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(() => localStorage.getItem('app_admin_mode') === 'true');
+
+  const condoCode = store.getPasscode() || profile?.condoCode || '';
+  const isTestAdmin = profile?.uid === 'testtest';
+  const effectiveCondoCode = (isTestAdmin && isAdminMode) ? DEMO_PASSCODE : condoCode;
 
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
   const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
@@ -114,6 +119,28 @@ export const App: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Migration: Set condoId for all users to "The Tamarind"
+  useEffect(() => {
+    const migrateUser = async () => {
+      // Ensure the condo master data exists
+      try {
+        await setDoc(doc(db, "condos", TAMARIND_CONDO.id), TAMARIND_CONDO, { merge: true });
+      } catch (e) {
+        console.error("Condo master data error:", e);
+      }
+
+      if (profile && !profile.condoId) {
+        try {
+          await updateDoc(doc(db, "users", profile.uid), { condoId: TAMARIND_CONDO.id });
+          setProfile(prev => prev ? { ...prev, condoId: TAMARIND_CONDO.id } : null);
+        } catch (e) {
+          console.error("Migration error:", e);
+        }
+      }
+    };
+    migrateUser();
+  }, [profile]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -186,8 +213,6 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     if (appState === 'READY' && profile) {
-      const condoCode = store.getPasscode() || profile.condoCode || '';
-      
       const qAct = query(
         collection(db, "activities")
       );
@@ -196,7 +221,7 @@ export const App: React.FC = () => {
         const data: Activity[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Activity));
         
-        const filtered = condoCode === DEMO_PASSCODE 
+        const filtered = effectiveCondoCode === DEMO_PASSCODE 
           ? data.filter(item => item.condoCode === DEMO_PASSCODE)
           : data.filter(item => item.condoCode !== DEMO_PASSCODE);
 
@@ -211,13 +236,13 @@ export const App: React.FC = () => {
         const data: MarketItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as MarketItem));
         
-        const filtered = condoCode === DEMO_PASSCODE 
+        const filtered = effectiveCondoCode === DEMO_PASSCODE 
           ? data.filter(item => item.condoCode === DEMO_PASSCODE)
           : data.filter(item => item.condoCode !== DEMO_PASSCODE);
 
         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
-        if (condoCode === DEMO_PASSCODE) {
+        if (effectiveCondoCode === DEMO_PASSCODE) {
           const combined = [...SAMPLE_MARKET_ITEMS, ...filtered];
           combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setMarketItems(combined);
@@ -237,13 +262,13 @@ export const App: React.FC = () => {
         const data: Skill[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as Skill));
         
-        const filtered = condoCode === DEMO_PASSCODE 
+        const filtered = effectiveCondoCode === DEMO_PASSCODE 
           ? data.filter(item => item.condoCode === DEMO_PASSCODE)
           : data.filter(item => item.condoCode !== DEMO_PASSCODE);
 
         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
-        if (condoCode === DEMO_PASSCODE) {
+        if (effectiveCondoCode === DEMO_PASSCODE) {
           const combined = [...SAMPLE_SKILLS, ...filtered];
           combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setSkills(combined);
@@ -263,13 +288,13 @@ export const App: React.FC = () => {
         const data: WantedItem[] = [];
         snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as WantedItem));
         
-        const filtered = condoCode === DEMO_PASSCODE 
+        const filtered = effectiveCondoCode === DEMO_PASSCODE 
           ? data.filter(item => item.condoCode === DEMO_PASSCODE)
           : data.filter(item => item.condoCode !== DEMO_PASSCODE);
 
         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
-        if (condoCode === DEMO_PASSCODE) {
+        if (effectiveCondoCode === DEMO_PASSCODE) {
           const combined = [...SAMPLE_WANTED_ITEMS, ...filtered];
           combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setWantedItems(combined);
@@ -284,7 +309,7 @@ export const App: React.FC = () => {
 
       return () => { unsubAct(); unsubMarket(); unsubSkills(); unsubWanted(); setIsLive(false); };
     }
-  }, [appState, profile]);
+  }, [appState, profile, isAdminMode, effectiveCondoCode]);
 
   // One-time cleanup script for specific items as requested
   useEffect(() => {
@@ -460,7 +485,7 @@ export const App: React.FC = () => {
         const { id, ...data } = activity;
         await addDoc(collection(db, "activities"), {
           ...data,
-          condoCode: store.getPasscode() || profile.condoCode || ''
+          condoCode: effectiveCondoCode
         });
       }
       closeModals();
@@ -483,7 +508,7 @@ export const App: React.FC = () => {
         const { id, ...data } = item;
         await addDoc(collection(db, "marketItems"), {
           ...data,
-          condoCode: store.getPasscode() || profile.condoCode || ''
+          condoCode: effectiveCondoCode
         });
       }
       closeModals();
@@ -600,7 +625,7 @@ export const App: React.FC = () => {
         const { id, ...data } = skill;
         await addDoc(collection(db, "skills"), {
           ...data,
-          condoCode: store.getPasscode() || profile.condoCode || ''
+          condoCode: effectiveCondoCode
         });
       }
       closeModals();
@@ -663,7 +688,7 @@ export const App: React.FC = () => {
         const { id, ...data } = wanted;
         await addDoc(collection(db, "wantedItems"), {
           ...data,
-          condoCode: store.getPasscode() || profile.condoCode || ''
+          condoCode: effectiveCondoCode
         });
       }
       closeModals();
@@ -875,6 +900,11 @@ export const App: React.FC = () => {
             acknowledgedSkillMap={acknowledgedSkillMap}
             acknowledgedWantedMap={acknowledgedWantedMap}
             language={language}
+            isAdminMode={isAdminMode}
+            onToggleAdminMode={(val) => {
+              setIsAdminMode(val);
+              localStorage.setItem('app_admin_mode', String(val));
+            }}
           />
         )}
       </main>
@@ -901,6 +931,11 @@ export const App: React.FC = () => {
           onGoToWanted={(id) => { setTargetWantedId(id); setViewingProfile(null); setActiveTab('WANTED'); }}
           onClose={() => setViewingProfile(null)} 
           language={language}
+          isAdminMode={isAdminMode}
+          onToggleAdminMode={(val) => {
+            setIsAdminMode(val);
+            localStorage.setItem('app_admin_mode', String(val));
+          }}
         />
       )}
 

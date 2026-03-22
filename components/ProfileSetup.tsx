@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserProfile, Child } from '../types';
 import { Language, translations } from '../translations';
-import { AVATAR_ICONS, AGE_OPTIONS } from '../constants';
+import { AVATAR_ICONS, AGE_OPTIONS, TAMARIND_CONDO } from '../constants';
 import { auth, db, doc, setDoc } from '../firebase';
 import { store } from '../services/store';
 import { Trash2, PlusCircle } from 'lucide-react';
@@ -46,6 +46,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
         avatarIcon: parentAvatar,
         totalLoginDays: 1,
         lastLoginDate: new Date().toISOString(),
+        condoId: TAMARIND_CONDO.id,
         // Fix: Added missing properties showPastSales and showBuying to satisfy PrivacySettings interface
         privacySettings: {
           showChildren: true,

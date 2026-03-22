@@ -5,6 +5,15 @@ export enum LocationType {
   INDOOR = 'INDOOR'
 }
 
+export interface Condo {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  radius: number; // in meters
+}
+
 export interface Child {
   id: string;
   nickname: string;
@@ -34,6 +43,8 @@ export interface UserProfile {
   totalLoginDays: number;
   lastLoginDate: string; // ISO String
   privacySettings?: PrivacySettings;
+  role?: 'admin' | 'user';
+  condoId?: string;
 }
 
 export interface Activity {

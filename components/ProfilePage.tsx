@@ -32,6 +32,8 @@ interface Props {
   acknowledgedWantedMap?: Record<string, string>;
   language: Language;
   tabResetToggle?: boolean;
+  isAdminMode?: boolean;
+  onToggleAdminMode?: (val: boolean) => void;
 }
 
 const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }: { title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }) => (
@@ -69,7 +71,7 @@ export const ProfilePage: React.FC<Props> = ({
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
   onAddMarketComment, onGoToTransaction, onGoToSkill, onGoToWanted, onClose,
   acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {},
-  language, tabResetToggle
+  language, tabResetToggle, isAdminMode, onToggleAdminMode
 }) => {
   const t = translations[language];
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -247,11 +249,39 @@ export const ProfilePage: React.FC<Props> = ({
         )}
       </div>
 
+      {currentUser.uid === 'testtest' && (
+        <div className="bg-white p-6 rounded-[32px] border-2 border-pink-100 shadow-sm space-y-4">
+          <div className="flex items-center gap-3">
+            <ShieldAlert size={20} className="text-pink-500" />
+            <div>
+              <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">{t.adminMode}</h3>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">{t.adminModeDesc}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => onToggleAdminMode?.(!isAdminMode)} 
+            className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98] ${isAdminMode ? 'bg-pink-50 border-2 border-pink-200' : 'bg-gray-50 border-2 border-transparent'}`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={isAdminMode ? 'text-pink-500' : 'text-gray-400'}>
+                {isAdminMode ? <Eye size={18}/> : <EyeOff size={18}/>}
+              </div>
+              <span className={`text-[12px] font-black uppercase tracking-tight ${isAdminMode ? 'text-pink-600' : 'text-gray-500'}`}>
+                {isAdminMode ? 'TEST DATA (1111)' : 'PRODUCTION DATA'}
+              </span>
+            </div>
+            <div className={`w-10 h-6 rounded-full transition-all relative ${isAdminMode ? 'bg-pink-400' : 'bg-gray-200'}`}>
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isAdminMode ? 'right-1' : 'left-1'}`} />
+            </div>
+          </button>
+        </div>
+      )}
+
       {isOwnProfile && showSettings && (
         <div className="fixed inset-0 z-[600] flex items-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6">
-            <div className="flex justify-between items-center mb-2">
+          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
+            <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-2 z-10">
               <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.settings}</h2>
               <button onClick={() => setShowSettings(false)} className="p-2 text-gray-400"><X size={24}/></button>
             </div>

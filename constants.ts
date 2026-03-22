@@ -1,6 +1,17 @@
 
 import { LocationType } from './types';
 
+export const TAMARIND_CONDO = {
+  id: 'tamarind-penang',
+  name: 'The Tamarind',
+  address: 'Jalan Seri Tanjung 1, 10470 Tanjung Tokong Penang',
+  lat: 5.4526,
+  lng: 100.3075,
+  radius: 400
+};
+
+export const CONDOS = [TAMARIND_CONDO];
+
 export const RESIDENT_PASSCODE = '1234';
 export const DEMO_PASSCODE = '1111';
 
