@@ -249,7 +249,7 @@ export const ProfilePage: React.FC<Props> = ({
         )}
       </div>
 
-      {currentUser.uid === 'testtest' && (
+      {currentUser.customUserId === 'testtest' && (
         <div className="bg-white p-6 rounded-[32px] border-2 border-pink-100 shadow-sm space-y-4">
           <div className="flex items-center gap-3">
             <ShieldAlert size={20} className="text-pink-500" />

@@ -67,7 +67,7 @@ export const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(() => localStorage.getItem('app_admin_mode') === 'true');
 
   const condoCode = store.getPasscode() || profile?.condoCode || '';
-  const isTestAdmin = profile?.uid === 'testtest';
+  const isTestAdmin = profile?.customUserId === 'testtest';
   const effectiveCondoCode = (isTestAdmin && isAdminMode) ? DEMO_PASSCODE : condoCode;
 
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());

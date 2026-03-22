@@ -433,13 +433,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               disabled={!canClick}
               className={`bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group ${!canClick ? 'opacity-80 grayscale-[0.5]' : ''}`}
             >
-              <button 
+              <div 
                 onClick={(e) => { e.stopPropagation(); onLike(skill.id); }}
-                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 ${skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 cursor-pointer ${skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
               >
                 <Heart size={10} fill={skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                 {skill.likes && skill.likes.length > 0 && <span className="text-[8px] font-black">{skill.likes.length}</span>}
-              </button>
+              </div>
               {isClosed && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
                   <div className="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-4 border-white -rotate-12 animate-pulse">
