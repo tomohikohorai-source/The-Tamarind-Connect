@@ -339,6 +339,43 @@ export const App: React.FC = () => {
     }).length;
   }, [activities, acknowledgedMap, profile]);
 
+  const hasInitializedSeenMaps = useRef(false);
+
+  useEffect(() => {
+    if (appState === 'READY' && profile && !hasInitializedSeenMaps.current && 
+        !marketLoading && !skillsLoading && !wantedLoading) {
+      
+      const newMarketMapping = { ...acknowledgedMarketMap };
+      marketItems.forEach(item => { 
+        if (!newMarketMapping[item.id]) {
+          newMarketMapping[item.id] = item.lastUpdated || 'initial'; 
+        }
+      });
+      setAcknowledgedMarketMap(newMarketMapping);
+      store.setAcknowledgedMarket(newMarketMapping);
+
+      const newSkillMapping = { ...acknowledgedSkillMap };
+      skills.forEach(skill => { 
+        if (!newSkillMapping[skill.id]) {
+          newSkillMapping[skill.id] = skill.lastUpdated || 'initial'; 
+        }
+      });
+      setAcknowledgedSkillMap(newSkillMapping);
+      store.setAcknowledgedSkills(newSkillMapping);
+
+      const newWantedMapping = { ...acknowledgedWantedMap };
+      wantedItems.forEach(w => { 
+        if (!newWantedMapping[w.id]) {
+          newWantedMapping[w.id] = w.lastUpdated || 'initial'; 
+        }
+      });
+      setAcknowledgedWantedMap(newWantedMapping);
+      localStorage.setItem('play_share_seen_wanted', JSON.stringify(newWantedMapping));
+
+      hasInitializedSeenMaps.current = true;
+    }
+  }, [appState, profile, marketLoading, skillsLoading, wantedLoading, marketItems, skills, wantedItems]);
+
   const profileActionsCount = useMemo(() => {
     if (!profile) return 0;
     
@@ -349,15 +386,16 @@ export const App: React.FC = () => {
       const isBuyer = item.buyerId === profile.uid;
       const hasParticipated = item.comments.some(c => c.userId === profile.uid);
       const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+      const isInvolved = isOwner || isBuyer || hasParticipated;
 
       if (isOwner && item.requestStatus === 'PENDING' && !dismissedIds.includes(`${item.id}-req`)) return true;
       if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion && !dismissedIds.includes(`${item.id}-conf`)) return true;
       if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion && !dismissedIds.includes(`${item.id}-appr`)) return true;
-      if ((isOwner || isBuyer || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`)) return true;
+      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`)) return true;
 
       const lastSeenUpdate = acknowledgedMarketMap[item.id];
       const isUnseenInformation = lastSeenUpdate !== (item.lastUpdated || 'initial');
-      if (isUnseenInformation && !dismissedIds.some(id => id.startsWith(item.id))) return true;
+      if (isUnseenInformation && isInvolved && !dismissedIds.some(id => id.startsWith(item.id))) return true;
 
       return false;
     }).length;
@@ -368,13 +406,14 @@ export const App: React.FC = () => {
       const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
       const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
       const isCmtDismissed = dismissedIds.includes(`${skill.id}-cmt`);
+      const isInvolved = isOwner || isRequester || hasParticipated;
 
       if (isOwner && skill.requestStatus === 'PENDING' && !dismissedIds.includes(`${skill.id}-req`)) return true;
       if (isRequester && skill.status === 'RESERVED' && !dismissedIds.includes(`${skill.id}-appr`)) return true;
-      if ((isOwner || hasParticipated) && lastCommentFromOthers && !isCmtDismissed) return true;
+      if (isInvolved && lastCommentFromOthers && !isCmtDismissed) return true;
 
       const lastSeenUpdate = acknowledgedSkillMap[skill.id];
-      if (lastSeenUpdate !== (skill.lastUpdated || 'initial') && !isCmtDismissed) return true;
+      if (lastSeenUpdate !== (skill.lastUpdated || 'initial') && isInvolved && !isCmtDismissed) return true;
 
       return false;
     }).length;
@@ -383,11 +422,12 @@ export const App: React.FC = () => {
       const isOwner = wanted.userId === profile.uid;
       const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
       const lastCommentFromOthers = wanted.comments.length > 0 && wanted.comments[wanted.comments.length - 1].userId !== profile.uid;
+      const isInvolved = isOwner || hasParticipated;
       
-      if ((isOwner || hasParticipated) && lastCommentFromOthers && !dismissedIds.includes(`${wanted.id}-cmt`)) return true;
+      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${wanted.id}-cmt`)) return true;
       
       const lastSeenUpdate = acknowledgedWantedMap[wanted.id];
-      if (lastSeenUpdate !== (wanted.lastUpdated || 'initial') && !dismissedIds.some(id => id.startsWith(wanted.id))) return true;
+      if (lastSeenUpdate !== (wanted.lastUpdated || 'initial') && isInvolved && !dismissedIds.some(id => id.startsWith(wanted.id))) return true;
 
       return false;
     }).length;
