@@ -145,16 +145,29 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      if (hash === '#profile') setActiveTab('PROFILE');
-      else if (hash === '#market' || hash === '') setActiveTab('MARKET');
-      else if (hash === '#wanted') setActiveTab('WANTED');
-      else if (hash === '#skills') setActiveTab('SKILLS');
-      else if (hash === '#home' || hash === '#play') setActiveTab('PLAY');
+      const [path, queryStr] = hash.split('?');
+      const params = new URLSearchParams(queryStr || '');
+      const id = params.get('id');
+
+      if (path === '#profile') setActiveTab('PROFILE');
+      else if (path === '#market' || path === '') {
+        setActiveTab('MARKET');
+        setTargetMarketId(id);
+      }
+      else if (path === '#wanted') {
+        setActiveTab('WANTED');
+        setTargetWantedId(id);
+      }
+      else if (path === '#skills') {
+        setActiveTab('SKILLS');
+        setTargetSkillId(id);
+      }
+      else if (path === '#home' || path === '#play') setActiveTab('PLAY');
       
-      if (hash === '#checkin') setShowCheckIn(true);
-      else if (hash === '#sell') setShowMarketForm(true);
-      else if (hash === '#post-skill') setShowSkillForm(true);
-      else if (hash === '#post-wanted') setShowWantedForm(true);
+      if (path === '#checkin') setShowCheckIn(true);
+      else if (path === '#sell') setShowMarketForm(true);
+      else if (path === '#post-skill') setShowSkillForm(true);
+      else if (path === '#post-wanted') setShowWantedForm(true);
       else { 
         setShowCheckIn(false); 
         setEditingActivity(undefined);
@@ -879,7 +892,16 @@ export const App: React.FC = () => {
             onAddComment={handleMarketComment} 
             onLike={handleMarketLike}
             onViewProfile={handleViewProfile} 
-            onChatClose={() => setTargetMarketId(null)} 
+            onChatClose={() => {
+              setTargetMarketId(null);
+              if (window.location.hash.startsWith('#market')) {
+                window.location.hash = '#market';
+              }
+            }} 
+            onViewItem={(id) => {
+              if (id) window.location.hash = `#market?id=${id}`;
+              else window.location.hash = '#market';
+            }}
           />
         )}
         {activeTab === 'WANTED' && profile && (
@@ -895,7 +917,16 @@ export const App: React.FC = () => {
             onAddComment={handleWantedComment} 
             onLike={handleWantedLike}
             onViewProfile={handleViewProfile} 
-            onChatClose={() => setTargetWantedId(null)} 
+            onChatClose={() => {
+              setTargetWantedId(null);
+              if (window.location.hash.startsWith('#wanted')) {
+                window.location.hash = '#wanted';
+              }
+            }} 
+            onViewItem={(id) => {
+              if (id) window.location.hash = `#wanted?id=${id}`;
+              else window.location.hash = '#wanted';
+            }}
           />
         )}
         {activeTab === 'SKILLS' && profile && (
@@ -912,7 +943,16 @@ export const App: React.FC = () => {
             onAddComment={handleSkillComment} 
             onLike={handleSkillLike}
             onViewProfile={handleViewProfile} 
-            onChatClose={() => setTargetSkillId(null)} 
+            onChatClose={() => {
+              setTargetSkillId(null);
+              if (window.location.hash.startsWith('#skills')) {
+                window.location.hash = '#skills';
+              }
+            }} 
+            onViewItem={(id) => {
+              if (id) window.location.hash = `#skills?id=${id}`;
+              else window.location.hash = '#skills';
+            }}
           />
         )}
         {activeTab === 'PROFILE' && profile && (

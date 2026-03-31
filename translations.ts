@@ -254,7 +254,9 @@ export const translations = {
     notifPickupReported: "Pickup Reported",
     notifDiscussion: "New Reply",
     adminMode: "Admin: Test Data Mode",
-    adminModeDesc: "Toggle between production and test data"
+    adminModeDesc: "Toggle between production and test data",
+    share: "Share",
+    itemNotFound: "Item not found or has been deleted."
   },
   zh: {
     appName: "邻里交换",
@@ -508,7 +510,9 @@ export const translations = {
     notifPickupReported: "已报告取货",
     notifDiscussion: "新回复",
     adminMode: "管理员：测试数据模式",
-    adminModeDesc: "在生产数据和测试数据之间切换"
+    adminModeDesc: "在生产数据和测试数据之间切换",
+    share: "分享",
+    itemNotFound: "未找到该项目或已被删除。"
   },
   ko: {
     appName: "이웃 교환",
@@ -763,7 +767,9 @@ export const translations = {
     notifPickupReported: "수령 보고됨",
     notifDiscussion: "새 답글",
     adminMode: "관리자: 테스트 데이터 모드",
-    adminModeDesc: "운영 데이터와 테스트 데이터 간 전환"
+    adminModeDesc: "운영 데이터와 테스트 데이터 간 전환",
+    share: "공유",
+    itemNotFound: "항목을 찾을 수 없거나 삭제되었습니다."
   },
   ja: {
     appName: "Nearby Exchange",
@@ -1018,6 +1024,8 @@ export const translations = {
     notifPickupReported: "受取報告あり",
     notifDiscussion: "新着返信",
     adminMode: "管理者：テストデータモード",
-    adminModeDesc: "本番用とテスト用データの表示を切り替えます"
+    adminModeDesc: "本番用とテスト用データの表示を切り替えます",
+    share: "シェア",
+    itemNotFound: "項目が見つからないか、削除された可能性があります。"
   }
 };

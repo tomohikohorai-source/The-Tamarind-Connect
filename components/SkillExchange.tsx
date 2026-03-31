@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { Language, translations } from '../translations';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart, Share2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
 interface Props {
@@ -17,6 +17,7 @@ interface Props {
   onLike: (skillId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
+  onViewItem?: (id: string | null) => void;
   language?: Language;
   loading?: boolean;
   tabResetToggle?: boolean;
@@ -70,7 +71,7 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, language = 'en', loading = false, tabResetToggle }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,12 +92,16 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         // Access gate for private reserved/closed sessions
         if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
            alert(t.privateSessionMsg);
+           if (onChatClose) onChatClose();
            return;
         }
         setViewingSkill(skill);
+      } else if (!loading && skills.length > 0) {
+        alert(t.itemNotFound);
+        if (onChatClose) onChatClose();
       }
     }
-  }, [initialActiveSkillId, skills, profile.uid, t.privateSessionMsg]);
+  }, [initialActiveSkillId, skills, profile.uid, t.privateSessionMsg, t.itemNotFound, loading, onChatClose]);
 
   useEffect(() => {
     if (viewingSkill) {
@@ -162,6 +167,26 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       return;
     }
     setViewingSkill(skill);
+    if (onViewItem) onViewItem(skill.id);
+  };
+
+  const handleShare = () => {
+    if (!viewingSkill) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}#skill?id=${viewingSkill.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: viewingSkill.title,
+        text: viewingSkill.description,
+        url: shareUrl,
+      }).catch(() => {
+        navigator.clipboard.writeText(shareUrl);
+        alert(t.linkCopied);
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert(t.linkCopied);
+    }
   };
 
   if (viewingSkill) {
@@ -173,7 +198,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         <div className="flex items-center justify-between">
            <div className="flex gap-2">
              <button 
-               onClick={() => { setViewingSkill(null); if(onChatClose) onChatClose(); }} 
+               onClick={() => { setViewingSkill(null); if(onChatClose) onChatClose(); if(onViewItem) onViewItem(null); }} 
                className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
              >
                <ChevronLeft size={16} /> {t.skill}
@@ -184,6 +209,12 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
              >
                <Heart size={16} fill={viewingSkill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                {viewingSkill.likes && viewingSkill.likes.length > 0 && <span>{viewingSkill.likes.length}</span>}
+             </button>
+             <button 
+               onClick={handleShare} 
+               className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+             >
+               <Share2 size={16} /> {t.share}
              </button>
            </div>
            <button 

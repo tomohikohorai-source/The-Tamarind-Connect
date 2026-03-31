@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart, Share2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
 
@@ -21,6 +21,7 @@ interface Props {
   onLike: (itemId: string) => void;
   onViewProfile?: (userId: string) => void;
   onChatClose?: () => void;
+  onViewItem?: (id: string | null) => void;
   tabResetToggle?: boolean;
 }
 
@@ -172,7 +173,7 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, tabResetToggle }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -198,12 +199,17 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         // Validation for deep linking - restrict access to RESERVED and SOLD items
         if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
            alert(t.transactionPrivateMsg);
+           if (onChatClose) onChatClose();
            return;
         }
         setViewingItem(item);
+      } else if (!loading && items.length > 0) {
+        // Item not found
+        alert(t.itemNotFound);
+        if (onChatClose) onChatClose();
       }
     }
-  }, [initialActiveItemId, items, profile.uid, t.transactionPrivateMsg]);
+  }, [initialActiveItemId, items, profile.uid, t.transactionPrivateMsg, t.itemNotFound, loading, onChatClose]);
 
   useEffect(() => {
     if (viewingItem) {
@@ -334,6 +340,26 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       return;
     }
     setViewingItem(item);
+    if (onViewItem) onViewItem(item.id);
+  };
+
+  const handleShare = () => {
+    if (!viewingItem) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}#market?id=${viewingItem.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: viewingItem.title,
+        text: viewingItem.description,
+        url: shareUrl,
+      }).catch(() => {
+        navigator.clipboard.writeText(shareUrl);
+        alert(t.linkCopied);
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert(t.linkCopied);
+    }
   };
 
   if (viewingItem) {
@@ -345,7 +371,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         <div className="flex items-center justify-between">
             <div className="flex gap-2">
               <button 
-                onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); }} 
+                onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); if(onViewItem) onViewItem(null); }} 
                 className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
               >
                 <ChevronLeft size={16} /> {t.market}
@@ -356,6 +382,12 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
               >
                 <Heart size={16} fill={viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                 {viewingItem.likes && viewingItem.likes.length > 0 && <span>{viewingItem.likes.length}</span>}
+              </button>
+              <button 
+                onClick={handleShare} 
+                className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+              >
+                <Share2 size={16} /> {t.share}
               </button>
             </div>
            <button 
@@ -736,7 +768,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
           <React.Fragment key={item.id}>
             {((index === 4) || (index > 4 && (index - 4) % 10 === 0)) && (
               <div className="col-span-2">
-                <AffiliateBanner />
+                <AffiliateBanner index={Math.floor((index - 4) / 10)} />
               </div>
             )}
             <MarketItemCard 
