@@ -23,7 +23,7 @@ import {
 } from './firebase';
 
 export const App: React.FC = () => {
-  const [isVerified, setIsVerified] = useState(store.isVerified());
+  const [isVerified, setIsVerified] = useState(true); // Skip passcode gate by default
   const [appState, setAppState] = useState<AppState>('AUTH');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [viewingProfile, setViewingProfile] = useState<UserProfile | null>(null);
@@ -68,7 +68,9 @@ export const App: React.FC = () => {
 
   const condoCode = store.getPasscode() || profile?.condoCode || '';
   const isTestAdmin = profile?.customUserId === 'testtest';
-  const effectiveCondoCode = (isTestAdmin && isAdminMode) ? DEMO_PASSCODE : condoCode;
+  
+  // Only admins in admin mode can see test data (DEMO_PASSCODE)
+  const effectiveCondoCode = (isTestAdmin && isAdminMode) ? DEMO_PASSCODE : (condoCode === DEMO_PASSCODE ? '' : condoCode);
 
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
   const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
