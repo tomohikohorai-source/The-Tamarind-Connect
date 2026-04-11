@@ -921,9 +921,18 @@ export const App: React.FC = () => {
                <RefreshCw size={12} className="text-gray-300 group-hover:text-pink-400 transition-colors" />
              </button>
            </div>
-           <button onClick={handleLogout} className="p-2.5 text-gray-300 hover:text-red-400 active:scale-90 transition-all">
-             <LogOut size={20} />
-           </button>
+           {profile ? (
+             <button onClick={handleLogout} className="p-2.5 text-gray-300 hover:text-red-400 active:scale-90 transition-all">
+               <LogOut size={20} />
+             </button>
+           ) : (
+             <button 
+               onClick={() => setShowAuthOverlay(true)} 
+               className="px-3 py-1.5 bg-pink-50 text-pink-500 rounded-xl font-black text-[9px] uppercase tracking-widest border border-pink-100 active:scale-95 transition-all"
+             >
+               {t.loginPrompt}
+             </button>
+           )}
         </div>
         <div className="flex flex-col items-center">
           <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>{t.appName}</h1>
@@ -939,6 +948,21 @@ export const App: React.FC = () => {
         </div>
       </header>
 
+      {!profile && (
+        <div className="bg-amber-50 border-b border-amber-100 p-4 animate-fade-in">
+          <p className="text-[10px] font-bold text-amber-700 leading-relaxed text-center">
+            {t.authAnnouncement}
+          </p>
+          <div className="flex justify-center mt-3">
+            <button 
+              onClick={() => setShowAuthOverlay(true)}
+              className="px-6 py-2 bg-amber-400 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md shadow-amber-100 active:scale-95 transition-all border-2 border-white"
+            >
+              {t.loginPrompt}
+            </button>
+          </div>
+        </div>
+      )}
       <main ref={mainRef} className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
         {activeTab === 'MARKET' && (
           <MarketPlace 

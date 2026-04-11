@@ -260,7 +260,9 @@ export const translations = {
     adminMode: "Admin: Test Data Mode",
     adminModeDesc: "Toggle between production and test data",
     share: "Share",
-    itemNotFound: "Item not found or has been deleted."
+    itemNotFound: "Item not found or has been deleted.",
+    loginPrompt: "Sign Up / Login",
+    authAnnouncement: "Actions such as posting, commenting, purchase requests, and viewing seller info require login. Sign up or login to join the community!"
   },
   zh: {
     appName: "邻里交换",
@@ -520,7 +522,9 @@ export const translations = {
     adminMode: "管理员：测试数据模式",
     adminModeDesc: "在生产数据和测试数据之间切换",
     share: "分享",
-    itemNotFound: "未找到该项目或已被删除。"
+    itemNotFound: "未找到该项目或已被删除。",
+    loginPrompt: "注册 / 登录",
+    authAnnouncement: "发布、评论、购买请求和查看卖家信息等操作需要登录。请注册或登录以加入社区！"
   },
   ko: {
     appName: "이웃 교환",
@@ -781,7 +785,9 @@ export const translations = {
     adminMode: "관리자: 테스트 데이터 모드",
     adminModeDesc: "운영 데이터와 테스트 데이터 간 전환",
     share: "공유",
-    itemNotFound: "항목을 찾을 수 없거나 삭제되었습니다."
+    itemNotFound: "항목을 찾을 수 없거나 삭제되었습니다.",
+    loginPrompt: "회원가입 / 로그인",
+    authAnnouncement: "게시, 댓글, 구매 요청 및 판매자 정보 확인 등의 작업은 로그인이 필요합니다. 커뮤니티에 가입하려면 회원가입 또는 로그인을 해주세요!"
   },
   ja: {
     appName: "Nearby Exchange",
@@ -1042,6 +1048,8 @@ export const translations = {
     adminMode: "管理者：テストデータモード",
     adminModeDesc: "本番用とテスト用データの表示を切り替えます",
     share: "シェア",
-    itemNotFound: "項目が見つからないか、削除された可能性があります。"
+    itemNotFound: "項目が見つからないか、削除された可能性があります。",
+    loginPrompt: "新規登録 / ログイン",
+    authAnnouncement: "出品、コメント、購入リクエスト、出品者情報の確認などのアクションにはログインが必要です。新規登録またはログインしてコミュニティに参加しましょう！"
   }
 };
