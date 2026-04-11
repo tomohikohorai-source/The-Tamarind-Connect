@@ -913,38 +913,44 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md p-5 flex flex-col items-center border-b border-gray-100">
-        <div className="w-full flex justify-between items-center absolute px-5">
-           <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-3 sm:p-5 border-b border-gray-100">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full gap-2">
+           <div className="flex items-center">
              <button onClick={handleManualRefresh} className="flex items-center gap-2 group active:scale-95 transition-all">
                <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
                <RefreshCw size={12} className="text-gray-300 group-hover:text-pink-400 transition-colors" />
              </button>
            </div>
-           {profile ? (
-             <button onClick={handleLogout} className="p-2.5 text-gray-300 hover:text-red-400 active:scale-90 transition-all">
-               <LogOut size={20} />
-             </button>
-           ) : (
-             <button 
-               onClick={() => setShowAuthOverlay(true)} 
-               className="px-3 py-1.5 bg-pink-50 text-pink-500 rounded-xl font-black text-[9px] uppercase tracking-widest border border-pink-100 active:scale-95 transition-all"
-             >
-               {t.loginPrompt}
-             </button>
-           )}
+
+           <div className="flex flex-col items-center">
+             <h1 className={`text-base sm:text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500 whitespace-nowrap`}>
+               {t.appName}
+             </h1>
+           </div>
+
+           <div className="flex justify-end">
+             {profile ? (
+               <button onClick={handleLogout} className="p-2 text-gray-300 hover:text-red-400 active:scale-90 transition-all">
+                 <LogOut size={18} />
+               </button>
+             ) : (
+               <button 
+                 onClick={() => setShowAuthOverlay(true)} 
+                 className="px-2 py-1.5 bg-pink-50 text-pink-500 rounded-xl font-black text-[8px] sm:text-[9px] uppercase tracking-widest border border-pink-100 active:scale-95 transition-all whitespace-nowrap"
+               >
+                 {t.loginPrompt}
+               </button>
+             )}
+           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <h1 className={`text-xl font-black ${themeColor} tracking-tighter uppercase text-center transition-colors duration-500`}>{t.appName}</h1>
-          <div className="flex gap-2 mt-1">
-            <button 
-              onClick={() => setShowShareMenu(true)} 
-              className="flex items-center gap-1.5 bg-pink-500 text-white px-3 py-1 rounded-full shadow-lg shadow-pink-100 active:scale-90 transition-all hover:bg-pink-600 z-10"
-            >
-              <Share2 size={12} className="animate-bounce" />
-              <span className="text-[9px] font-black uppercase tracking-tight">{t.shareApp}</span>
-            </button>
-          </div>
+        <div className="flex justify-center mt-2">
+          <button 
+            onClick={() => setShowShareMenu(true)} 
+            className="flex items-center gap-1.5 bg-pink-500 text-white px-3 py-1 rounded-full shadow-lg shadow-pink-100 active:scale-90 transition-all hover:bg-pink-600 z-10"
+          >
+            <Share2 size={12} className="animate-bounce" />
+            <span className="text-[9px] font-black uppercase tracking-tight">{t.shareApp}</span>
+          </button>
         </div>
       </header>
 
