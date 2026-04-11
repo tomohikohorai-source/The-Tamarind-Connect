@@ -10,7 +10,7 @@ import { Language, translations } from '../translations';
 
 interface Props {
   items: WantedItem[];
-  profile: UserProfile;
+  profile: UserProfile | null;
   language?: Language;
   loading?: boolean;
   initialActiveItemId?: string | null;
@@ -24,14 +24,14 @@ interface Props {
   tabResetToggle?: boolean;
 }
 
-const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }: { item: WantedItem, onClick: () => void, profile: UserProfile, onLike: (e: React.MouseEvent) => void, language?: Language }) => {
+const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }: { item: WantedItem, onClick: () => void, profile: UserProfile | null, onLike: (e: React.MouseEvent) => void, language?: Language }) => {
   const t = translations[language];
   const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
   const isDiscounted = item.hopePriceUpdatedAt && 
                       item.previousHopePrice !== undefined && 
                       item.hopePrice > item.previousHopePrice && 
                       differenceInHours(new Date(), new Date(item.hopePriceUpdatedAt)) <= 72;
-  const isLiked = item.likes?.includes(profile.uid);
+  const isLiked = profile ? item.likes?.includes(profile.uid) : false;
 
   return (
     <button onClick={onClick} className="bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative group">
@@ -148,7 +148,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
   };
 
   if (viewingItem) {
-    const isOwner = viewingItem.userId === profile.uid;
+    const isOwner = profile && viewingItem.userId === profile.uid;
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
         <div className="flex items-center justify-between">
@@ -161,9 +161,9 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
              </button>
              <button 
                onClick={() => onLike(viewingItem.id)} 
-               className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+               className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${profile && viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
              >
-               <Heart size={16} fill={viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+               <Heart size={16} fill={profile && viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                {viewingItem.likes && viewingItem.likes.length > 0 && <span>{viewingItem.likes.length}</span>}
              </button>
              <button 
@@ -253,7 +253,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
 
             <div className="space-y-4">
               {viewingItem.comments.map(c => {
-                const isMe = c.userId === profile.uid;
+                const isMe = profile && c.userId === profile.uid;
                 const isItemOwner = c.userId === viewingItem.userId;
                 return (
                   <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>

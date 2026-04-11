@@ -91,6 +91,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', init
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: profile.condoId || '',
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       parentAvatarIcon: profile.avatarIcon,

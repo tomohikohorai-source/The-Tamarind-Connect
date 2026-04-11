@@ -10,7 +10,22 @@ export const TAMARIND_CONDO = {
   radius: 400
 };
 
-export const CONDOS = [TAMARIND_CONDO];
+export const CONDO_OPTIONS = [
+  { id: 'tamarind-penang', name: 'Tamarind' },
+  { id: 'marinox-sky-villas-penang', name: 'Marinox Sky Villas' },
+  { id: 'i-santorini-penang', name: 'i-Santorini' },
+  { id: 'mira-residence-penang', name: 'Mira Residence' },
+  { id: 'quayside-penang', name: 'Quayside' }
+];
+
+export const CONDOS = CONDO_OPTIONS.map(opt => ({
+  id: opt.id,
+  name: opt.name,
+  address: '', // To be filled if needed
+  lat: 0,
+  lng: 0,
+  radius: 400
+}));
 
 export const RESIDENT_PASSCODE = '1234';
 export const DEMO_PASSCODE = '1111';

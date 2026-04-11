@@ -49,6 +49,8 @@ export const translations = {
     completeSetup: "Complete Setup",
     bio: "Bio / Intro",
     bioPlaceholder: "Tell neighbors about yourself...",
+    selectCondo: "Select Your Condominium",
+    condominium: "Condominium",
     // Marketplace
     sell: "Sell",
     sellOrGive: "Sell or Give",
@@ -305,6 +307,8 @@ export const translations = {
     completeSetup: "完成设置",
     bio: "简介",
     bioPlaceholder: "向邻居介绍一下你自己...",
+    selectCondo: "选择您的公寓",
+    condominium: "公寓",
     // Marketplace
     sell: "出售",
     sellOrGive: "出售或赠送",
@@ -561,6 +565,8 @@ export const translations = {
     completeSetup: "설정 완료",
     bio: "자기소개",
     bioPlaceholder: "이웃에게 자신을 소개해보세요...",
+    selectCondo: "콘도미니엄 선택",
+    condominium: "콘도미니엄",
     // Marketplace
     sell: "판매하기",
     sellOrGive: "판매 또는 나눔",
@@ -818,6 +824,8 @@ export const translations = {
     completeSetup: "設定を完了する",
     bio: "自己紹介",
     bioPlaceholder: "隣人に自己紹介しましょう...",
+    selectCondo: "コンドミニアムを選択",
+    condominium: "住んでいるコンドミニアム",
     // Marketplace
     sell: "売る",
     sellOrGive: "売る・あげる",

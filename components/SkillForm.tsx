@@ -41,6 +41,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
       id: initialSkill?.id || crypto.randomUUID(),
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: profile.condoId || '',
       parentNickname: profile.parentNickname,
       parentAvatarIcon: profile.avatarIcon,
       roomNumber: profile.roomNumber,
