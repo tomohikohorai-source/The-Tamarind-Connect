@@ -49,6 +49,8 @@ export const translations = {
     completeSetup: "Complete Setup",
     bio: "Bio / Intro",
     bioPlaceholder: "Tell neighbors about yourself...",
+    selectCondo: "Select Your Condominium",
+    condominium: "Condominium",
     // Marketplace
     sell: "Sell",
     sellOrGive: "Sell or Give",
@@ -91,6 +93,8 @@ export const translations = {
     endDate: "End Date",
     targetTime: "Target Time",
     otherSpecify: "Other (Specify)",
+    condoLocation: "Condo Location",
+    lobby: "LOBBY",
     disclaimer: "By posting, you agree that transactions are made at your own risk. The app is not responsible for disputes.",
     // Wanted
     postWanted: "Post Wanted",
@@ -305,6 +309,8 @@ export const translations = {
     completeSetup: "完成设置",
     bio: "简介",
     bioPlaceholder: "向邻居介绍一下你自己...",
+    selectCondo: "选择您的公寓",
+    condominium: "公寓",
     // Marketplace
     sell: "出售",
     sellOrGive: "出售或赠送",
@@ -347,6 +353,8 @@ export const translations = {
     endDate: "结束日期",
     targetTime: "目标时间",
     otherSpecify: "其他（请注明）",
+    condoLocation: "公寓位置",
+    lobby: "大堂",
     disclaimer: "发布即表示您同意交易风险自担。本应用不负责任何纠纷。",
     // Wanted
     postWanted: "发布征集",
@@ -561,6 +569,8 @@ export const translations = {
     completeSetup: "설정 완료",
     bio: "자기소개",
     bioPlaceholder: "이웃에게 자신을 소개해보세요...",
+    selectCondo: "콘도미니엄 선택",
+    condominium: "콘도미니엄",
     // Marketplace
     sell: "판매하기",
     sellOrGive: "판매 또는 나눔",
@@ -603,6 +613,8 @@ export const translations = {
     endDate: "종료 날짜",
     targetTime: "희망 시간",
     otherSpecify: "기타 (직접 입력)",
+    condoLocation: "콘도 위치",
+    lobby: "로비",
     disclaimer: "게시함으로써 귀하는 거래가 본인의 책임하에 이루어짐에 동의합니다. 앱은 분쟁에 대해 책임을 지지 않습니다.",
     // Wanted
     postWanted: "구함 등록",
@@ -818,6 +830,8 @@ export const translations = {
     completeSetup: "設定を完了する",
     bio: "自己紹介",
     bioPlaceholder: "隣人に自己紹介しましょう...",
+    selectCondo: "コンドミニアムを選択",
+    condominium: "住んでいるコンドミニアム",
     // Marketplace
     sell: "売る",
     sellOrGive: "売る・あげる",
@@ -860,6 +874,8 @@ export const translations = {
     endDate: "終了日",
     targetTime: "希望時間",
     otherSpecify: "その他（自由入力）",
+    condoLocation: "出品するコンドミニアム",
+    lobby: "ロビー",
     disclaimer: "投稿することで、取引は自己責任で行われることに同意したことになります。アプリはトラブルの責任を負いません。",
     // Wanted
     postWanted: "ほしいを投稿",

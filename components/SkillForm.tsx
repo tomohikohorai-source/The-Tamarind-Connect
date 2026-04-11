@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import { UserProfile, Skill } from '../types';
-import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
+import { SKILL_CATEGORIES, SKILL_ICONS, CONDO_OPTIONS } from '../constants';
 import { store } from '../services/store';
-import { ChevronLeft, X, BookOpen, MessageSquare, ShieldAlert, Award, CreditCard, Layers } from 'lucide-react';
+import { ChevronLeft, X, BookOpen, MessageSquare, ShieldAlert, Award, CreditCard, Layers, Building2 } from 'lucide-react';
 
 import { Language, translations } from '../translations';
 
@@ -22,6 +22,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
   const [description, setDescription] = useState(initialSkill?.description || '');
   const [type, setType] = useState<'OFFER' | 'REQUEST'>(initialSkill?.type || 'OFFER');
   const [price, setPrice] = useState(initialSkill?.price || 'Free');
+  const [condoId, setCondoId] = useState(initialSkill?.condoId || profile.condoId || 'tamarind-penang');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +42,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
       id: initialSkill?.id || crypto.randomUUID(),
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: condoId,
       parentNickname: profile.parentNickname,
       parentAvatarIcon: profile.avatarIcon,
       roomNumber: profile.roomNumber,
@@ -86,6 +88,20 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
         </div>
 
         <div className="space-y-5">
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.condoLocation}</label>
+            <div className="relative">
+              <Building2 className="absolute left-4 top-3.5 text-indigo-200" size={18} />
+              <select 
+                value={condoId} 
+                onChange={e => setCondoId(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none focus:ring-2 ring-indigo-50"
+              >
+                {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.heading}</label>
             <div className="relative">

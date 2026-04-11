@@ -1,9 +1,9 @@
 
 import React, { useState, useRef } from 'react';
 import { UserProfile, WantedItem } from '../types';
-import { MARKET_GENRES } from '../constants';
+import { MARKET_GENRES, CONDO_OPTIONS } from '../constants';
 import { store } from '../services/store';
-import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar } from 'lucide-react';
+import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Language, translations } from '../translations';
@@ -55,6 +55,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', init
   const [images, setImages] = useState<string[]>(initialItem?.images || []);
   const [preferredTiming, setPreferredTiming] = useState(initialItem?.preferredTiming || format(new Date(), 'yyyy-MM-dd'));
   const [isCompressing, setIsCompressing] = useState(false);
+  const [condoId, setCondoId] = useState(initialItem?.condoId || profile.condoId || 'tamarind-penang');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -91,6 +92,7 @@ export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', init
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: condoId,
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       parentAvatarIcon: profile.avatarIcon,
@@ -147,6 +149,20 @@ export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', init
         </div>
 
         <div className="space-y-5">
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.condoLocation}</label>
+            <div className="relative">
+              <Building2 className="absolute left-4 top-3.5 text-amber-200" size={18} />
+              <select 
+                value={condoId} 
+                onChange={e => setCondoId(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none focus:ring-2 ring-amber-50"
+              >
+                {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.lookingFor}</label>
             <div className="relative">

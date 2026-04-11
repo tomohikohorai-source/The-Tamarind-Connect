@@ -12,8 +12,9 @@ import { SkillExchange } from './components/SkillExchange';
 import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
+import { LoginRequiredModal } from './components/LoginRequiredModal';
 import { store } from './services/store';
-import { DEMO_PASSCODE, TAMARIND_CONDO } from './constants';
+import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
 import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
 import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
 import { isSameDay } from 'date-fns';
@@ -66,11 +67,22 @@ export const App: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(() => localStorage.getItem('app_admin_mode') === 'true');
 
+  const [showLoginRequired, setShowLoginRequired] = useState(false);
+  const [showAuthOverlay, setShowAuthOverlay] = useState(false);
+
   const condoCode = store.getPasscode() || profile?.condoCode || '';
   const isTestAdmin = profile?.customUserId === 'testtest';
   
   // Only admins in admin mode can see test data (DEMO_PASSCODE)
   const effectiveCondoCode = (isTestAdmin && isAdminMode) ? DEMO_PASSCODE : (condoCode === DEMO_PASSCODE ? '' : condoCode);
+
+  const ensureAuth = (action: () => void) => {
+    if (profile) {
+      action();
+    } else {
+      setShowLoginRequired(true);
+    }
+  };
 
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
   const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
@@ -122,27 +134,57 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Migration: Set condoId for all users to "The Tamarind"
+  // Migration: Set condoId for all users to "The Tamarind" if missing
   useEffect(() => {
     const migrateUser = async () => {
-      // Ensure the condo master data exists
+      // Ensure all condo master data exists
       try {
-        await setDoc(doc(db, "condos", TAMARIND_CONDO.id), TAMARIND_CONDO, { merge: true });
+        for (const condo of CONDOS) {
+          await setDoc(doc(db, "condos", condo.id), condo, { merge: true });
+        }
       } catch (e) {
         console.error("Condo master data error:", e);
       }
 
       if (profile && !profile.condoId) {
         try {
-          await updateDoc(doc(db, "users", profile.uid), { condoId: TAMARIND_CONDO.id });
-          setProfile(prev => prev ? { ...prev, condoId: TAMARIND_CONDO.id } : null);
+          const defaultCondoId = 'tamarind-penang';
+          await updateDoc(doc(db, "users", profile.uid), { condoId: defaultCondoId });
+          setProfile(prev => prev ? { ...prev, condoId: defaultCondoId } : null);
         } catch (e) {
           console.error("Migration error:", e);
         }
       }
+
+      // Migration for items: Set condoId to Tamarind if missing
+      const migrateItems = async () => {
+        const defaultCondoId = 'tamarind-penang';
+        
+        // Market Items
+        marketItems.forEach(async (item) => {
+          if (!item.condoId) {
+            try { await updateDoc(doc(db, "marketItems", item.id), { condoId: defaultCondoId }); } catch (e) {}
+          }
+        });
+
+        // Skills
+        skills.forEach(async (skill) => {
+          if (!skill.condoId) {
+            try { await updateDoc(doc(db, "skills", skill.id), { condoId: defaultCondoId }); } catch (e) {}
+          }
+        });
+
+        // Wanted Items
+        wantedItems.forEach(async (wanted) => {
+          if (!wanted.condoId) {
+            try { await updateDoc(doc(db, "wantedItems", wanted.id), { condoId: defaultCondoId }); } catch (e) {}
+          }
+        });
+      };
+      migrateItems();
     };
     migrateUser();
-  }, [profile]);
+  }, [profile, marketItems, skills, wantedItems]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -218,7 +260,7 @@ export const App: React.FC = () => {
           setAppState('SETUP');
         }
       } else {
-        setAppState('AUTH');
+        setAppState('READY');
         setProfile(null);
       }
       setLoading(false);
@@ -227,7 +269,7 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (appState === 'READY' && profile) {
+    if (appState === 'READY') {
       const qAct = query(
         collection(db, "activities")
       );
@@ -474,6 +516,10 @@ export const App: React.FC = () => {
   }, [activeTab, activities, marketItems, skills, wantedItems, profile]);
 
   const changeTab = (tab: AppTab) => {
+    if (tab === 'PROFILE' && !profile) {
+      setShowLoginRequired(true);
+      return;
+    }
     if (activeTab === tab) {
       setTabResetToggle(prev => !prev);
     }
@@ -492,19 +538,21 @@ export const App: React.FC = () => {
   };
 
   const handleActionClick = () => {
-    if (activeTab === 'MARKET' || activeTab === 'PROFILE') {
-      setShowMarketForm(true);
-      window.location.hash = 'sell';
-    } else if (activeTab === 'WANTED') {
-      setShowWantedForm(true);
-      window.location.hash = 'post-wanted';
-    } else if (activeTab === 'SKILLS') {
-      setShowSkillForm(true);
-      window.location.hash = 'post-skill';
-    } else {
-      setShowCheckIn(true);
-      window.location.hash = 'checkin';
-    }
+    ensureAuth(() => {
+      if (activeTab === 'MARKET' || activeTab === 'PROFILE') {
+        setShowMarketForm(true);
+        window.location.hash = 'sell';
+      } else if (activeTab === 'WANTED') {
+        setShowWantedForm(true);
+        window.location.hash = 'post-wanted';
+      } else if (activeTab === 'SKILLS') {
+        setShowSkillForm(true);
+        window.location.hash = 'post-skill';
+      } else {
+        setShowCheckIn(true);
+        window.location.hash = 'checkin';
+      }
+    });
   };
 
   const closeModals = () => {
@@ -839,7 +887,6 @@ export const App: React.FC = () => {
 
   if (!isVerified) return <PasscodeGate language={language} onSuccess={handlePasscodeSuccess} onLanguageChange={handleLanguageChange} />;
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-pink-50 text-pink-500 font-black uppercase tracking-widest text-xs animate-pulse">{t.loading}</div>;
-  if (appState === 'AUTH') return <AuthScreen language={language} onLanguageChange={handleLanguageChange} />;
   if (appState === 'SETUP' && auth.currentUser) return <ProfileSetup language={language} onComplete={handleProfileComplete} />;
 
   const isMarket = activeTab === 'MARKET';
@@ -880,7 +927,7 @@ export const App: React.FC = () => {
       </header>
 
       <main ref={mainRef} className="flex-grow overflow-y-auto touch-pan-y hide-scrollbar" style={{ transform: `translateY(${pullDistance}px)` }}>
-        {activeTab === 'MARKET' && profile && (
+        {activeTab === 'MARKET' && (
           <MarketPlace 
             items={marketItems} 
             profile={profile} 
@@ -888,12 +935,12 @@ export const App: React.FC = () => {
             loading={marketLoading}
             initialActiveItemId={targetMarketId} 
             tabResetToggle={tabResetToggle}
-            onEdit={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
-            onStatusChange={handleMarketStatusChange} 
-            onDelete={handleMarketDelete} 
-            onAddComment={handleMarketComment} 
-            onLike={handleMarketLike}
-            onViewProfile={handleViewProfile} 
+            onEdit={(item) => ensureAuth(() => { setEditingMarketItem(item); setShowMarketForm(true); })} 
+            onStatusChange={(id, status, buyerId, reason, flags) => ensureAuth(() => handleMarketStatusChange(id, status, buyerId, reason, flags))} 
+            onDelete={(id) => ensureAuth(() => handleMarketDelete(id))} 
+            onAddComment={(itemId, text) => ensureAuth(() => handleMarketComment(itemId, text))} 
+            onLike={(itemId) => ensureAuth(() => handleMarketLike(itemId))}
+            onViewProfile={(userId) => ensureAuth(() => handleViewProfile(userId))} 
             onChatClose={() => {
               setTargetMarketId(null);
               if (window.location.hash.startsWith('#market')) {
@@ -904,9 +951,10 @@ export const App: React.FC = () => {
               if (id) window.location.hash = `#market?id=${id}`;
               else window.location.hash = '#market';
             }}
+            ensureAuth={ensureAuth}
           />
         )}
-        {activeTab === 'WANTED' && profile && (
+        {activeTab === 'WANTED' && (
           <WantedList 
             items={wantedItems} 
             profile={profile} 
@@ -914,11 +962,11 @@ export const App: React.FC = () => {
             loading={wantedLoading}
             initialActiveItemId={targetWantedId} 
             tabResetToggle={tabResetToggle}
-            onEdit={(item) => { setEditingWantedItem(item); setShowWantedForm(true); }} 
-            onDelete={handleWantedDelete} 
-            onAddComment={handleWantedComment} 
-            onLike={handleWantedLike}
-            onViewProfile={handleViewProfile} 
+            onEdit={(item) => ensureAuth(() => { setEditingWantedItem(item); setShowWantedForm(true); })} 
+            onDelete={(id) => ensureAuth(() => handleWantedDelete(id))} 
+            onAddComment={(itemId, text) => ensureAuth(() => handleWantedComment(itemId, text))} 
+            onLike={(itemId) => ensureAuth(() => handleWantedLike(itemId))}
+            onViewProfile={(userId) => ensureAuth(() => handleViewProfile(userId))} 
             onChatClose={() => {
               setTargetWantedId(null);
               if (window.location.hash.startsWith('#wanted')) {
@@ -929,9 +977,10 @@ export const App: React.FC = () => {
               if (id) window.location.hash = `#wanted?id=${id}`;
               else window.location.hash = '#wanted';
             }}
+            ensureAuth={ensureAuth}
           />
         )}
-        {activeTab === 'SKILLS' && profile && (
+        {activeTab === 'SKILLS' && (
           <SkillExchange 
             skills={skills} 
             profile={profile} 
@@ -939,12 +988,12 @@ export const App: React.FC = () => {
             loading={skillsLoading}
             initialActiveSkillId={targetSkillId} 
             tabResetToggle={tabResetToggle}
-            onEdit={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} 
-            onDelete={handleSkillDelete} 
-            onStatusChange={handleSkillStatusChange} 
-            onAddComment={handleSkillComment} 
-            onLike={handleSkillLike}
-            onViewProfile={handleViewProfile} 
+            onEdit={(skill) => ensureAuth(() => { setEditingSkill(skill); setShowSkillForm(true); })} 
+            onDelete={(id) => ensureAuth(() => handleSkillDelete(id))} 
+            onStatusChange={(id, status) => ensureAuth(() => handleSkillStatusChange(id, status))} 
+            onAddComment={(itemId, text) => ensureAuth(() => handleSkillComment(itemId, text))} 
+            onLike={(itemId) => ensureAuth(() => handleSkillLike(itemId))}
+            onViewProfile={(userId) => ensureAuth(() => handleViewProfile(userId))} 
             onChatClose={() => {
               setTargetSkillId(null);
               if (window.location.hash.startsWith('#skills')) {
@@ -955,41 +1004,69 @@ export const App: React.FC = () => {
               if (id) window.location.hash = `#skills?id=${id}`;
               else window.location.hash = '#skills';
             }}
+            ensureAuth={ensureAuth}
           />
         )}
-        {activeTab === 'PROFILE' && profile && (
-          <ProfilePage 
-            profile={profile} 
-            currentUser={profile} 
-            marketItems={marketItems} 
-            skills={skills} 
-            wantedItems={wantedItems} 
-            tabResetToggle={tabResetToggle}
-            onLogout={handleLogout} 
-            onUpdateProfile={setProfile} 
-            onEditMarket={(item) => { setEditingMarketItem(item); setShowMarketForm(true); }} 
-            onDeleteMarket={handleMarketDelete} 
-            onMarketStatusChange={handleMarketStatusChange} 
-            onAddMarket={() => setShowMarketForm(true)} 
-            onAddSkill={() => setShowSkillForm(true)} 
-            onEditSkill={(skill) => { setEditingSkill(skill); setShowSkillForm(true); }} 
-            onDeleteSkill={handleSkillDelete} 
-            onAddMarketComment={handleMarketComment} 
-            onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} 
-            onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} 
-            onGoToWanted={(id) => { setTargetWantedId(id); setActiveTab('WANTED'); }}
-            acknowledgedMarketMap={acknowledgedMarketMap}
-            acknowledgedSkillMap={acknowledgedSkillMap}
-            acknowledgedWantedMap={acknowledgedWantedMap}
-            language={language}
-            isAdminMode={isAdminMode}
-            onToggleAdminMode={(val) => {
-              setIsAdminMode(val);
-              localStorage.setItem('app_admin_mode', String(val));
-            }}
-          />
+        {activeTab === 'PROFILE' && (
+          profile ? (
+            <ProfilePage 
+              profile={profile} 
+              currentUser={profile} 
+              marketItems={marketItems} 
+              skills={skills} 
+              wantedItems={wantedItems} 
+              tabResetToggle={tabResetToggle}
+              onLogout={handleLogout} 
+              onUpdateProfile={setProfile} 
+              onEditMarket={(item) => ensureAuth(() => { setEditingMarketItem(item); setShowMarketForm(true); })} 
+              onDeleteMarket={(id) => ensureAuth(() => handleMarketDelete(id))} 
+              onMarketStatusChange={(id, status, buyerId, reason, flags) => ensureAuth(() => handleMarketStatusChange(id, status, buyerId, reason, flags))} 
+              onAddMarket={() => ensureAuth(() => setShowMarketForm(true))} 
+              onAddSkill={() => ensureAuth(() => setShowSkillForm(true))} 
+              onEditSkill={(skill) => ensureAuth(() => { setEditingSkill(skill); setShowSkillForm(true); })} 
+              onDeleteSkill={(id) => ensureAuth(() => handleSkillDelete(id))} 
+              onAddMarketComment={(itemId, text) => ensureAuth(() => handleMarketComment(itemId, text))} 
+              onGoToTransaction={(id) => { setTargetMarketId(id); setActiveTab('MARKET'); }} 
+              onGoToSkill={(id) => { setTargetSkillId(id); setActiveTab('SKILLS'); }} 
+              onGoToWanted={(id) => { setTargetWantedId(id); setActiveTab('WANTED'); }}
+              acknowledgedMarketMap={acknowledgedMarketMap}
+              acknowledgedSkillMap={acknowledgedSkillMap}
+              acknowledgedWantedMap={acknowledgedWantedMap}
+              language={language}
+              isAdminMode={isAdminMode}
+              onToggleAdminMode={(val) => {
+                setIsAdminMode(val);
+                localStorage.setItem('app_admin_mode', String(val));
+              }}
+            />
+          ) : (
+            <AuthScreen language={language} onLanguageChange={handleLanguageChange} />
+          )
         )}
       </main>
+
+      {showLoginRequired && (
+        <LoginRequiredModal 
+          language={language} 
+          onProceed={() => {
+            setShowLoginRequired(false);
+            setShowAuthOverlay(true);
+          }} 
+          onCancel={() => setShowLoginRequired(false)} 
+        />
+      )}
+
+      {showAuthOverlay && (
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm relative">
+            <AuthScreen 
+              language={language} 
+              onLanguageChange={handleLanguageChange} 
+              onClose={() => setShowAuthOverlay(false)} 
+            />
+          </div>
+        </div>
+      )}
 
       {viewingProfile && profile && (
         <ProfilePage 

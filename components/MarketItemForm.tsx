@@ -1,9 +1,9 @@
 
 import React, { useState, useRef } from 'react';
 import { UserProfile, MarketItem } from '../types';
-import { MARKET_LOCATIONS, DEMO_MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES, DEMO_PASSCODE } from '../constants';
+import { MARKET_LOCATIONS, DEMO_MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES, DEMO_PASSCODE, CONDO_OPTIONS } from '../constants';
 import { store } from '../services/store';
-import { ChevronLeft, X, Package, Tag, Info, MapPin, CreditCard, Clock, Calendar, MessageSquare, Camera, Trash2, Coins, Layers, ShieldAlert } from 'lucide-react';
+import { ChevronLeft, X, Package, Tag, Info, MapPin, CreditCard, Clock, Calendar, MessageSquare, Camera, Trash2, Coins, Layers, ShieldAlert, Building2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
 import { Language, translations } from '../translations';
@@ -67,9 +67,15 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
   const [paymentMethod, setPaymentMethod] = useState<MarketItem['paymentMethod']>(initialItem?.paymentMethod || 'FREE');
   const [images, setImages] = useState<string[]>(initialItem?.images || []);
   const [isCompresing, setIsCompressing] = useState(false);
+  const [condoId, setCondoId] = useState(initialItem?.condoId || profile.condoId || 'tamarind-penang');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const locations = store.getPasscode() === DEMO_PASSCODE ? DEMO_MARKET_LOCATIONS : MARKET_LOCATIONS;
+  
+  const isTamarindSelected = condoId === 'tamarind-penang';
+  const locations = store.getPasscode() === DEMO_PASSCODE 
+    ? DEMO_MARKET_LOCATIONS 
+    : (isTamarindSelected ? MARKET_LOCATIONS : ['LOBBY', 'Other (Specify)']);
+
   const [pickupLocation, setPickupLocation] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? 'Other (Specify)' : initialItem?.pickupLocation || locations[0]);
   const [otherLocationText, setOtherLocationText] = useState(initialItem?.pickupLocation?.startsWith('Other:') ? initialItem.pickupLocation.replace('Other: ', '') : '');
 
@@ -137,6 +143,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
       id: initialItem?.id || crypto.randomUUID(),
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: condoId,
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       parentAvatarIcon: profile.avatarIcon,
@@ -213,6 +220,33 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
                 <span className="text-[8px] font-bold text-gray-400 leading-tight">{t[c.desc.toLowerCase().replace(/ \/ /g, '').replace(/ /g, '') as keyof typeof t] || c.desc}</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.condoLocation}</label>
+          <div className="relative">
+            <Building2 className="absolute left-4 top-3.5 text-teal-200" size={18} />
+            <select 
+              value={condoId} 
+              onChange={e => {
+                const newCondoId = e.target.value;
+                setCondoId(newCondoId);
+                
+                // Reset pickup location if it's not in the new list
+                const newIsTamarind = newCondoId === 'tamarind-penang';
+                const newLocations = store.getPasscode() === DEMO_PASSCODE 
+                  ? DEMO_MARKET_LOCATIONS 
+                  : (newIsTamarind ? MARKET_LOCATIONS : ['LOBBY', 'Other (Specify)']);
+                
+                if (!newLocations.includes(pickupLocation)) {
+                  setPickupLocation(newLocations[0]);
+                }
+              }}
+              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none"
+            >
+              {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
+            </select>
           </div>
         </div>
 
@@ -300,7 +334,9 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
           <div className="grid grid-cols-1 gap-2">
             {locations.map(loc => (
               <button key={loc} type="button" onClick={() => setPickupLocation(loc)} className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex items-center gap-3 ${pickupLocation === loc ? 'border-teal-400 bg-teal-50 shadow-sm' : 'border-gray-50 bg-white text-gray-400'}`}>
-                <span className="text-[10px] font-black uppercase tracking-tight">{loc === 'Other (Specify)' ? t.otherSpecify : loc}</span>
+                <span className="text-[10px] font-black uppercase tracking-tight">
+                  {loc === 'Other (Specify)' ? t.otherSpecify : (loc === 'LOBBY' ? t.lobby : loc)}
+                </span>
               </button>
             ))}
           </div>

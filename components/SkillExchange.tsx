@@ -3,12 +3,12 @@ import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { Language, translations } from '../translations';
 import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart, Share2 } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart, Share2, Edit2, Trash2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
 interface Props {
   skills: Skill[];
-  profile: UserProfile;
+  profile: UserProfile | null;
   initialActiveSkillId?: string | null;
   onEdit: (skill: Skill) => void;
   onDelete: (id: string) => void;
@@ -21,9 +21,11 @@ interface Props {
   language?: Language;
   loading?: boolean;
   tabResetToggle?: boolean;
+  ensureAuth?: (action: () => void) => void;
 }
 
-const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile, t: any }) => {
+const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile | null, t: any }) => {
+  if (!profile) return null;
   const isOwner = skill.userId === profile.uid;
   const isRequester = skill.requesterId === profile.uid;
 
@@ -71,7 +73,7 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,7 +92,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       const skill = skills.find(s => s.id === initialActiveSkillId);
       if (skill) {
         // Access gate for private reserved/closed sessions
-        if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
+        if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && (!profile || (skill.userId !== profile.uid && skill.requesterId !== profile.uid))) {
            alert(t.privateSessionMsg);
            if (onChatClose) onChatClose();
            return;
@@ -101,7 +103,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         if (onChatClose) onChatClose();
       }
     }
-  }, [initialActiveSkillId, skills, profile.uid, t.privateSessionMsg, t.itemNotFound, loading, onChatClose]);
+  }, [initialActiveSkillId, skills, profile?.uid, t.privateSessionMsg, t.itemNotFound, loading, onChatClose]);
 
   useEffect(() => {
     if (viewingSkill) {
@@ -131,14 +133,14 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   const [confirmRequestSkill, setConfirmRequestSkill] = useState<Skill | null>(null);
 
   const handleConfirmRequest = () => {
-    if (confirmRequestSkill) {
+    if (confirmRequestSkill && profile) {
       onStatusChange(confirmRequestSkill.id, 'AVAILABLE', profile.uid);
       setConfirmRequestSkill(null);
     }
   };
 
   const handleRequestCancellation = (skill: Skill) => {
-    const isMine = skill.userId === profile.uid;
+    const isMine = profile && skill.userId === profile.uid;
     const msg = isMine ? t.cancelExchangeProvider : t.cancelExchangeRequester;
     if (confirm(msg)) {
       const updates = isMine ? { sellerRequestedCancellation: true } : { requesterRequestedCancellation: true };
@@ -162,7 +164,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   };
 
   const handleItemClick = (skill: Skill) => {
-    if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
+    if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && (!profile || (skill.userId !== profile.uid && skill.requesterId !== profile.uid))) {
       alert(t.accessRestrictedMsg);
       return;
     }
@@ -190,8 +192,8 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   };
 
   if (viewingSkill) {
-    const isMine = viewingSkill.userId === profile.uid;
-    const isRequester = viewingSkill.requesterId === profile.uid;
+    const isMine = profile && viewingSkill.userId === profile.uid;
+    const isRequester = profile && viewingSkill.requesterId === profile.uid;
 
     return (
       <div className="animate-fade-in space-y-6 pb-32 px-4 pt-4">
@@ -269,7 +271,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         <div className="bg-white p-6 rounded-[32px] border-2 border-indigo-50 shadow-lg space-y-6 animate-slide-down">
           {!isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
             <button 
-              onClick={() => setConfirmRequestSkill(viewingSkill)} 
+              onClick={() => {
+                if (ensureAuth) {
+                  ensureAuth(() => setConfirmRequestSkill(viewingSkill));
+                } else {
+                  setConfirmRequestSkill(viewingSkill);
+                }
+              }} 
               className="w-full py-5 bg-indigo-500 text-white rounded-[28px] font-black uppercase tracking-[0.2em] text-[14px] shadow-xl shadow-indigo-100 active:scale-[0.97] transition-all border-4 border-white block"
             >
               {t.requesting}
@@ -277,11 +285,11 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
           )}
 
           {isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus === 'PENDING' && (
-            <div className="space-y-3">
-              <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest text-center">{t.inquiryReceived} {viewingSkill.requesterNickname}</p>
+            <div className="space-y-4 p-5 bg-indigo-50/50 rounded-[32px] border-2 border-indigo-100 mb-4">
+              <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest text-center">{t.inquiryReceived} {viewingSkill.requesterNickname}</p>
               <div className="flex gap-3">
-                <button onClick={() => onStatusChange(viewingSkill.id, 'RESERVED')} className="flex-1 py-4.5 bg-indigo-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">{t.confirm}</button>
-                <button onClick={() => onStatusChange(viewingSkill.id, 'AVAILABLE', undefined, 'declined')} className="flex-1 py-4.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-gray-100 active:scale-95 transition-all">{t.cancel}</button>
+                <button onClick={() => onStatusChange(viewingSkill.id, 'RESERVED')} className="flex-1 py-5 bg-indigo-500 text-white rounded-[28px] font-black uppercase text-[14px] tracking-widest shadow-xl active:scale-95 border-4 border-white transition-all">{t.confirm}</button>
+                <button onClick={() => onStatusChange(viewingSkill.id, 'AVAILABLE', undefined, 'declined')} className="flex-1 py-5 bg-white text-gray-400 rounded-[28px] font-black uppercase text-[14px] tracking-widest border-2 border-gray-100 active:scale-95 transition-all">{t.cancel}</button>
               </div>
             </div>
           )}
@@ -303,11 +311,15 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
           <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingSkill.description}</p>
           
           {isMine && (
-            <div className="flex gap-4 pt-2">
+            <div className="flex flex-col gap-3 pt-2">
               {viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
-                <button onClick={() => onEdit(viewingSkill)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-gray-100 shadow-sm active:scale-95 transition-all">{t.edit}</button>
+                <button onClick={() => onEdit(viewingSkill)} className="w-full py-4 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[11px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+                  <Edit2 size={16}/> {t.edit}
+                </button>
               )}
-              <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingSkill.id); setViewingSkill(null); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-red-50 shadow-sm active:scale-95 transition-all">{t.delete}</button>
+              <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingSkill.id); setViewingSkill(null); } }} className="w-full py-3.5 bg-white text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 flex items-center justify-center gap-2 transition-all opacity-70 hover:opacity-100">
+                <Trash2 size={14}/> {t.deleteListing}
+              </button>
             </div>
           )}
         </div>
@@ -330,7 +342,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
           <div className="space-y-4">
             {viewingSkill.comments.map(c => {
-              const isMe = c.userId === profile.uid;
+              const isMe = profile && c.userId === profile.uid;
               return (
                 <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
                   <div className="flex flex-col items-center gap-1 shrink-0">
@@ -455,7 +467,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                                differenceInHours(new Date(), new Date(skill.priceUpdatedAt)) <= 72;
 
           const isClosed = skill.status === 'CLOSED';
-          const canClick = !isClosed || skill.userId === profile.uid || skill.requesterId === profile.uid;
+          const canClick = !isClosed || (profile && (skill.userId === profile.uid || skill.requesterId === profile.uid));
 
           return (
             <button 
@@ -466,9 +478,9 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             >
               <div 
                 onClick={(e) => { e.stopPropagation(); onLike(skill.id); }}
-                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 cursor-pointer ${skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 cursor-pointer ${profile && skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
               >
-                <Heart size={10} fill={skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+                <Heart size={10} fill={profile && skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                 {skill.likes && skill.likes.length > 0 && <span className="text-[8px] font-black">{skill.likes.length}</span>}
               </div>
               {isClosed && (

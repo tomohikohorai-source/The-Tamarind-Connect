@@ -10,7 +10,7 @@ import { Language, translations } from '../translations';
 
 interface Props {
   items: MarketItem[];
-  profile: UserProfile;
+  profile: UserProfile | null;
   language?: Language;
   loading?: boolean;
   initialActiveItemId?: string | null;
@@ -23,10 +23,12 @@ interface Props {
   onChatClose?: () => void;
   onViewItem?: (id: string | null) => void;
   tabResetToggle?: boolean;
+  ensureAuth?: (action: () => void) => void;
 }
 
-const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: MarketItem, profile: UserProfile, language?: Language }) => {
+const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: MarketItem, profile: UserProfile | null, language?: Language }) => {
   const t = translations[language];
+  if (!profile) return null;
   const isSeller = item.userId === profile.uid;
   const isBuyer = item.buyerId === profile.uid;
 
@@ -96,7 +98,7 @@ const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: Mark
   return null;
 });
 
-const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketItem, onClick: () => void, profile: UserProfile, onLike: (e: React.MouseEvent) => void }) => {
+const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketItem, onClick: () => void, profile: UserProfile | null, onLike: (e: React.MouseEvent) => void }) => {
   const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
   const isDiscounted = item.priceUpdatedAt && 
                       item.previousPrice !== undefined && 
@@ -104,8 +106,8 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
                       differenceInHours(new Date(), new Date(item.priceUpdatedAt)) <= 72;
 
   const isSold = item.status === 'SOLD';
-  const canClick = !isSold || item.userId === profile.uid || item.buyerId === profile.uid;
-  const isLiked = item.likes?.includes(profile.uid);
+  const canClick = !isSold || (profile && (item.userId === profile.uid || item.buyerId === profile.uid));
+  const isLiked = profile ? item.likes?.includes(profile.uid) : false;
 
   return (
     <button 
@@ -173,7 +175,7 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, ensureAuth }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,7 +199,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       const item = items.find(i => i.id === initialActiveItemId);
       if (item) {
         // Validation for deep linking - restrict access to RESERVED and SOLD items
-        if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
+        if ((item.status === 'RESERVED' || item.status === 'SOLD') && (!profile || (item.userId !== profile.uid && item.buyerId !== profile.uid))) {
            alert(t.transactionPrivateMsg);
            if (onChatClose) onChatClose();
            return;
@@ -209,7 +211,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         if (onChatClose) onChatClose();
       }
     }
-  }, [initialActiveItemId, items, profile.uid, t.transactionPrivateMsg, t.itemNotFound, loading, onChatClose]);
+  }, [initialActiveItemId, items, profile?.uid, t.transactionPrivateMsg, t.itemNotFound, loading, onChatClose]);
 
   useEffect(() => {
     if (viewingItem) {
@@ -308,7 +310,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
   };
 
   const handleRequestCancellation = (item: MarketItem) => {
-    const isSeller = item.userId === profile.uid;
+    const isSeller = profile && item.userId === profile.uid;
     const msg = isSeller ? t.cancelTradeSeller : t.cancelTradeBuyer;
     if (confirm(msg)) {
       const updates = isSeller ? { sellerRequestedCancellation: true } : { buyerRequestedCancellation: true };
@@ -335,7 +337,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
 
   const handleItemClick = (item: MarketItem) => {
     // Check privacy for TRADE (RESERVED) and SOLD items
-    if ((item.status === 'RESERVED' || item.status === 'SOLD') && item.userId !== profile.uid && item.buyerId !== profile.uid) {
+    if ((item.status === 'RESERVED' || item.status === 'SOLD') && (!profile || (item.userId !== profile.uid && item.buyerId !== profile.uid))) {
       alert(t.transactionPrivateMsg);
       return;
     }
@@ -363,8 +365,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
   };
 
   if (viewingItem) {
-    const isSeller = viewingItem.userId === profile.uid;
-    const isBuyer = viewingItem.buyerId === profile.uid;
+    const isSeller = profile && viewingItem.userId === profile.uid;
+    const isBuyer = profile && viewingItem.buyerId === profile.uid;
 
     return (
       <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
@@ -378,9 +380,9 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
               </button>
               <button 
                 onClick={() => onLike(viewingItem.id)} 
-                className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+                className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${profile && viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
               >
-                <Heart size={16} fill={viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+                <Heart size={16} fill={profile && viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                 {viewingItem.likes && viewingItem.likes.length > 0 && <span>{viewingItem.likes.length}</span>}
               </button>
               <button 
@@ -405,9 +407,15 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
 
         {viewingItem.status !== 'SOLD' && (
           <div className="bg-white p-6 rounded-[32px] border-2 border-teal-50 shadow-lg animate-slide-down">
-              {viewingItem.userId !== profile.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+              {viewingItem.userId !== profile?.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
                 <button 
-                  onClick={() => setConfirmRequestItem(viewingItem)} 
+                  onClick={() => {
+                    if (ensureAuth) {
+                      ensureAuth(() => setConfirmRequestItem(viewingItem));
+                    } else {
+                      setConfirmRequestItem(viewingItem);
+                    }
+                  }} 
                   className="w-full py-5 bg-teal-400 text-white rounded-[28px] font-black uppercase tracking-[0.2em] text-[14px] shadow-xl shadow-teal-100 active:scale-[0.97] transition-all border-4 border-white block"
                 >
                   {t.requesting}
@@ -415,24 +423,24 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
               )}
 
               {isSeller && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
-                <div className="space-y-3">
-                  <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest text-center">{t.buyerApplicationReceived}</p>
+                <div className="space-y-4 p-5 bg-orange-50/50 rounded-[32px] border-2 border-orange-100 mb-4">
+                  <p className="text-[11px] font-black text-orange-600 uppercase tracking-widest text-center">{t.buyerApplicationReceived}</p>
                   <div className="flex gap-3">
-                    <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-4.5 bg-green-500 text-white rounded-[24px] font-black uppercase text-[12px] tracking-widest shadow-xl active:scale-95 border-2 border-white transition-all">{t.confirm}</button>
-                    <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-4.5 bg-red-50 text-red-500 rounded-[24px] font-black uppercase text-[12px] tracking-widest border border-red-100 active:scale-95 transition-all">{t.cancel}</button>
+                    <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-5 bg-green-500 text-white rounded-[28px] font-black uppercase text-[14px] tracking-widest shadow-xl active:scale-95 border-4 border-white transition-all">{t.confirm}</button>
+                    <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-5 bg-white text-red-500 rounded-[28px] font-black uppercase text-[14px] tracking-widest border-2 border-red-100 active:scale-95 transition-all">{t.cancel}</button>
                   </div>
                 </div>
               )}
 
               {isSeller && (viewingItem.status === 'AVAILABLE' || viewingItem.status === 'RESERVED') && (
-                <div className="flex gap-4">
+                <div className="flex flex-col gap-3">
                   {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
-                    <button onClick={() => onEdit(viewingItem)} className="flex-1 py-3.5 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
-                      <Edit2 size={14}/> {t.edit}
+                    <button onClick={() => onEdit(viewingItem)} className="w-full py-4 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[11px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+                      <Edit2 size={16}/> {t.edit}
                     </button>
                   )}
-                  <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="flex-1 py-3.5 bg-red-50 text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
-                    <Trash2 size={14}/> {t.delete}
+                  <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="w-full py-3.5 bg-white text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 flex items-center justify-center gap-2 transition-all opacity-70 hover:opacity-100">
+                    <Trash2 size={14}/> {t.deleteListing}
                   </button>
                 </div>
               )}
@@ -574,7 +582,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
 
             <div className="space-y-4">
               {viewingItem.comments.map(c => {
-                const isMe = c.userId === profile.uid;
+                const isMe = profile && c.userId === profile.uid;
                 const isItemSeller = c.userId === viewingItem.userId;
                 return (
                   <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>

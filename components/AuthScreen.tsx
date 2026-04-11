@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
-import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info, Mail } from 'lucide-react';
+import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info, Mail, X } from 'lucide-react';
 
 import { Language, translations } from '../translations';
 
@@ -9,9 +9,10 @@ type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
 interface Props {
   language: Language;
   onLanguageChange: (lang: Language) => void;
+  onClose?: () => void;
 }
 
-export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange }) => {
+export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange, onClose }) => {
   const t = translations[language];
   const [mode, setMode] = useState<AuthMode>('CHOICE');
   const [userId, setUserId] = useState('');
@@ -108,7 +109,12 @@ export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange }) => {
   if (mode === 'CHOICE') {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50 text-center relative">
-        <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-10 border border-pink-100 animate-fade-in">
+        <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-10 border border-pink-100 animate-fade-in relative">
+          {onClose && (
+            <button onClick={onClose} className="absolute top-6 right-6 p-2 text-gray-300 hover:text-pink-400 transition-colors">
+              <X size={24} />
+            </button>
+          )}
           <div className="text-6xl mb-6">🏘️</div>
           <h1 className="text-2xl font-black text-pink-500 mb-2 tracking-tighter uppercase">{t.appName}</h1>
           <p className="text-gray-400 mb-10 font-black text-[10px] uppercase tracking-widest leading-loose">{t.appTagline}</p>
@@ -133,6 +139,14 @@ export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange }) => {
             </button>
           </div>
           <Disclaimer />
+          {onClose && (
+            <button 
+              onClick={onClose} 
+              className="w-full mt-6 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <ChevronLeft size={14} /> {t.back}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -140,7 +154,12 @@ export const AuthScreen: React.FC<Props> = ({ language, onLanguageChange }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50 relative">
-      <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-8 border border-pink-100 animate-fade-in">
+      <div className="w-full max-w-sm bg-white rounded-[40px] shadow-2xl p-8 border border-pink-100 animate-fade-in relative">
+        {onClose && (
+          <button onClick={onClose} className="absolute top-6 right-6 p-2 text-gray-300 hover:text-pink-400 transition-colors">
+            <X size={24} />
+          </button>
+        )}
         <button 
           onClick={() => { setMode('CHOICE'); setError(''); setShowPassword(false); }}
           className="mb-6 flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-pink-400 transition-colors"

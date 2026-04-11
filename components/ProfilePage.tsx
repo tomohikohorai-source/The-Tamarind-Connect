@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import { UserProfile, Child, MarketItem, Skill, WantedItem, PrivacySettings } from '../types';
-import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS } from '../constants';
-import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages } from 'lucide-react';
+import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS } from '../constants';
+import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc, updateDoc } from '../firebase';
 import { Language, translations } from '../translations';
@@ -96,7 +96,7 @@ export const ProfilePage: React.FC<Props> = ({
 
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
   const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
-  const [editBlock, setEditBlock] = useState(profile.roomNumber);
+  const [editCondoId, setEditCondoId] = useState(profile.condoId || '');
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
   const isOwnProfile = profile.uid === currentUser.uid;
@@ -197,8 +197,8 @@ export const ProfilePage: React.FC<Props> = ({
   };
 
   const handleSaveProfile = async () => {
-    if (!editNickname.trim()) return;
-    const updatedProfile: UserProfile = { ...profile, parentNickname: editNickname, avatarIcon: editAvatar, roomNumber: editBlock, children: editChildren };
+    if (!editNickname.trim() || !editCondoId) return;
+    const updatedProfile: UserProfile = { ...profile, parentNickname: editNickname, avatarIcon: editAvatar, condoId: editCondoId, children: editChildren };
     try {
       await setDoc(doc(db, "users", profile.uid), updatedProfile);
       onUpdateProfile(updatedProfile);
@@ -329,17 +329,21 @@ export const ProfilePage: React.FC<Props> = ({
                </div>
 
                <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.location}</label>
-                <div className="flex gap-2 mt-2">
-                  {['3A', '3B'].map(b => (
-                    <button
-                      key={b}
-                      onClick={() => setEditBlock(b as any)}
-                      className={`flex-1 py-3 rounded-2xl font-black text-sm transition-all ${editBlock === b ? 'bg-pink-400 text-white shadow-md' : 'bg-gray-50 text-gray-400'}`}
-                    >
-                      Block {b}
-                    </button>
-                  ))}
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
+                <div className="relative mt-1">
+                  <select 
+                    value={editCondoId} 
+                    onChange={e => setEditCondoId(e.target.value)}
+                    className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none appearance-none border-2 border-transparent focus:border-pink-100"
+                  >
+                    <option value="" disabled>{t.selectCondo}</option>
+                    {CONDO_OPTIONS.map(opt => (
+                      <option key={opt.id} value={opt.id}>{opt.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                    <ChevronDown size={18} />
+                  </div>
                 </div>
                </div>
                
