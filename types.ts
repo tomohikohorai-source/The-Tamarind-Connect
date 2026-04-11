@@ -62,7 +62,6 @@ export interface Activity {
   childAvatars: string[]; 
   isInvitation: boolean;
   lastUpdated: string; // ISO String
-  condoId?: string;
 }
 
 export interface MarketComment {
@@ -103,7 +102,6 @@ export interface MarketItem {
   createdAt: string;
   lastUpdated: string;
   likes?: string[];
-  condoId?: string;
   // Transaction flow flags
   buyerConfirmedCompletion?: boolean;
   sellerConfirmedCompletion?: boolean;
@@ -143,7 +141,6 @@ export interface Skill {
   createdAt: string;
   lastUpdated: string;
   likes?: string[];
-  condoId?: string;
   requesterRequestedCancellation?: boolean;
   sellerRequestedCancellation?: boolean;
 }
@@ -178,7 +175,6 @@ export interface WantedItem {
   createdAt: string;
   lastUpdated: string;
   likes?: string[];
-  condoId?: string;
 }
 
 export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'PROFILE';

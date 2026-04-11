@@ -61,7 +61,6 @@ export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initial
       id: initialActivity?.id || crypto.randomUUID(),
       userId: profile.uid, 
       condoCode: profile.condoCode || store.getPasscode() || '',
-      condoId: profile.condoId || '',
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       location,

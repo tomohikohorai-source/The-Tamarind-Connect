@@ -8,7 +8,7 @@ import { format, differenceInHours } from 'date-fns';
 
 interface Props {
   skills: Skill[];
-  profile: UserProfile | null;
+  profile: UserProfile;
   initialActiveSkillId?: string | null;
   onEdit: (skill: Skill) => void;
   onDelete: (id: string) => void;
@@ -23,8 +23,7 @@ interface Props {
   tabResetToggle?: boolean;
 }
 
-const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile | null, t: any }) => {
-  if (!profile) return null;
+const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile, t: any }) => {
   const isOwner = skill.userId === profile.uid;
   const isRequester = skill.requesterId === profile.uid;
 
@@ -91,7 +90,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       const skill = skills.find(s => s.id === initialActiveSkillId);
       if (skill) {
         // Access gate for private reserved/closed sessions
-        if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && (!profile || (skill.userId !== profile.uid && skill.requesterId !== profile.uid))) {
+        if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
            alert(t.privateSessionMsg);
            if (onChatClose) onChatClose();
            return;
@@ -102,7 +101,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         if (onChatClose) onChatClose();
       }
     }
-  }, [initialActiveSkillId, skills, profile?.uid, t.privateSessionMsg, t.itemNotFound, loading, onChatClose]);
+  }, [initialActiveSkillId, skills, profile.uid, t.privateSessionMsg, t.itemNotFound, loading, onChatClose]);
 
   useEffect(() => {
     if (viewingSkill) {
@@ -132,14 +131,14 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   const [confirmRequestSkill, setConfirmRequestSkill] = useState<Skill | null>(null);
 
   const handleConfirmRequest = () => {
-    if (confirmRequestSkill && profile) {
+    if (confirmRequestSkill) {
       onStatusChange(confirmRequestSkill.id, 'AVAILABLE', profile.uid);
       setConfirmRequestSkill(null);
     }
   };
 
   const handleRequestCancellation = (skill: Skill) => {
-    const isMine = profile && skill.userId === profile.uid;
+    const isMine = skill.userId === profile.uid;
     const msg = isMine ? t.cancelExchangeProvider : t.cancelExchangeRequester;
     if (confirm(msg)) {
       const updates = isMine ? { sellerRequestedCancellation: true } : { requesterRequestedCancellation: true };
@@ -163,7 +162,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   };
 
   const handleItemClick = (skill: Skill) => {
-    if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && (!profile || (skill.userId !== profile.uid && skill.requesterId !== profile.uid))) {
+    if ((skill.status === 'RESERVED' || skill.status === 'CLOSED') && skill.userId !== profile.uid && skill.requesterId !== profile.uid) {
       alert(t.accessRestrictedMsg);
       return;
     }
@@ -191,8 +190,8 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   };
 
   if (viewingSkill) {
-    const isMine = profile && viewingSkill.userId === profile.uid;
-    const isRequester = profile && viewingSkill.requesterId === profile.uid;
+    const isMine = viewingSkill.userId === profile.uid;
+    const isRequester = viewingSkill.requesterId === profile.uid;
 
     return (
       <div className="animate-fade-in space-y-6 pb-32 px-4 pt-4">
@@ -331,7 +330,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
           <div className="space-y-4">
             {viewingSkill.comments.map(c => {
-              const isMe = profile && c.userId === profile.uid;
+              const isMe = c.userId === profile.uid;
               return (
                 <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
                   <div className="flex flex-col items-center gap-1 shrink-0">
@@ -456,7 +455,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                                differenceInHours(new Date(), new Date(skill.priceUpdatedAt)) <= 72;
 
           const isClosed = skill.status === 'CLOSED';
-          const canClick = !isClosed || (profile && (skill.userId === profile.uid || skill.requesterId === profile.uid));
+          const canClick = !isClosed || skill.userId === profile.uid || skill.requesterId === profile.uid;
 
           return (
             <button 
@@ -467,9 +466,9 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             >
               <div 
                 onClick={(e) => { e.stopPropagation(); onLike(skill.id); }}
-                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 cursor-pointer ${profile && skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 cursor-pointer ${skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
               >
-                <Heart size={10} fill={profile && skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+                <Heart size={10} fill={skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
                 {skill.likes && skill.likes.length > 0 && <span className="text-[8px] font-black">{skill.likes.length}</span>}
               </div>
               {isClosed && (

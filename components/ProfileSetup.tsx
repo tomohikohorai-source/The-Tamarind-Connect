@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserProfile, Child } from '../types';
 import { Language, translations } from '../translations';
-import { AVATAR_ICONS, AGE_OPTIONS, CONDO_OPTIONS } from '../constants';
+import { AVATAR_ICONS, AGE_OPTIONS, TAMARIND_CONDO } from '../constants';
 import { auth, db, doc, setDoc } from '../firebase';
 import { store } from '../services/store';
 import { Trash2, PlusCircle } from 'lucide-react';
@@ -16,7 +16,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
   const t = translations[language];
   const [parentNickname, setParentNickname] = useState('');
   const [parentAvatar, setParentAvatar] = useState(AVATAR_ICONS.PARENTS[0]);
-  const [selectedCondoId, setSelectedCondoId] = useState<string>('');
+  const [block, setBlock] = useState<'3A' | '3B'>('3A');
   const [children, setChildren] = useState<Child[]>([]);
 
   // Add child helper function
@@ -32,7 +32,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
   };
 
   // Children is now optional: length > 0 check removed
-  const isFormValid = parentNickname.trim().length > 0 && selectedCondoId !== '' && children.every(c => c.nickname.trim().length > 0);
+  const isFormValid = parentNickname.trim().length > 0 && children.every(c => c.nickname.trim().length > 0);
 
   const handleSubmit = async () => {
     if (isFormValid && auth.currentUser) {
@@ -40,13 +40,13 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
         uid: auth.currentUser.uid,
         customUserId: auth.currentUser.displayName || 'unknown_user',
         parentNickname,
-        roomNumber: '', // Block removed
+        roomNumber: block,
         condoCode: store.getPasscode() || '',
         children,
         avatarIcon: parentAvatar,
         totalLoginDays: 1,
         lastLoginDate: new Date().toISOString(),
-        condoId: selectedCondoId,
+        condoId: TAMARIND_CONDO.id,
         // Fix: Added missing properties showPastSales and showBuying to satisfy PrivacySettings interface
         privacySettings: {
           showChildren: true,
@@ -78,21 +78,17 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
             <div className="space-y-4">
               <input type="text" value={parentNickname} onChange={e => setParentNickname(e.target.value)} placeholder={t.parentNickname} className="w-full p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm" />
               <div className="flex flex-col gap-2">
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
-                <div className="relative">
-                  <select 
-                    value={selectedCondoId} 
-                    onChange={e => setSelectedCondoId(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm appearance-none"
-                  >
-                    <option value="" disabled>{t.selectCondo}</option>
-                    {CONDO_OPTIONS.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    ▼
-                  </div>
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.selectBlock}</label>
+                <div className="flex gap-2">
+                  {['3A', '3B'].map(b => (
+                    <button
+                      key={b}
+                      onClick={() => setBlock(b as any)}
+                      className={`flex-1 py-3 rounded-2xl font-black text-sm transition-all ${block === b ? 'bg-pink-400 text-white shadow-md' : 'bg-gray-50 text-gray-400'}`}
+                    >
+                      {t.block} {b}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
