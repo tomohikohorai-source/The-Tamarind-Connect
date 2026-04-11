@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment } from './types';
+import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment, ReadContent } from './types';
 import { Language, translations } from './translations';
 import { AuthScreen } from './components/AuthScreen';
 import { ProfileSetup } from './components/ProfileSetup';
@@ -12,11 +12,12 @@ import { SkillExchange } from './components/SkillExchange';
 import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
+import { ReadTab } from './components/ReadTab';
 import { LoginRequiredModal } from './components/LoginRequiredModal';
 import { store } from './services/store';
 import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
 import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
-import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send } from 'lucide-react';
+import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
@@ -32,6 +33,7 @@ export const App: React.FC = () => {
   const [marketItems, setMarketItems] = useState<MarketItem[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [wantedItems, setWantedItems] = useState<WantedItem[]>([]);
+  const [readItems, setReadItems] = useState<ReadContent[]>([]);
   
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
   const [tabResetToggle, setTabResetToggle] = useState(false);
@@ -101,6 +103,7 @@ export const App: React.FC = () => {
   const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
   const [acknowledgedSkillMap, setAcknowledgedSkillMap] = useState<Record<string, string>>(() => store.getAcknowledgedSkills());
   const [acknowledgedWantedMap, setAcknowledgedWantedMap] = useState<Record<string, string>>(() => JSON.parse(localStorage.getItem('play_share_seen_wanted') || '{}'));
+  const [acknowledgedReadMap, setAcknowledgedReadMap] = useState<Record<string, string>>(() => JSON.parse(localStorage.getItem('play_share_seen_read') || '{}'));
 
   const [showShareMenu, setShowShareMenu] = useState(false);
   const touchStartRef = useRef<number | null>(null);
@@ -377,7 +380,19 @@ export const App: React.FC = () => {
         setWantedLoading(false);
       });
 
-      return () => { unsubAct(); unsubMarket(); unsubSkills(); unsubWanted(); setIsLive(false); };
+      const qRead = query(
+        collection(db, "readContent"),
+        orderBy("createdAt", "desc")
+      );
+      const unsubRead = onSnapshot(qRead, (snapshot) => {
+        const data: ReadContent[] = [];
+        snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as ReadContent));
+        setReadItems(data);
+      }, (error) => {
+        console.error("Read snapshot error:", error);
+      });
+
+      return () => { unsubAct(); unsubMarket(); unsubSkills(); unsubWanted(); unsubRead(); setIsLive(false); };
     }
   }, [appState, profile, isAdminMode, effectiveCondoCode]);
 
@@ -526,6 +541,13 @@ export const App: React.FC = () => {
     });
   }, [wantedItems, acknowledgedWantedMap]);
 
+  const hasNewRead = useMemo(() => {
+    return readItems.some(item => {
+      const lastSeenUpdate = acknowledgedReadMap[item.id];
+      return !lastSeenUpdate || lastSeenUpdate !== (item.createdAt || 'initial');
+    });
+  }, [readItems, acknowledgedReadMap]);
+
   useEffect(() => {
     if (activeTab === 'MARKET') {
       const newMarketMapping = { ...acknowledgedMarketMap };
@@ -569,6 +591,21 @@ export const App: React.FC = () => {
       if (changed) {
         setAcknowledgedWantedMap(newWantedMapping);
         localStorage.setItem('play_share_seen_wanted', JSON.stringify(newWantedMapping));
+      }
+    }
+
+    if (activeTab === 'READ') {
+      const newReadMapping = { ...acknowledgedReadMap };
+      let changed = false;
+      readItems.forEach(item => { 
+        if (newReadMapping[item.id] !== (item.createdAt || 'initial')) {
+          newReadMapping[item.id] = item.createdAt || 'initial'; 
+          changed = true;
+        }
+      });
+      if (changed) {
+        setAcknowledgedReadMap(newReadMapping);
+        localStorage.setItem('play_share_seen_read', JSON.stringify(newReadMapping));
       }
     }
 
@@ -1089,6 +1126,13 @@ export const App: React.FC = () => {
             ensureAuth={ensureAuth}
           />
         )}
+        {activeTab === 'READ' && (
+          <ReadTab 
+            profile={profile}
+            language={language}
+            onShowAuth={() => setShowAuthOverlay(true)}
+          />
+        )}
         {activeTab === 'SKILLS' && (
           <SkillExchange 
             skills={skills} 
@@ -1293,16 +1337,24 @@ export const App: React.FC = () => {
               <span className="absolute top-2 right-1/2 translate-x-5 bg-red-500 text-white text-[6px] font-black px-1 py-0.5 rounded-full shadow-sm animate-pulse">NEW</span>
             )}
           </button>
+
+          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
+            <BookOpen size={20} />
+            <span className="text-[7px] font-black uppercase tracking-wider">{t.skills}</span>
+            {hasNewSkills && activeTab !== 'SKILLS' && (
+              <span className="absolute top-2 right-1/2 translate-x-5 bg-red-500 text-white text-[6px] font-black px-1 py-0.5 rounded-full shadow-sm animate-pulse">NEW</span>
+            )}
+          </button>
           
           <button onClick={handleActionClick} className={`flex flex-col items-center justify-center ${themeBg} text-white w-14 h-14 rounded-[22px] font-black shadow-xl ${themeShadow} border-4 border-white -translate-y-6 active:scale-95 transition-all flex-shrink-0 mx-1`}>
             <PlusCircle size={24} />
             <span className="text-[7px] font-black uppercase tracking-tighter mt-0.5 leading-none">{t.postListing}</span>
           </button>
 
-          <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
-            <BookOpen size={20} />
-            <span className="text-[7px] font-black uppercase tracking-wider">{t.skills}</span>
-            {hasNewSkills && activeTab !== 'SKILLS' && (
+          <button onClick={() => changeTab('READ')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'READ' ? 'text-indigo-400' : 'text-gray-300'}`}>
+            <Sparkles size={20} />
+            <span className="text-[7px] font-black uppercase tracking-wider">{t.read}</span>
+            {hasNewRead && activeTab !== 'READ' && (
               <span className="absolute top-2 right-1/2 translate-x-5 bg-red-500 text-white text-[6px] font-black px-1 py-0.5 rounded-full shadow-sm animate-pulse">NEW</span>
             )}
           </button>

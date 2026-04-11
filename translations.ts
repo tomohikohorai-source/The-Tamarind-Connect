@@ -7,6 +7,7 @@ export const translations = {
     market: "Market",
     wanted: "Wanted",
     skills: "Skills",
+    read: "Read",
     play: "Play",
     trade: "Trade",
     profile: "Profile",
@@ -262,13 +263,19 @@ export const translations = {
     share: "Share",
     itemNotFound: "Item not found or has been deleted.",
     loginPrompt: "Sign Up / Login",
-    authAnnouncement: "Actions such as posting, commenting, purchase requests, and viewing seller info require login. Sign up or login to join the community!"
+    authAnnouncement: "Actions such as posting, commenting, purchase requests, and viewing seller info require login. Sign up or login to join the community!",
+    readMore: "Read More",
+    loginToRead: "Login to read full story",
+    dailyNovel: "Daily Novel",
+    penangColumn: "Penang Column",
+    archive: "Archive"
   },
   zh: {
     appName: "邻里交换",
     market: "市场",
     wanted: "征集",
     skills: "技能",
+    read: "阅读",
     play: "活动",
     trade: "交易",
     profile: "个人资料",
@@ -524,7 +531,12 @@ export const translations = {
     share: "分享",
     itemNotFound: "未找到该项目或已被删除。",
     loginPrompt: "注册 / 登录",
-    authAnnouncement: "发布、评论、购买请求和查看卖家信息等操作需要登录。请注册或登录以加入社区！"
+    authAnnouncement: "发布、评论、购买请求和查看卖家信息等操作需要登录。请注册或登录以加入社区！",
+    readMore: "阅读更多",
+    loginToRead: "登录以阅读全文",
+    dailyNovel: "每日小说",
+    penangColumn: "槟城专栏",
+    archive: "存档"
   },
   ko: {
     appName: "이웃 교환",
@@ -534,6 +546,7 @@ export const translations = {
     play: "놀이",
     trade: "거래",
     profile: "프로필",
+    read: "읽기",
     shareApp: "앱 공유",
     loading: "커뮤니티를 불러오는 중...",
     logout: "로그아웃?",
@@ -787,13 +800,19 @@ export const translations = {
     share: "공유",
     itemNotFound: "항목을 찾을 수 없거나 삭제되었습니다.",
     loginPrompt: "회원가입 / 로그인",
-    authAnnouncement: "게시, 댓글, 구매 요청 및 판매자 정보 확인 등의 작업은 로그인이 필요합니다. 커뮤니티에 가입하려면 회원가입 또는 로그인을 해주세요!"
+    authAnnouncement: "게시, 댓글, 구매 요청 및 판매자 정보 확인 등의 작업은 로그인이 필요합니다. 커뮤ニ티에 가입하려면 회원가입 또는 로그인을 해주세요!",
+    readMore: "더 읽기",
+    loginToRead: "전체 내용을 읽으려면 로그인하세요",
+    dailyNovel: "일일 소설",
+    penangColumn: "페낭 칼럼",
+    archive: "아카이브"
   },
   ja: {
     appName: "Nearby Exchange",
     market: "マーケット",
     wanted: "ほしい",
     skills: "スキル",
+    read: "Read",
     play: "遊び",
     trade: "取引",
     profile: "プロフィール",
@@ -1050,6 +1069,11 @@ export const translations = {
     share: "シェア",
     itemNotFound: "項目が見つからないか、削除された可能性があります。",
     loginPrompt: "新規登録 / ログイン",
-    authAnnouncement: "出品、コメント、購入リクエスト、出品者情報の確認などのアクションにはログインが必要です。新規登録またはログインしてコミュニティに参加しましょう！"
+    authAnnouncement: "出品、コメント、購入リクエスト、出品者情報の確認などのアクションにはログインが必要です。新規登録またはログインしてコミュニティに参加しましょう！",
+    readMore: "続きを読む",
+    loginToRead: "全文を読むにはログインしてください",
+    dailyNovel: "日刊小説",
+    penangColumn: "ペナンコラム",
+    archive: "アーカイブ"
   }
 };

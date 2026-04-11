@@ -181,5 +181,26 @@ export interface WantedItem {
   condoId?: string;
 }
 
-export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'PROFILE';
+export interface ReadContent {
+  id: string;
+  type: 'NOVEL' | 'COLUMN';
+  title: string;
+  content: string;
+  snippet: string;
+  chapterNumber?: number;
+  seriesId?: string;
+  createdAt: string;
+}
+
+export interface ReadSeriesState {
+  id: string;
+  currentSeriesId: string;
+  currentChapter: number;
+  lastGeneratedDate: string;
+  characters: string;
+  plotPoints: string;
+  title: string;
+}
+
+export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'READ' | 'PROFILE';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';

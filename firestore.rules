@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /activities/{activityId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /marketItems/{itemId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /skills/{skillId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /wantedItems/{itemId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /readContent/{contentId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /readSeriesState/{stateId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    match /condos/{condoId} {
+      allow read: if true;
+      allow write: if false; // Admin only via console
+    }
+  }
+}
