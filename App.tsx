@@ -69,6 +69,7 @@ export const App: React.FC = () => {
 
   const [showLoginRequired, setShowLoginRequired] = useState(false);
   const [showAuthOverlay, setShowAuthOverlay] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const condoCode = store.getPasscode() || profile?.condoCode || '';
   const isTestAdmin = profile?.customUserId === 'testtest';
@@ -80,9 +81,21 @@ export const App: React.FC = () => {
     if (profile) {
       action();
     } else {
+      setPendingAction(() => action);
       setShowLoginRequired(true);
     }
   };
+
+  useEffect(() => {
+    if (profile) {
+      setShowLoginRequired(false);
+      setShowAuthOverlay(false);
+      if (pendingAction) {
+        pendingAction();
+        setPendingAction(null);
+      }
+    }
+  }, [profile, pendingAction]);
 
   const [acknowledgedMap, setAcknowledgedMap] = useState<Record<string, string>>(() => store.getAcknowledgedActivities());
   const [acknowledgedMarketMap, setAcknowledgedMarketMap] = useState<Record<string, string>>(() => store.getAcknowledgedMarket());
@@ -517,7 +530,7 @@ export const App: React.FC = () => {
 
   const changeTab = (tab: AppTab) => {
     if (tab === 'PROFILE' && !profile) {
-      setShowLoginRequired(true);
+      ensureAuth(() => changeTab('PROFILE'));
       return;
     }
     if (activeTab === tab) {
@@ -1052,7 +1065,10 @@ export const App: React.FC = () => {
             setShowLoginRequired(false);
             setShowAuthOverlay(true);
           }} 
-          onCancel={() => setShowLoginRequired(false)} 
+          onCancel={() => {
+            setShowLoginRequired(false);
+            setPendingAction(null);
+          }} 
         />
       )}
 
@@ -1062,7 +1078,10 @@ export const App: React.FC = () => {
             <AuthScreen 
               language={language} 
               onLanguageChange={handleLanguageChange} 
-              onClose={() => setShowAuthOverlay(false)} 
+              onClose={() => {
+                setShowAuthOverlay(false);
+                setPendingAction(null);
+              }} 
             />
           </div>
         </div>
