@@ -12,7 +12,7 @@ interface Props {
   initialActiveSkillId?: string | null;
   onEdit: (skill: Skill) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string) => void;
+  onStatusChange: (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string, extraUpdates?: any) => void;
   onAddComment: (skillId: string, text: string) => void;
   onLike: (skillId: string) => void;
   onViewProfile?: (userId: string) => void;

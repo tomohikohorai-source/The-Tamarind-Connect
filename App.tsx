@@ -855,7 +855,7 @@ export const App: React.FC = () => {
     try { await deleteDoc(doc(db, "skills", id)); } catch (e: any) { alert("Failed to delete post: " + e.message); }
   };
 
-  const handleSkillStatusChange = async (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string) => {
+  const handleSkillStatusChange = async (id: string, status: Skill['status'], requesterId?: string, rejectionReason?: string, extraUpdates?: any) => {
     try {
       const updates: any = { 
         status, 
@@ -875,6 +875,11 @@ export const App: React.FC = () => {
       } else if (status === 'RESERVED') {
         updates.requestStatus = 'NONE';
       }
+
+      if (extraUpdates) {
+        Object.assign(updates, extraUpdates);
+      }
+
       await updateDoc(doc(db, "skills", id), updates);
     } catch (e: any) { alert("Update failed: " + e.message); }
   };
@@ -1143,7 +1148,7 @@ export const App: React.FC = () => {
             tabResetToggle={tabResetToggle}
             onEdit={(skill) => ensureAuth(() => { setEditingSkill(skill); setShowSkillForm(true); })} 
             onDelete={(id) => ensureAuth(() => handleSkillDelete(id))} 
-            onStatusChange={(id, status) => ensureAuth(() => handleSkillStatusChange(id, status))} 
+            onStatusChange={(id, status, reqId, reason, extra) => ensureAuth(() => handleSkillStatusChange(id, status, reqId, reason, extra))} 
             onAddComment={(itemId, text) => ensureAuth(() => handleSkillComment(itemId, text))} 
             onLike={(itemId) => ensureAuth(() => handleSkillLike(itemId))}
             onViewProfile={(userId) => ensureAuth(() => handleViewProfile(userId))} 

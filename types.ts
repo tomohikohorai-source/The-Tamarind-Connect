@@ -202,5 +202,5 @@ export interface ReadSeriesState {
   title: string;
 }
 
-export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'READ' | 'PROFILE';
+export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'READ' | 'PROFILE' | 'PLAY';
 export type AppState = 'AUTH' | 'SETUP' | 'READY';

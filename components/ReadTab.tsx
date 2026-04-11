@@ -6,6 +6,7 @@ import { translations } from '../translations';
 import { Book, Lightbulb, ChevronRight, Lock, Clock, History, Sparkles, BookOpen } from 'lucide-react';
 import { GoogleGenAI, Type } from "@google/genai";
 import { format } from 'date-fns';
+import ReactMarkdown from 'react-markdown';
 
 interface ReadTabProps {
   profile: UserProfile | null;
@@ -139,7 +140,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
         Setting: Penang, Malaysia.
         Characters: ${state.characters}
         Current Plot: ${state.plotPoints}
-        Requirements: About 500 words, English, Engaging tone.
+        Requirements: About 500 words, English, Engaging tone. Use Markdown for formatting (paragraphs, bold text for emphasis).
       `;
       const novelRes = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -183,7 +184,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       const columnPrompt = `
         Write a short educational column about Penang, Malaysia.
         Topic: Interesting trivia, history, or local food.
-        Requirements: About 200 words, English, Friendly tone.
+        Requirements: About 200 words, English, Friendly tone. Use Markdown for formatting (paragraphs, bold text for emphasis).
       `;
       const columnRes = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -250,6 +251,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       - Length: About 500 words.
       - Language: English.
       - Tone: Engaging and slightly mysterious.
+      - Format: Use Markdown (paragraphs, bold text for emphasis).
       - If this is chapter 15, make sure to conclude the story.
     `;
 
@@ -280,6 +282,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       - Length: About 200 words.
       - Language: English.
       - Tone: Informative and friendly.
+      - Format: Use Markdown (paragraphs, bold text for emphasis).
     `;
 
     const columnResponse = await ai.models.generateContent({
@@ -398,15 +401,15 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
 
           <h1 className="text-2xl font-black text-gray-900 leading-tight">{selectedItem.title}</h1>
 
-          <div className="prose prose-sm max-w-none">
+          <div className="prose prose-sm max-w-none prose-indigo">
             {profile ? (
-              <div className="text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">
-                {selectedItem.content}
+              <div className="text-gray-700 leading-relaxed font-medium">
+                <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">
-                  {selectedItem.snippet}...
+                <div className="text-gray-700 leading-relaxed font-medium">
+                  <ReactMarkdown>{selectedItem.snippet + "..."}</ReactMarkdown>
                 </div>
                 <div className="bg-gradient-to-b from-transparent to-gray-50 p-8 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center text-center space-y-4">
                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-indigo-500">

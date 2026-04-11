@@ -268,7 +268,13 @@ export const translations = {
     loginToRead: "Login to read full story",
     dailyNovel: "Daily Novel",
     penangColumn: "Penang Column",
-    archive: "Archive"
+    archive: "Archive",
+    deleteConfirm: "Are you sure you want to delete this?",
+    deleteListing: "Delete Listing",
+    skill: "Skill",
+    request: "Request",
+    discussion: "Discussion",
+    genres: "Genres"
   },
   zh: {
     appName: "邻里交换",
@@ -536,7 +542,13 @@ export const translations = {
     loginToRead: "登录以阅读全文",
     dailyNovel: "每日小说",
     penangColumn: "槟城专栏",
-    archive: "存档"
+    archive: "存档",
+    deleteConfirm: "您确定要删除吗？",
+    deleteListing: "删除列表",
+    skill: "技能",
+    request: "请求",
+    discussion: "讨论",
+    genres: "类别"
   },
   ko: {
     appName: "이웃 교환",
@@ -805,7 +817,13 @@ export const translations = {
     loginToRead: "전체 내용을 읽으려면 로그인하세요",
     dailyNovel: "일일 소설",
     penangColumn: "페낭 칼럼",
-    archive: "아카이브"
+    archive: "아카이브",
+    deleteConfirm: "정말로 삭제하시겠습니까?",
+    deleteListing: "게시물 삭제",
+    skill: "재능",
+    request: "요청",
+    discussion: "토론",
+    genres: "카테고리"
   },
   ja: {
     appName: "Nearby Exchange",
@@ -1074,6 +1092,12 @@ export const translations = {
     loginToRead: "全文を読むにはログインしてください",
     dailyNovel: "日刊小説",
     penangColumn: "ペナンコラム",
-    archive: "アーカイブ"
+    archive: "アーカイブ",
+    deleteConfirm: "本当に削除しますか？",
+    deleteListing: "投稿を削除",
+    skill: "スキル",
+    request: "リクエスト",
+    discussion: "ディスカッション",
+    genres: "ジャンル"
   }
 };
