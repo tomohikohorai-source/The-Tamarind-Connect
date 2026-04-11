@@ -412,7 +412,7 @@ export const App: React.FC = () => {
   const hasInitializedSeenMaps = useRef(false);
 
   useEffect(() => {
-    if (appState === 'READY' && profile && !hasInitializedSeenMaps.current && 
+    if (appState === 'READY' && !hasInitializedSeenMaps.current && 
         !marketLoading && !skillsLoading && !wantedLoading) {
       
       const newMarketMapping = { ...acknowledgedMarketMap };
@@ -444,7 +444,7 @@ export const App: React.FC = () => {
 
       hasInitializedSeenMaps.current = true;
     }
-  }, [appState, profile, marketLoading, skillsLoading, wantedLoading, marketItems, skills, wantedItems]);
+  }, [appState, marketLoading, skillsLoading, wantedLoading, marketItems, skills, wantedItems]);
 
   const profileActionsCount = useMemo(() => {
     if (!profile) return 0;
@@ -505,7 +505,73 @@ export const App: React.FC = () => {
     return marketNotifications + skillNotifications + wantedNotifications;
   }, [marketItems, skills, wantedItems, profile, acknowledgedMarketMap, acknowledgedSkillMap, acknowledgedWantedMap]);
 
+  const hasNewMarket = useMemo(() => {
+    return marketItems.some(item => {
+      const lastSeenUpdate = acknowledgedMarketMap[item.id];
+      return !lastSeenUpdate || lastSeenUpdate !== (item.lastUpdated || 'initial');
+    });
+  }, [marketItems, acknowledgedMarketMap]);
+
+  const hasNewSkills = useMemo(() => {
+    return skills.some(skill => {
+      const lastSeenUpdate = acknowledgedSkillMap[skill.id];
+      return !lastSeenUpdate || lastSeenUpdate !== (skill.lastUpdated || 'initial');
+    });
+  }, [skills, acknowledgedSkillMap]);
+
+  const hasNewWanted = useMemo(() => {
+    return wantedItems.some(w => {
+      const lastSeenUpdate = acknowledgedWantedMap[w.id];
+      return !lastSeenUpdate || lastSeenUpdate !== (w.lastUpdated || 'initial');
+    });
+  }, [wantedItems, acknowledgedWantedMap]);
+
   useEffect(() => {
+    if (activeTab === 'MARKET') {
+      const newMarketMapping = { ...acknowledgedMarketMap };
+      let changed = false;
+      marketItems.forEach(item => { 
+        if (newMarketMapping[item.id] !== (item.lastUpdated || 'initial')) {
+          newMarketMapping[item.id] = item.lastUpdated || 'initial'; 
+          changed = true;
+        }
+      });
+      if (changed) {
+        setAcknowledgedMarketMap(newMarketMapping);
+        store.setAcknowledgedMarket(newMarketMapping);
+      }
+    }
+
+    if (activeTab === 'SKILLS') {
+      const newSkillMapping = { ...acknowledgedSkillMap };
+      let changed = false;
+      skills.forEach(skill => { 
+        if (newSkillMapping[skill.id] !== (skill.lastUpdated || 'initial')) {
+          newSkillMapping[skill.id] = skill.lastUpdated || 'initial'; 
+          changed = true;
+        }
+      });
+      if (changed) {
+        setAcknowledgedSkillMap(newSkillMapping);
+        store.setAcknowledgedSkills(newSkillMapping);
+      }
+    }
+
+    if (activeTab === 'WANTED') {
+      const newWantedMapping = { ...acknowledgedWantedMap };
+      let changed = false;
+      wantedItems.forEach(w => { 
+        if (newWantedMapping[w.id] !== (w.lastUpdated || 'initial')) {
+          newWantedMapping[w.id] = w.lastUpdated || 'initial'; 
+          changed = true;
+        }
+      });
+      if (changed) {
+        setAcknowledgedWantedMap(newWantedMapping);
+        localStorage.setItem('play_share_seen_wanted', JSON.stringify(newWantedMapping));
+      }
+    }
+
     if (activeTab === 'PROFILE' && profile) {
       const newMarketMapping = { ...acknowledgedMarketMap };
       marketItems.forEach(item => { newMarketMapping[item.id] = item.lastUpdated || 'initial'; });
@@ -1214,10 +1280,18 @@ export const App: React.FC = () => {
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe z-40">
         <div className="max-w-lg mx-auto flex justify-around items-center h-20 px-1 relative">
           <button onClick={() => changeTab('MARKET')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'MARKET' ? 'text-teal-400' : 'text-gray-300'}`}>
-            <ShoppingBag size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.market}</span>
+            <ShoppingBag size={20} />
+            <span className="text-[7px] font-black uppercase tracking-wider">{t.market}</span>
+            {hasNewMarket && activeTab !== 'MARKET' && (
+              <span className="absolute top-2 right-1/2 translate-x-5 bg-red-500 text-white text-[6px] font-black px-1 py-0.5 rounded-full shadow-sm animate-pulse">NEW</span>
+            )}
           </button>
           <button onClick={() => changeTab('WANTED')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'WANTED' ? 'text-amber-400' : 'text-gray-300'}`}>
-            <Heart size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.wanted}</span>
+            <Heart size={20} />
+            <span className="text-[7px] font-black uppercase tracking-wider">{t.wanted}</span>
+            {hasNewWanted && activeTab !== 'WANTED' && (
+              <span className="absolute top-2 right-1/2 translate-x-5 bg-red-500 text-white text-[6px] font-black px-1 py-0.5 rounded-full shadow-sm animate-pulse">NEW</span>
+            )}
           </button>
           
           <button onClick={handleActionClick} className={`flex flex-col items-center justify-center ${themeBg} text-white w-14 h-14 rounded-[22px] font-black shadow-xl ${themeShadow} border-4 border-white -translate-y-6 active:scale-95 transition-all flex-shrink-0 mx-1`}>
@@ -1226,12 +1300,16 @@ export const App: React.FC = () => {
           </button>
 
           <button onClick={() => changeTab('SKILLS')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'SKILLS' ? 'text-indigo-400' : 'text-gray-300'}`}>
-            <BookOpen size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.skills}</span>
+            <BookOpen size={20} />
+            <span className="text-[7px] font-black uppercase tracking-wider">{t.skills}</span>
+            {hasNewSkills && activeTab !== 'SKILLS' && (
+              <span className="absolute top-2 right-1/2 translate-x-5 bg-red-500 text-white text-[6px] font-black px-1 py-0.5 rounded-full shadow-sm animate-pulse">NEW</span>
+            )}
           </button>
 
           <button onClick={() => changeTab('PROFILE')} className={`flex flex-col items-center gap-1 flex-1 relative transition-all ${activeTab === 'PROFILE' ? 'text-pink-400' : 'text-gray-300'}`}>
             <UserCircle size={20} /><span className="text-[7px] font-black uppercase tracking-wider">{t.profile}</span>
-            {(activeTab !== 'PROFILE' && profileActionsCount > 0) && <span className="absolute top-1/2 left-1/2 -translate-x-[-10px] -translate-y-[-10px] w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{profileActionsCount}</span>}
+            {(activeTab !== 'PROFILE' && profileActionsCount > 0) && <span className="absolute top-2 right-1/2 translate-x-5 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[7px] text-white font-black">{profileActionsCount}</span>}
           </button>
         </div>
       </nav>
