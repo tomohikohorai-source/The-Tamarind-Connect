@@ -14,6 +14,8 @@ interface ReadTabProps {
   onShowAuth: () => void;
 }
 
+import { ReadSkeleton } from './Skeleton';
+
 export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth }) => {
   const t = translations[language];
   const [contents, setContents] = useState<ReadContent[]>([]);
@@ -272,6 +274,14 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
     
     return { latestNovel: novel, latestColumn: column, archiveItems: archive };
   }, [contents]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full bg-[#fdfbf7]">
+        <ReadSkeleton />
+      </div>
+    );
+  }
 
   if (selectedItem) {
     return (

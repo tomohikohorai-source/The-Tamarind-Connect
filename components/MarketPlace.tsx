@@ -5,6 +5,7 @@ import { MARKET_GENRES, GENRE_ICONS } from '../constants';
 import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart, Share2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
+import { MarketSkeleton } from './Skeleton';
 
 import { Language, translations } from '../translations';
 
@@ -807,9 +808,8 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         ))}
       </div>
       {loading ? (
-        <div className="py-20 text-center">
-          <div className="w-12 h-12 border-4 border-teal-100 border-t-teal-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Loading...</p>
+        <div className="p-4 space-y-4">
+          <MarketSkeleton />
         </div>
       ) : filteredItems.length === 0 && (
         <div className="py-20 text-center">

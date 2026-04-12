@@ -83,6 +83,8 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
   );
 });
 
+import { WantedSkeleton } from './Skeleton';
+
 export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, condos = [] }) => {
   const t = translations[language];
   const [searchQuery, setSearchQuery] = useState('');
@@ -381,9 +383,8 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
       </div>
 
       {loading ? (
-        <div className="py-24 text-center">
-          <div className="w-12 h-12 border-4 border-amber-100 border-t-amber-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Loading...</p>
+        <div className="p-4 space-y-4">
+          <WantedSkeleton />
         </div>
       ) : filteredItems.length === 0 && (
         <div className="py-24 text-center">

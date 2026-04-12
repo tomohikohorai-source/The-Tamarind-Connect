@@ -74,6 +74,8 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
+import { SkillSkeleton } from './Skeleton';
+
 export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth, condos = [] }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
@@ -546,9 +548,8 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       </div>
 
       {loading ? (
-        <div className="py-24 text-center">
-          <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-400 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">Loading...</p>
+        <div className="p-4 space-y-4">
+          <SkillSkeleton />
         </div>
       ) : filteredSkills.length === 0 && (
         <div className="py-24 text-center">

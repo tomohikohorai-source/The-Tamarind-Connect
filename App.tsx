@@ -1024,9 +1024,21 @@ export const App: React.FC = () => {
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-3 sm:p-5 border-b border-gray-100">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full gap-2">
            <div className="flex items-center">
-             <button onClick={handleManualRefresh} className="flex items-center gap-2 group active:scale-95 transition-all">
-               <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-               <RefreshCw size={12} className="text-gray-300 group-hover:text-pink-400 transition-colors" />
+             <button 
+               onClick={handleManualRefresh} 
+               className="flex items-center gap-2.5 group active:scale-95 transition-all bg-gray-50/50 hover:bg-white px-3 py-1.5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md"
+               title="Refresh App"
+             >
+               <div className="relative flex items-center justify-center">
+                 <div className={`w-2 h-2 rounded-full ${isLive && isOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'} shadow-sm`}></div>
+                 {isRefreshing && (
+                   <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-400 animate-ping"></div>
+                 )}
+               </div>
+               <RefreshCw 
+                 size={16} 
+                 className={`text-gray-400 group-hover:text-pink-500 transition-all ${isRefreshing ? 'animate-spin text-pink-500' : ''}`} 
+               />
              </button>
            </div>
 
