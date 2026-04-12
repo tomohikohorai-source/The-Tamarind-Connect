@@ -24,6 +24,7 @@ interface Props {
   onViewItem?: (id: string | null) => void;
   tabResetToggle?: boolean;
   ensureAuth?: (action: () => void) => void;
+  condos?: { id: string, name: string }[];
 }
 
 const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: MarketItem, profile: UserProfile | null, language?: Language }) => {
@@ -175,12 +176,13 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, ensureAuth }) => {
+export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, ensureAuth, condos = [] }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
   const [selectedCondition, setSelectedCondition] = useState<string>(t.anyCondition);
+  const [selectedCondoId, setSelectedCondoId] = useState<string>('ALL');
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -240,6 +242,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedGenre !== t.allGenres && item.genre !== selectedGenre) return false;
       if (selectedCondition !== t.anyCondition && item.condition !== selectedCondition) return false;
+      if (selectedCondoId !== 'ALL' && item.condoId !== selectedCondoId) return false;
       if (minPrice && item.price < Number(minPrice)) return false;
       if (maxPrice && item.price > Number(maxPrice)) return false;
       
@@ -701,8 +704,23 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
           <div className="bg-white p-6 rounded-[32px] border border-teal-50 shadow-xl space-y-5 animate-fade-in">
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">{t.sortAndFilters}</h4>
-              <button onClick={() => { setSearchQuery(''); setSelectedGenre(t.allGenres); setSelectedCondition(t.anyCondition); setMinPrice(''); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">{t.resetAll}</button>
+              <button onClick={() => { setSearchQuery(''); setSelectedGenre(t.allGenres); setSelectedCondition(t.anyCondition); setSelectedCondoId('ALL'); setMinPrice(''); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">{t.resetAll}</button>
             </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
+              <select 
+                value={selectedCondoId} 
+                onChange={e => setSelectedCondoId(e.target.value)} 
+                className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+              >
+                <option value="ALL">{t.anyCondo}</option>
+                {condos.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.genre}</label>

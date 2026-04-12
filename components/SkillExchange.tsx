@@ -22,6 +22,7 @@ interface Props {
   loading?: boolean;
   tabResetToggle?: boolean;
   ensureAuth?: (action: () => void) => void;
+  condos?: { id: string, name: string }[];
 }
 
 const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: UserProfile | null, t: any }) => {
@@ -73,11 +74,12 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   return null;
 });
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth, condos = [] }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>(t.allCategories);
+  const [selectedCondoId, setSelectedCondoId] = useState<string>('ALL');
   const [showFilters, setShowFilters] = useState(false);
   
   const [viewingSkill, setViewingSkill] = useState<Skill | null>(null);
@@ -119,6 +121,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
       if (filterType !== 'ALL' && skill.type !== filterType) return false;
       if (searchQuery && !skill.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedCategory !== t.allCategories && skill.category !== selectedCategory) return false;
+      if (selectedCondoId !== 'ALL' && skill.condoId !== selectedCondoId) return false;
       return true;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [skills, filterType, searchQuery, selectedCategory, t.allCategories]);
@@ -432,8 +435,23 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
           <div className="bg-white p-6 rounded-[32px] border border-indigo-50 shadow-xl space-y-4 animate-fade-in">
             <div className="flex justify-between items-center">
               <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">{t.exchangeFilters}</h4>
-              <button onClick={() => { setSearchQuery(''); setSelectedCategory(t.allCategories); setFilterType('ALL'); }} className="text-[9px] font-black text-indigo-500 uppercase">{t.resetAll}</button>
+              <button onClick={() => { setSearchQuery(''); setSelectedCategory(t.allCategories); setSelectedCondoId('ALL'); setFilterType('ALL'); }} className="text-[9px] font-black text-indigo-500 uppercase">{t.resetAll}</button>
             </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
+              <select 
+                value={selectedCondoId} 
+                onChange={e => setSelectedCondoId(e.target.value)} 
+                className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+              >
+                <option value="ALL">{t.anyCondo}</option>
+                {condos.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.category}</label>
               <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[11px] font-black outline-none appearance-none">

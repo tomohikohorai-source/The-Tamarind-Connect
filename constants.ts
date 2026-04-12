@@ -11,11 +11,15 @@ export const TAMARIND_CONDO = {
 };
 
 export const CONDO_OPTIONS = [
-  { id: 'tamarind-penang', name: 'Tamarind' },
-  { id: 'marinox-sky-villas-penang', name: 'Marinox Sky Villas' },
   { id: 'i-santorini-penang', name: 'i-Santorini' },
+  { id: 'Jazz Suite-penang', name: 'Jazz Suite' },
+  { id: 'marinox-sky-villas-penang', name: 'Marinox Sky Villas' },
   { id: 'mira-residence-penang', name: 'Mira Residence' },
-  { id: 'quayside-penang', name: 'Quayside' }
+  { id: 'Other-Penang', name: 'Other' },
+  { id: 'quayside-penang', name: 'Quayside' },
+  { id: 'Selasih Court-penang', name: 'Selasih Court' },
+  { id: 'Straits Residences-Penang', name: 'Straits Residences' },
+  { id: 'tamarind-penang', name: 'Tamarind' }
 ];
 
 export const CONDOS = CONDO_OPTIONS.map(opt => ({

@@ -23,6 +23,7 @@ interface Props {
   onViewItem?: (id: string | null) => void;
   tabResetToggle?: boolean;
   ensureAuth?: (action: () => void) => void;
+  condos?: { id: string, name: string }[];
 }
 
 const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }: { item: WantedItem, onClick: () => void, profile: UserProfile | null, onLike: (e: React.MouseEvent) => void, language?: Language }) => {
@@ -82,10 +83,11 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
   );
 });
 
-export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle }) => {
+export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, condos = [] }) => {
   const t = translations[language];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
+  const [selectedCondoId, setSelectedCondoId] = useState<string>('ALL');
   const [showFilters, setShowFilters] = useState(false);
   const [viewingItem, setViewingItem] = useState<WantedItem | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
@@ -118,6 +120,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
     return items.filter(item => {
       if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedGenre !== t.allGenres && item.genre !== selectedGenre) return false;
+      if (selectedCondoId !== 'ALL' && item.condoId !== selectedCondoId) return false;
       return true;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [items, searchQuery, selectedGenre, t.allGenres]);
@@ -326,6 +329,25 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
 
         {showFilters && (
           <div className="bg-white p-6 rounded-[32px] border border-amber-50 shadow-xl space-y-4 animate-fade-in">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">{t.sortAndFilters}</h4>
+              <button onClick={() => { setSearchQuery(''); setSelectedGenre(t.allGenres); setSelectedCondoId('ALL'); }} className="text-[9px] font-black text-amber-500 uppercase">{t.resetAll}</button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
+              <select 
+                value={selectedCondoId} 
+                onChange={e => setSelectedCondoId(e.target.value)} 
+                className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+              >
+                <option value="ALL">{t.anyCondo}</option>
+                {condos.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
             <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest mb-1">{t.genres}</h4>
             <div className="flex flex-wrap gap-2">
               <button onClick={() => setSelectedGenre(t.allGenres)} className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight transition-all ${selectedGenre === t.allGenres ? 'bg-amber-400 text-white' : 'bg-gray-50 text-gray-400'}`}>{t.all}</button>

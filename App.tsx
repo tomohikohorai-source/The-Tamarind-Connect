@@ -1103,6 +1103,7 @@ export const App: React.FC = () => {
               else window.location.hash = '#market';
             }}
             ensureAuth={ensureAuth}
+            condos={CONDOS}
           />
         )}
         {activeTab === 'WANTED' && (
@@ -1129,6 +1130,7 @@ export const App: React.FC = () => {
               else window.location.hash = '#wanted';
             }}
             ensureAuth={ensureAuth}
+            condos={CONDOS}
           />
         )}
         {activeTab === 'READ' && (
@@ -1163,6 +1165,7 @@ export const App: React.FC = () => {
               else window.location.hash = '#skills';
             }}
             ensureAuth={ensureAuth}
+            condos={CONDOS}
           />
         )}
         {activeTab === 'PROFILE' && (

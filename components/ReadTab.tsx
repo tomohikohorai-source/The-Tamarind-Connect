@@ -3,10 +3,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db, collection, query, orderBy, onSnapshot, addDoc, getDocs, where, limit, doc, getDoc, setDoc, updateDoc, deleteDoc } from '../firebase';
 import { ReadContent, ReadSeriesState, UserProfile } from '../types';
 import { translations } from '../translations';
-import { Book, Lightbulb, ChevronRight, Lock, Clock, History, Sparkles, BookOpen } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { Book, Lightbulb, ChevronRight, Lock, Clock, History, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
+import { PRE_CREATED_CONTENT } from '../src/constants/readContentData';
 
 interface ReadTabProps {
   profile: UserProfile | null;
@@ -14,52 +14,15 @@ interface ReadTabProps {
   onShowAuth: () => void;
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-
 export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth }) => {
   const t = translations[language];
   const [contents, setContents] = useState<ReadContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const isGeneratingRef = React.useRef(false);
+  const lastCheckRef = React.useRef<number>(0);
   const [selectedItem, setSelectedItem] = useState<ReadContent | null>(null);
-
-  // Cleanup duplicates and extras (to return to 1 each as requested)
-  useEffect(() => {
-    const cleanup = async () => {
-      if (contents.length === 0) return;
-      
-      const novels = contents.filter(c => c.type === 'NOVEL').sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      const columns = contents.filter(c => c.type === 'COLUMN').sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      
-      const toDelete: string[] = [];
-      
-      // If we have more than 1 of each, it means we have extras from the previous seeding
-      // We trim it down to 1 each to "reset" as requested.
-      // This logic will only trigger if there are more than 1, 
-      // and since we only generate 1 per day from now on, it won't interfere with the daily archive
-      // unless we somehow get multiple items on the same day again.
-      if (novels.length > 1) {
-        novels.slice(1).forEach(item => toDelete.push(item.id));
-      }
-      if (columns.length > 1) {
-        columns.slice(1).forEach(item => toDelete.push(item.id));
-      }
-
-      if (toDelete.length > 0) {
-        console.log(`Trimming ${toDelete.length} extra items to return to 1 each...`);
-        for (const id of toDelete) {
-          try {
-            await deleteDoc(doc(db, "readContent", id));
-          } catch (e) {
-            console.error("Failed to delete extra content:", e);
-          }
-        }
-      }
-    };
-
-    cleanup();
-  }, [contents]);
+  const hasCleanedUpRef = React.useRef(false);
 
   useEffect(() => {
     const q = query(collection(db, "readContent"), orderBy("createdAt", "desc"));
@@ -69,52 +32,75 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       setContents(data);
       setLoading(false);
       
-      // Check if we need to seed or generate today's content
-      checkAndGenerate(data);
+      // Check if we need to post today's content
+      checkAndPost(data);
+
+      // One-time cleanup for duplicates
+      if (!hasCleanedUpRef.current && data.length > 0) {
+        hasCleanedUpRef.current = true;
+        const seen = new Set<string>();
+        data.forEach(item => {
+          const key = `${item.type}-${item.title}-${item.chapterNumber || ''}`;
+          if (seen.has(key)) {
+            deleteDoc(doc(db, "readContent", item.id)).catch(console.error);
+          } else {
+            seen.add(key);
+          }
+        });
+      }
     });
     return () => unsub();
   }, []);
 
-  const checkAndGenerate = async (existingContents: ReadContent[]) => {
+  const checkAndPost = async (existingContents: ReadContent[]) => {
     if (isGeneratingRef.current) return;
+    
+    // Throttle checks to once every 30 seconds to prevent loops/jitter
+    const nowTime = Date.now();
+    if (nowTime - lastCheckRef.current < 30000) return;
+    lastCheckRef.current = nowTime;
 
-    const novels = existingContents.filter(c => c.type === 'NOVEL');
-    const columns = existingContents.filter(c => c.type === 'COLUMN');
+    const today = format(new Date(), 'yyyy-MM-dd');
+    // Check for our specific pre-created content
+    const preCreatedNovels = existingContents.filter(c => c.type === 'NOVEL' && c.seriesId === 'pre_created_series_1');
+    const preCreatedColumns = existingContents.filter(c => c.type === 'COLUMN');
 
-    // Seeding: Ensure at least 1 novel and 1 column
-    if (novels.length < 1 || columns.length < 1) {
+    const hasChapter1 = preCreatedNovels.some(n => n.chapterNumber === 1);
+    const hasChapter2 = preCreatedNovels.some(n => n.chapterNumber === 2);
+    const hasColumn1 = preCreatedColumns.some(c => c.title === PRE_CREATED_CONTENT.columns[0].title);
+    const hasColumn2 = preCreatedColumns.some(c => c.title === PRE_CREATED_CONTENT.columns[1].title);
+
+    // Requirement: 2 chapters/columns as of today.
+    if (!hasChapter1 || !hasChapter2 || !hasColumn1 || !hasColumn2) {
       isGeneratingRef.current = true;
-      setGenerating(true);
       try {
-        await seedMissingContent(novels.length, columns.length);
+        await seedInitialContent(existingContents, today);
       } catch (error) {
-        console.error("Failed to seed missing content:", error);
+        console.error("Failed to seed initial content:", error);
       } finally {
-        setGenerating(false);
         isGeneratingRef.current = false;
       }
       return;
     }
 
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const hasToday = existingContents.some(c => c.createdAt.startsWith(today));
+    const hasTodayNovel = existingContents.some(c => c.type === 'NOVEL' && c.createdAt.startsWith(today));
+    const hasTodayColumn = existingContents.some(c => c.type === 'COLUMN' && c.createdAt.startsWith(today));
     
-    if (!hasToday) {
+    if (!hasTodayNovel || !hasTodayColumn) {
       isGeneratingRef.current = true;
-      setGenerating(true);
       try {
-        await generateDailyContent(today);
+        await postDailyContent(today, hasTodayNovel, hasTodayColumn);
       } catch (error) {
-        console.error("Failed to generate daily content:", error);
+        console.error("Failed to post daily content:", error);
       } finally {
-        setGenerating(false);
         isGeneratingRef.current = false;
       }
     }
   };
 
-  const seedMissingContent = async (currentNovels: number, currentColumns: number) => {
-    console.log(`Seeding missing content: ${1 - currentNovels} novels, ${1 - currentColumns} columns`);
+  const seedInitialContent = async (existingContents: ReadContent[], today: string) => {
+    const novels = existingContents.filter(c => c.type === 'NOVEL' && c.seriesId === 'pre_created_series_1');
+    const columns = existingContents.filter(c => c.type === 'COLUMN' && c.title.includes('Penang'));
     
     const stateDoc = await getDoc(doc(db, "readSeriesState", "current_novel"));
     let state: ReadSeriesState;
@@ -122,115 +108,106 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
     if (!stateDoc.exists()) {
       state = {
         id: "current_novel",
-        currentSeriesId: `series_${Date.now()}`,
+        currentSeriesId: "pre_created_series_1",
         currentChapter: 1,
         lastGeneratedDate: "",
-        characters: "A young expat named Sarah who just moved to Penang, and her mysterious neighbor Mr. Tan who knows all the local secrets.",
-        plotPoints: "Sarah finds an old map in her apartment that leads to hidden gems in Penang.",
-        title: "The Penang Map Mystery"
+        characters: "",
+        plotPoints: "",
+        title: "The Penang Pearl"
       };
     } else {
       state = stateDoc.data() as ReadSeriesState;
     }
 
-    // Seed Novels
-    for (let i = currentNovels; i < 1; i++) {
-      const novelPrompt = `
-        Write Chapter ${state.currentChapter} of a 15-chapter novel titled "${state.title}".
-        Setting: Penang, Malaysia.
-        Characters: ${state.characters}
-        Current Plot: ${state.plotPoints}
-        Requirements: About 500 words, English, Engaging tone. Use Markdown for formatting (paragraphs, bold text for emphasis).
-      `;
-      const novelRes = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: novelPrompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              content: { type: Type.STRING },
-              snippet: { type: Type.STRING }
-            },
-            required: ["title", "content", "snippet"]
-          }
-        }
-      });
-      const novelData = JSON.parse(novelRes.text || '{}');
+    const batch = [];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(9, 0, 0, 0);
+    const yesterdayStr = yesterday.toISOString();
+    
+    const todayDate = new Date();
+    todayDate.setHours(10, 0, 0, 0);
+    const todayStr = todayDate.toISOString();
 
-      const date = new Date();
-      
-      await addDoc(collection(db, "readContent"), {
-        ...novelData,
+    // Post Chapter 1 if missing
+    if (!novels.some(n => n.chapterNumber === 1)) {
+      const n1 = PRE_CREATED_CONTENT.novels[0];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: n1.title,
+        content: n1.content,
+        snippet: n1.snippet,
         type: 'NOVEL',
-        chapterNumber: state.currentChapter,
-        seriesId: state.currentSeriesId,
-        createdAt: date.toISOString()
-      });
-
-      state.currentChapter++;
-      const updatePrompt = `Based on: "${novelData.content}", summarize updated plot for next chapter. Under 100 words.`;
-      const updateRes = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: updatePrompt
-      });
-      state.plotPoints = updateRes.text || '';
+        chapterNumber: 1,
+        seriesId: "pre_created_series_1",
+        createdAt: yesterdayStr
+      }));
     }
 
-      // Seed Columns
-    for (let i = currentColumns; i < 1; i++) {
-      const columnPrompt = `
-        Write a short educational column about Penang, Malaysia.
-        Topic: Interesting trivia, history, or local food.
-        Requirements: About 200 words, English, Friendly tone. Use Markdown for formatting (paragraphs, bold text for emphasis).
-      `;
-      const columnRes = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: columnPrompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              content: { type: Type.STRING },
-              snippet: { type: Type.STRING }
-            },
-            required: ["title", "content", "snippet"]
-          }
-        }
-      });
-      const columnData = JSON.parse(columnRes.text || '{}');
+    // Post Chapter 2 if missing
+    if (!novels.some(n => n.chapterNumber === 2)) {
+      const n2 = PRE_CREATED_CONTENT.novels[1];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: n2.title,
+        content: n2.content,
+        snippet: n2.snippet,
+        type: 'NOVEL',
+        chapterNumber: 2,
+        seriesId: "pre_created_series_1",
+        createdAt: todayStr
+      }));
+    }
 
-      const date = new Date();
-
-      await addDoc(collection(db, "readContent"), {
-        ...columnData,
+    // Post Column 1 if missing
+    if (!columns.some(c => c.title === PRE_CREATED_CONTENT.columns[0].title)) {
+      const c1 = PRE_CREATED_CONTENT.columns[0];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: c1.title,
+        content: c1.content,
+        snippet: c1.snippet,
         type: 'COLUMN',
-        createdAt: date.toISOString()
-      });
+        createdAt: yesterdayStr
+      }));
     }
 
-    state.lastGeneratedDate = format(new Date(), 'yyyy-MM-dd');
-    await setDoc(doc(db, "readSeriesState", "current_novel"), state);
+    // Post Column 2 if missing
+    if (!columns.some(c => c.title === PRE_CREATED_CONTENT.columns[1].title)) {
+      const c2 = PRE_CREATED_CONTENT.columns[1];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: c2.title,
+        content: c2.content,
+        snippet: c2.snippet,
+        type: 'COLUMN',
+        createdAt: todayStr
+      }));
+    }
+
+    if (batch.length > 0) {
+      await Promise.all(batch);
+    }
+
+    await setDoc(doc(db, "readSeriesState", "current_novel"), {
+      ...state,
+      currentSeriesId: "pre_created_series_1",
+      currentChapter: 3,
+      lastGeneratedDate: today
+    });
   };
 
-  const generateDailyContent = async (today: string) => {
+  const postDailyContent = async (today: string, skipNovel = false, skipColumn = false) => {
     // 1. Get Series State
     const stateDoc = await getDoc(doc(db, "readSeriesState", "current_novel"));
     let state: ReadSeriesState;
     
     if (!stateDoc.exists()) {
+      // This case should be handled by seedInitialContent, but for safety:
       state = {
         id: "current_novel",
-        currentSeriesId: `series_${Date.now()}`,
+        currentSeriesId: "pre_created_series_1",
         currentChapter: 1,
         lastGeneratedDate: "",
-        characters: "A young expat named Sarah who just moved to Penang, and her mysterious neighbor Mr. Tan who knows all the local secrets.",
-        plotPoints: "Sarah finds an old map in her apartment that leads to hidden gems in Penang.",
-        title: "The Penang Map Mystery"
+        characters: "",
+        plotPoints: "",
+        title: "The Penang Pearl"
       };
       await setDoc(doc(db, "readSeriesState", "current_novel"), state);
     } else {
@@ -238,145 +215,63 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
     }
 
     // Don't generate if already generated today (double check)
-    if (state.lastGeneratedDate === today) return;
+    if (state.lastGeneratedDate === today && skipNovel && skipColumn) return;
 
-    // 2. Generate Novel Chapter
-    const novelPrompt = `
-      Write Chapter ${state.currentChapter} of a 15-chapter novel titled "${state.title}".
-      Setting: Penang, Malaysia.
-      Characters: ${state.characters}
-      Current Plot: ${state.plotPoints}
-      
-      Requirements:
-      - Length: About 500 words.
-      - Language: English.
-      - Tone: Engaging and slightly mysterious.
-      - Format: Use Markdown (paragraphs, bold text for emphasis).
-      - If this is chapter 15, make sure to conclude the story.
-    `;
-
-    const novelResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: novelPrompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            content: { type: Type.STRING },
-            snippet: { type: Type.STRING }
-          },
-          required: ["title", "content", "snippet"]
-        }
-      }
-    });
-
-    const novelData = JSON.parse(novelResponse.text || '{}');
-
-    // 3. Generate Column
-    const columnPrompt = `
-      Write a short educational column about Penang, Malaysia.
-      Topic: Interesting trivia, history, or local food.
-      Requirements:
-      - Length: About 200 words.
-      - Language: English.
-      - Tone: Informative and friendly.
-      - Format: Use Markdown (paragraphs, bold text for emphasis).
-    `;
-
-    const columnResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: columnPrompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            content: { type: Type.STRING },
-            snippet: { type: Type.STRING }
-          },
-          required: ["title", "content", "snippet"]
-        }
-      }
-    });
-
-    const columnData = JSON.parse(columnResponse.text || '{}');
-
-    // 4. Save to Firestore
     const batch = [];
-    batch.push(addDoc(collection(db, "readContent"), {
-      ...novelData,
-      type: 'NOVEL',
-      chapterNumber: state.currentChapter,
-      seriesId: state.currentSeriesId,
-      createdAt: new Date().toISOString()
-    }));
 
-    batch.push(addDoc(collection(db, "readContent"), {
-      ...columnData,
-      type: 'COLUMN',
-      createdAt: new Date().toISOString()
-    }));
-
-    await Promise.all(batch);
-
-    // 5. Update Series State
-    let nextChapter = state.currentChapter + 1;
-    let nextSeriesId = state.currentSeriesId;
-    let nextTitle = state.title;
-    let nextCharacters = state.characters;
-    let nextPlot = state.plotPoints;
-
-    if (state.currentChapter >= 15) {
-      // Start new series
-      nextChapter = 1;
-      nextSeriesId = `series_${Date.now()}`;
-      
-      // Generate new series concept
-      const conceptResponse = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: "Generate a new 15-chapter novel concept set in Penang. Return JSON with 'title', 'characters' (short description), and 'plotPoints' (starting point).",
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              characters: { type: Type.STRING },
-              plotPoints: { type: Type.STRING }
-            },
-            required: ["title", "characters", "plotPoints"]
-          }
-        }
-      });
-      const concept = JSON.parse(conceptResponse.text || '{}');
-      nextTitle = concept.title;
-      nextCharacters = concept.characters;
-      nextPlot = concept.plotPoints;
-    } else {
-      // Update plot points for next chapter
-      const updatePrompt = `Based on the chapter just written: "${novelData.content}", summarize the updated plot points and character status for the next chapter. Keep it under 200 words.`;
-      const updateResponse = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: updatePrompt
-      });
-      nextPlot = updateResponse.text || '';
+    // 2. Post Novel Chapter from Pre-created list
+    if (!skipNovel) {
+      const chapterIndex = state.currentChapter - 1;
+      if (chapterIndex >= 0 && chapterIndex < PRE_CREATED_CONTENT.novels.length) {
+        const novelData = PRE_CREATED_CONTENT.novels[chapterIndex];
+        batch.push(addDoc(collection(db, "readContent"), {
+          title: novelData.title,
+          content: novelData.content,
+          snippet: novelData.snippet,
+          type: 'NOVEL',
+          chapterNumber: novelData.chapter,
+          seriesId: state.currentSeriesId,
+          createdAt: new Date().toISOString()
+        }));
+      }
     }
 
+    // 3. Post Column from Pre-created list
+    if (!skipColumn) {
+      const columnIndex = state.currentChapter - 1;
+      if (columnIndex >= 0 && columnIndex < PRE_CREATED_CONTENT.columns.length) {
+        const columnData = PRE_CREATED_CONTENT.columns[columnIndex];
+        batch.push(addDoc(collection(db, "readContent"), {
+          title: columnData.title,
+          content: columnData.content,
+          snippet: columnData.snippet,
+          type: 'COLUMN',
+          createdAt: new Date().toISOString()
+        }));
+      }
+    }
+
+    if (batch.length > 0) {
+      await Promise.all(batch);
+    }
+
+    // 4. Update Series State
     await updateDoc(doc(db, "readSeriesState", "current_novel"), {
-      currentChapter: nextChapter,
-      currentSeriesId: nextSeriesId,
-      lastGeneratedDate: today,
-      title: nextTitle,
-      characters: nextCharacters,
-      plotPoints: nextPlot
+      currentChapter: state.currentChapter + 1,
+      lastGeneratedDate: today
     });
   };
 
-  const novels = useMemo(() => contents.filter(c => c.type === 'NOVEL'), [contents]);
-  const columns = useMemo(() => contents.filter(c => c.type === 'COLUMN'), [contents]);
+  const { latestNovel, latestColumn, archiveItems } = useMemo(() => {
+    const sorted = [...contents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const novel = sorted.find(c => c.type === 'NOVEL');
+    const column = sorted.find(c => c.type === 'COLUMN');
+    
+    const latestIds = new Set([novel?.id, column?.id].filter(Boolean));
+    const archive = sorted.filter(item => !latestIds.has(item.id));
+    
+    return { latestNovel: novel, latestColumn: column, archiveItems: archive };
+  }, [contents]);
 
   if (selectedItem) {
     return (
@@ -440,91 +335,83 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
         {/* Header Section */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-indigo-500">
-            <Sparkles size={16} className="animate-pulse" />
+            <BookOpen size={16} />
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t.read}</span>
           </div>
           <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">
             Daily Stories<br/>& Insights
           </h2>
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
-            Fresh content every day, powered by community spirit.
+            Fresh content every day, curated for the community.
           </p>
         </div>
 
-        {generating && (
-          <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl flex items-center gap-4 animate-pulse">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-500 shadow-sm">
-              <BookOpen size={20} className="animate-bounce" />
-            </div>
-            <div className="flex-grow">
-              <div className="h-2 w-24 bg-indigo-200 rounded-full mb-2"></div>
-              <div className="h-2 w-48 bg-indigo-100 rounded-full"></div>
-            </div>
-          </div>
-        )}
-
         {/* Sections */}
-        <div className="space-y-10 pb-24">
+        <div className="space-y-10 pb-24 min-h-[400px]">
           {/* Today's Picks */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                <Clock size={14} />
-                Latest Updates
-              </h3>
+          {(latestNovel || latestColumn) ? (
+            <div className="space-y-4 animate-in fade-in duration-500">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <Clock size={14} />
+                  Latest Updates
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {[latestNovel, latestColumn].filter(Boolean).map((item) => (
+                  <button 
+                    key={item!.id}
+                    onClick={() => setSelectedItem(item!)}
+                    className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group active:scale-[0.98]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${item!.type === 'NOVEL' ? 'bg-indigo-50 text-indigo-500' : 'bg-teal-50 text-teal-500'}`}>
+                        {item!.type === 'NOVEL' ? t.dailyNovel : t.penangColumn}
+                      </span>
+                      <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-transform group-hover:translate-x-1" />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-black text-gray-800 leading-tight group-hover:text-indigo-600 transition-colors">{item!.title}</h4>
+                      <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 font-medium">
+                        {item!.snippet}...
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-            
-            <div className="grid grid-cols-1 gap-4">
-              {contents.slice(0, 2).map((item) => (
-                <button 
-                  key={item.id}
-                  onClick={() => setSelectedItem(item)}
-                  className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group active:scale-[0.98]"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${item.type === 'NOVEL' ? 'bg-indigo-50 text-indigo-500' : 'bg-teal-50 text-teal-500'}`}>
-                      {item.type === 'NOVEL' ? t.dailyNovel : t.penangColumn}
-                    </span>
-                    <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-transform group-hover:translate-x-1" />
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="text-lg font-black text-gray-800 leading-tight group-hover:text-indigo-600 transition-colors">{item.title}</h4>
-                    <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 font-medium">
-                      {item.snippet}...
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          ) : null}
 
           {/* Archive */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              <History size={14} />
-              {t.archive}
-            </h3>
-            <div className="space-y-3">
-              {contents.slice(2).map((item) => (
-                <button 
-                  key={item.id}
-                  onClick={() => setSelectedItem(item)}
-                  className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-50 hover:border-indigo-100 transition-all group active:scale-[0.99]"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'NOVEL' ? 'bg-indigo-50 text-indigo-400' : 'bg-teal-50 text-teal-400'}`}>
-                    {item.type === 'NOVEL' ? <Book size={18} /> : <Lightbulb size={18} />}
-                  </div>
-                  <div className="flex-grow min-w-0 text-left">
-                    <h4 className="text-xs font-black text-gray-700 truncate uppercase tracking-tight">{item.title}</h4>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-                      {format(new Date(item.createdAt), 'MMM dd')} • {item.type === 'NOVEL' ? `Chapter ${item.chapterNumber}` : 'Local Insight'}
-                    </p>
-                  </div>
-                  <ChevronRight size={14} className="text-gray-200 group-hover:text-indigo-300" />
-                </button>
-              ))}
+          {archiveItems.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <History size={14} />
+                {t.archive}
+              </h3>
+              <div className="space-y-3">
+                {archiveItems.map((item) => (
+                  <button 
+                    key={item.id}
+                    onClick={() => setSelectedItem(item)}
+                    className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-50 hover:border-indigo-100 transition-all group active:scale-[0.99]"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'NOVEL' ? 'bg-indigo-50 text-indigo-400' : 'bg-teal-50 text-teal-400'}`}>
+                      {item.type === 'NOVEL' ? <Book size={18} /> : <Lightbulb size={18} />}
+                    </div>
+                    <div className="flex-grow min-w-0 text-left">
+                      <h4 className="text-xs font-black text-gray-700 truncate uppercase tracking-tight">{item.title}</h4>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                        {format(new Date(item.createdAt), 'MMM dd')} • {item.type === 'NOVEL' ? `Chapter ${item.chapterNumber}` : 'Local Insight'}
+                      </p>
+                    </div>
+                    <ChevronRight size={14} className="text-gray-200 group-hover:text-indigo-300" />
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
