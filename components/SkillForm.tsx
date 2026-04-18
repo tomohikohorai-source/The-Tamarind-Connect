@@ -23,6 +23,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
   const [type, setType] = useState<'OFFER' | 'REQUEST'>(initialSkill?.type || 'OFFER');
   const [price, setPrice] = useState(initialSkill?.price || 'Free');
   const [condoId, setCondoId] = useState(initialSkill?.condoId || profile.condoId || 'tamarind-penang');
+  const [customCondoName, setCustomCondoName] = useState(initialSkill?.customCondoName || (initialSkill?.condoId === 'Other-Penang' ? '' : (profile.condoId === 'Other-Penang' ? profile.customCondoName : '')));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +44,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
       condoId: condoId,
+      customCondoName: condoId === 'Other-Penang' ? customCondoName : '',
       parentNickname: profile.parentNickname,
       parentAvatarIcon: profile.avatarIcon,
       roomNumber: profile.roomNumber,
@@ -100,6 +102,17 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
                 {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
               </select>
             </div>
+            {condoId === 'Other-Penang' && (
+              <div className="animate-fade-in mt-2">
+                <input 
+                  type="text" 
+                  value={customCondoName} 
+                  onChange={e => setCustomCondoName(e.target.value)} 
+                  placeholder="Enter condominium name" 
+                  className="w-full p-3.5 rounded-2xl bg-gray-50 border-2 border-indigo-100 outline-none font-bold text-sm" 
+                />
+              </div>
+            )}
           </div>
 
           <div>

@@ -17,6 +17,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
   const [parentNickname, setParentNickname] = useState('');
   const [parentAvatar, setParentAvatar] = useState(AVATAR_ICONS.PARENTS[0]);
   const [selectedCondoId, setSelectedCondoId] = useState<string>('');
+  const [otherCondoName, setOtherCondoName] = useState('');
   const [children, setChildren] = useState<Child[]>([]);
 
   // Add child helper function
@@ -32,7 +33,9 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
   };
 
   // Children is now optional: length > 0 check removed
-  const isFormValid = parentNickname.trim().length > 0 && selectedCondoId !== '' && children.every(c => c.nickname.trim().length > 0);
+  const isFormValid = parentNickname.trim().length > 0 && selectedCondoId !== '' && 
+                    (selectedCondoId !== 'Other-Penang' || otherCondoName.trim().length > 0) &&
+                    children.every(c => c.nickname.trim().length > 0);
 
   const handleSubmit = async () => {
     if (isFormValid && auth.currentUser) {
@@ -47,6 +50,7 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
         totalLoginDays: 1,
         lastLoginDate: new Date().toISOString(),
         condoId: selectedCondoId,
+        customCondoName: selectedCondoId === 'Other-Penang' ? otherCondoName : '',
         // Fix: Added missing properties showPastSales and showBuying to satisfy PrivacySettings interface
         privacySettings: {
           showChildren: true,
@@ -94,6 +98,17 @@ export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) =
                     ▼
                   </div>
                 </div>
+                {selectedCondoId === 'Other-Penang' && (
+                  <div className="animate-fade-in mt-2">
+                    <input 
+                      type="text" 
+                      value={otherCondoName} 
+                      onChange={e => setOtherCondoName(e.target.value)} 
+                      placeholder="Enter your condominium name" 
+                      className="w-full p-3.5 rounded-2xl bg-gray-50 border-2 border-pink-100 outline-none font-bold text-sm" 
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </section>

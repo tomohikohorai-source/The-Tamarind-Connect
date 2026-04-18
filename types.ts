@@ -45,6 +45,7 @@ export interface UserProfile {
   privacySettings?: PrivacySettings;
   role?: 'admin' | 'user';
   condoId?: string;
+  customCondoName?: string;
 }
 
 export interface Activity {
@@ -63,6 +64,7 @@ export interface Activity {
   isInvitation: boolean;
   lastUpdated: string; // ISO String
   condoId?: string;
+  customCondoName?: string;
 }
 
 export interface MarketComment {
@@ -104,6 +106,7 @@ export interface MarketItem {
   lastUpdated: string;
   likes?: string[];
   condoId?: string;
+  customCondoName?: string;
   // Transaction flow flags
   buyerConfirmedCompletion?: boolean;
   sellerConfirmedCompletion?: boolean;
@@ -144,6 +147,7 @@ export interface Skill {
   lastUpdated: string;
   likes?: string[];
   condoId?: string;
+  customCondoName?: string;
   requesterRequestedCancellation?: boolean;
   sellerRequestedCancellation?: boolean;
 }
@@ -179,6 +183,7 @@ export interface WantedItem {
   lastUpdated: string;
   likes?: string[];
   condoId?: string;
+  customCondoName?: string;
 }
 
 export interface ReadContent {

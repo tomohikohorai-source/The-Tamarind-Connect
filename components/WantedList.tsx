@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { WantedItem, UserProfile, WantedComment } from '../types';
-import { MARKET_GENRES, GENRE_ICONS } from '../constants';
+import { MARKET_GENRES, GENRE_ICONS, getCondoName } from '../constants';
 import { Heart, Search, SlidersHorizontal, ChevronLeft, ChevronRight, MessageCircle, Send, Sparkles, Flame, Image as ImageIcon, Edit2, Trash2, MapPin, Clock, Lock, ArrowUpDown, Coins, Info, Share2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
@@ -205,6 +205,11 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
         </div>
 
         <div className="space-y-6">
+          <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
+            <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.condominium}</span></div>
+            <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{getCondoName(viewingItem.condoId, viewingItem.customCondoName)}</div>
+          </div>
+
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">{t.lookingFor}</span>

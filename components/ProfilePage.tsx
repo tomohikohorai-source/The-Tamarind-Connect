@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import { UserProfile, Child, MarketItem, Skill, WantedItem, PrivacySettings } from '../types';
-import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS } from '../constants';
-import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages, Building2 } from 'lucide-react';
+import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS, getCondoName } from '../constants';
+import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages, Building2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { db, doc, setDoc, updateDoc } from '../firebase';
 import { Language, translations } from '../translations';
@@ -97,6 +97,7 @@ export const ProfilePage: React.FC<Props> = ({
   const [editNickname, setEditNickname] = useState(profile.parentNickname);
   const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
   const [editCondoId, setEditCondoId] = useState(profile.condoId || '');
+  const [editCustomCondoName, setEditCustomCondoName] = useState(profile.customCondoName || '');
   const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
 
   const isOwnProfile = profile.uid === currentUser.uid;
@@ -198,7 +199,16 @@ export const ProfilePage: React.FC<Props> = ({
 
   const handleSaveProfile = async () => {
     if (!editNickname.trim() || !editCondoId) return;
-    const updatedProfile: UserProfile = { ...profile, parentNickname: editNickname, avatarIcon: editAvatar, condoId: editCondoId, children: editChildren };
+    if (editCondoId === 'Other-Penang' && !editCustomCondoName.trim()) return;
+    
+    const updatedProfile: UserProfile = { 
+      ...profile, 
+      parentNickname: editNickname, 
+      avatarIcon: editAvatar, 
+      condoId: editCondoId, 
+      customCondoName: editCondoId === 'Other-Penang' ? editCustomCondoName : '',
+      children: editChildren 
+    };
     try {
       await setDoc(doc(db, "users", profile.uid), updatedProfile);
       onUpdateProfile(updatedProfile);
@@ -239,6 +249,12 @@ export const ProfilePage: React.FC<Props> = ({
           <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-5xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
           <div className="min-w-0">
             <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate leading-none mb-2">{profile.parentNickname}</h2>
+            <div className="flex items-center gap-1.5 text-gray-400">
+              <MapPin size={12} className="shrink-0" />
+              <span className="text-[10px] font-black uppercase tracking-widest truncate">
+                {getCondoName(profile.condoId, profile.customCondoName)}
+              </span>
+            </div>
           </div>
         </div>
         {isOwnProfile && (
@@ -328,7 +344,7 @@ export const ProfilePage: React.FC<Props> = ({
                 <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl mt-1 font-bold outline-none border-2 border-transparent focus:border-pink-100" />
                </div>
 
-               <div>
+                <div>
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
                 <div className="relative mt-1">
                   <select 
@@ -345,6 +361,17 @@ export const ProfilePage: React.FC<Props> = ({
                     <ChevronDown size={18} />
                   </div>
                 </div>
+                {editCondoId === 'Other-Penang' && (
+                  <div className="mt-2 animate-fade-in">
+                    <input 
+                      type="text" 
+                      value={editCustomCondoName} 
+                      onChange={e => setEditCustomCondoName(e.target.value)} 
+                      placeholder="Enter your condominium name" 
+                      className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none border-2 border-pink-100" 
+                    />
+                  </div>
+                )}
                </div>
                
                <div>

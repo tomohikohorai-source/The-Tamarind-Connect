@@ -1,0 +1,15 @@
+/* Global Styles */
+body {
+    font-family: 'Noto+Sans+JP', sans-serif;
+    background-color: #fdfbf7;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

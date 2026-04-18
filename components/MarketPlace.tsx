@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
-import { MARKET_GENRES, GENRE_ICONS } from '../constants';
+import { MARKET_GENRES, GENRE_ICONS, getCondoName } from '../constants';
 import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart, Share2 } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
@@ -478,6 +478,11 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
         </div>
 
         <div className="space-y-6">
+          <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
+            <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.condominium}</span></div>
+            <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{getCondoName(viewingItem.condoId, viewingItem.customCondoName)}</div>
+          </div>
+
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <div className="flex gap-2">

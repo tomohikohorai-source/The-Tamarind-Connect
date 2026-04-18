@@ -19,6 +19,8 @@ import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
 import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
 import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { isSameDay } from 'date-fns';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
   onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where, setDoc
@@ -72,6 +74,19 @@ export const App: React.FC = () => {
   const [showLoginRequired, setShowLoginRequired] = useState(false);
   const [showAuthOverlay, setShowAuthOverlay] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  // Push Notification Setup
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      LocalNotifications.requestPermissions().then(result => {
+        if (result.display === 'granted') {
+          console.log('Notification permission granted');
+        }
+      });
+    }
+  }, []);
+
+  const lastNotifiedIds = useRef<Set<string>>(new Set());
 
   const condoCode = store.getPasscode() || profile?.condoCode || '';
   const isTestAdmin = profile?.customUserId === 'testtest';
@@ -519,6 +534,96 @@ export const App: React.FC = () => {
 
     return marketNotifications + skillNotifications + wantedNotifications;
   }, [marketItems, skills, wantedItems, profile, acknowledgedMarketMap, acknowledgedSkillMap, acknowledgedWantedMap]);
+
+  // Trigger Local Notifications for Profile Actions
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !profile) return;
+
+    const dismissedIds: string[] = JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
+    const currentNotifItems: { id: string, title: string, body: string }[] = [];
+
+    // Market Notifications
+    marketItems.forEach(item => {
+      const isOwner = item.userId === profile.uid;
+      const isBuyer = item.buyerId === profile.uid;
+      const hasParticipated = item.comments.some(c => c.userId === profile.uid);
+      const lastCommentFromOthers = item.comments.length > 0 && item.comments[item.comments.length - 1].userId !== profile.uid;
+      const isInvolved = isOwner || isBuyer || hasParticipated;
+
+      let type = '';
+      if (isOwner && item.requestStatus === 'PENDING' && !dismissedIds.includes(`${item.id}-req`)) type = 'request';
+      else if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion && !dismissedIds.includes(`${item.id}-conf`)) type = 'completion';
+      else if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion && !dismissedIds.includes(`${item.id}-appr`)) type = 'approval';
+      else if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`)) type = 'comment';
+
+      if (type) {
+        currentNotifItems.push({
+          id: `${item.id}-${type}`,
+          title: t.market,
+          body: `${item.title}: ${type === 'comment' ? t.newComment : t.statusUpdate}`
+        });
+      }
+    });
+
+    // Skill Notifications
+    skills.forEach(skill => {
+      const isOwner = skill.userId === profile.uid;
+      const isRequester = skill.requesterId === profile.uid;
+      const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
+      const lastCommentFromOthers = skill.comments.length > 0 && skill.comments[skill.comments.length - 1].userId !== profile.uid;
+      const isInvolved = isOwner || isRequester || hasParticipated;
+
+      let type = '';
+      if (isOwner && skill.requestStatus === 'PENDING' && !dismissedIds.includes(`${skill.id}-req`)) type = 'request';
+      else if (isRequester && skill.status === 'RESERVED' && !dismissedIds.includes(`${skill.id}-appr`)) type = 'approval';
+      else if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${skill.id}-cmt`)) type = 'comment';
+
+      if (type) {
+        currentNotifItems.push({
+          id: `${skill.id}-${type}`,
+          title: t.skills,
+          body: `${skill.title}: ${type === 'comment' ? t.newComment : t.statusUpdate}`
+        });
+      }
+    });
+
+    // Wanted Notifications
+    wantedItems.forEach(wanted => {
+      const isOwner = wanted.userId === profile.uid;
+      const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
+      const lastCommentFromOthers = wanted.comments.length > 0 && wanted.comments[wanted.comments.length - 1].userId !== profile.uid;
+      const isInvolved = isOwner || hasParticipated;
+      
+      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${wanted.id}-cmt`)) {
+        currentNotifItems.push({
+          id: `${wanted.id}-cmt`,
+          title: t.wanted,
+          body: `${wanted.title}: ${t.newComment}`
+        });
+      }
+    });
+
+    // Notify for new items
+    currentNotifItems.forEach(async (item) => {
+      if (!lastNotifiedIds.current.has(item.id)) {
+        lastNotifiedIds.current.add(item.id);
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: item.title,
+              body: item.body,
+              id: Math.floor(Math.random() * 1000000),
+              schedule: { at: new Date(Date.now() + 1000) },
+              sound: 'default',
+              attachments: [],
+              actionTypeId: '',
+              extra: null
+            }
+          ]
+        });
+      }
+    });
+  }, [marketItems, skills, wantedItems, profile, t]);
 
   const hasNewMarket = useMemo(() => {
     return marketItems.some(item => {

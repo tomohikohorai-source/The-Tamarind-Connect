@@ -68,6 +68,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
   const [images, setImages] = useState<string[]>(initialItem?.images || []);
   const [isCompresing, setIsCompressing] = useState(false);
   const [condoId, setCondoId] = useState(initialItem?.condoId || profile.condoId || 'tamarind-penang');
+  const [customCondoName, setCustomCondoName] = useState(initialItem?.customCondoName || (initialItem?.condoId === 'Other-Penang' ? '' : (profile.condoId === 'Other-Penang' ? profile.customCondoName : '')));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -144,6 +145,7 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
       userId: profile.uid,
       condoCode: profile.condoCode || store.getPasscode() || '',
       condoId: condoId,
+      customCondoName: condoId === 'Other-Penang' ? customCondoName : '',
       parentNickname: profile.parentNickname,
       roomNumber: profile.roomNumber,
       parentAvatarIcon: profile.avatarIcon,
@@ -248,6 +250,17 @@ export const MarketItemForm: React.FC<Props> = ({ profile, language = 'en', init
               {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
             </select>
           </div>
+          {condoId === 'Other-Penang' && (
+            <div className="animate-fade-in mt-2">
+              <input 
+                type="text" 
+                value={customCondoName} 
+                onChange={e => setCustomCondoName(e.target.value)} 
+                placeholder="Enter condominium name" 
+                className="w-full p-3.5 rounded-2xl bg-gray-50 border-2 border-teal-100 outline-none font-bold text-sm" 
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

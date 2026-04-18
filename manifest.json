@@ -3,7 +3,7 @@
   "name": "Nearby Exchange",
   "short_name": "Nearby Exchange",
   "description": "Condominium community playground & market sharing app",
-  "start_url": "/",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#fdfbf7",
   "theme_color": "#f472b6",

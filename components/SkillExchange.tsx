@@ -2,8 +2,8 @@
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { Skill, UserProfile, SkillComment } from '../types';
 import { Language, translations } from '../translations';
-import { SKILL_CATEGORIES, SKILL_ICONS } from '../constants';
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart, Share2, Edit2, Trash2 } from 'lucide-react';
+import { SKILL_CATEGORIES, SKILL_ICONS, getCondoName } from '../constants';
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart, Share2, Edit2, Trash2, MapPin } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 
 interface Props {
@@ -274,6 +274,14 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         )}
 
         <div className="bg-white p-6 rounded-[32px] border-2 border-indigo-50 shadow-lg space-y-6 animate-slide-down">
+          <div className="bg-indigo-50/30 p-4 rounded-2xl border border-indigo-50/50 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-indigo-400">
+              <MapPin size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t.condominium}</span>
+            </div>
+            <span className="text-[10px] font-black text-indigo-700 uppercase tracking-tight">{getCondoName(viewingSkill.condoId, viewingSkill.customCondoName)}</span>
+          </div>
+
           {!isMine && viewingSkill.status === 'AVAILABLE' && viewingSkill.requestStatus !== 'PENDING' && (
             <button 
               onClick={() => {

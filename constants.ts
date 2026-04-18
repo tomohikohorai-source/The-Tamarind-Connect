@@ -15,11 +15,12 @@ export const CONDO_OPTIONS = [
   { id: 'Jazz Suite-penang', name: 'Jazz Suite' },
   { id: 'marinox-sky-villas-penang', name: 'Marinox Sky Villas' },
   { id: 'mira-residence-penang', name: 'Mira Residence' },
-  { id: 'Other-Penang', name: 'Other' },
   { id: 'quayside-penang', name: 'Quayside' },
   { id: 'Selasih Court-penang', name: 'Selasih Court' },
   { id: 'Straits Residences-Penang', name: 'Straits Residences' },
-  { id: 'tamarind-penang', name: 'Tamarind' }
+  { id: 'tamarind-penang', name: 'Tamarind' },
+  { id: 'The Brezza Condomium-penang', name: 'The Brezza Condomium' },
+  { id: 'Other-Penang', name: 'Other (Specify)' }
 ];
 
 export const CONDOS = CONDO_OPTIONS.map(opt => ({
@@ -157,3 +158,9 @@ export const AVATAR_ICONS = {
 export const AGE_OPTIONS = [
   "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16+"
 ];
+
+export const getCondoName = (condoId?: string, customCondoName?: string) => {
+  if (condoId === 'Other-Penang') return customCondoName || 'Other';
+  const condo = CONDO_OPTIONS.find(c => c.id === condoId);
+  return condo ? condo.name : 'Unknown';
+};

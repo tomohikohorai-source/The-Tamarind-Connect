@@ -275,7 +275,9 @@ export const translations = {
     skill: "Skill",
     request: "Request",
     discussion: "Discussion",
-    genres: "Genres"
+    genres: "Genres",
+    newComment: "New Comment",
+    statusUpdate: "Status Update"
   },
   zh: {
     appName: "邻里交换",
@@ -550,7 +552,9 @@ export const translations = {
     skill: "技能",
     request: "请求",
     discussion: "讨论",
-    genres: "类别"
+    genres: "类别",
+    newComment: "新评论",
+    statusUpdate: "状态更新"
   },
   ko: {
     appName: "이웃 교환",
@@ -826,7 +830,9 @@ export const translations = {
     skill: "재능",
     request: "요청",
     discussion: "토론",
-    genres: "카테고리"
+    genres: "카테고리",
+    newComment: "새 댓글",
+    statusUpdate: "상태 업데이트"
   },
   ja: {
     appName: "Nearby Exchange",
@@ -1102,6 +1108,8 @@ export const translations = {
     skill: "スキル",
     request: "リクエスト",
     discussion: "ディスカッション",
-    genres: "ジャンル"
+    genres: "ジャンル",
+    newComment: "新着コメント",
+    statusUpdate: "ステータスの更新"
   }
 };

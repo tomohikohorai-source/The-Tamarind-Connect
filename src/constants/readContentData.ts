@@ -105,6 +105,96 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "Chapter 15: The Legacy",
       content: "A month later, the **Penang Pearl Foundation** was officially launched. The rooftop observatory was opened to the public as a small museum, and the glass orb once again glowed every night, a beacon of hope over Gurney Drive.\n\nSarah sat on her balcony, sharing a cup of coffee with Mr. Tan and Mei. She had come to Penang looking for a fresh start, but she had found something much more valuable: a family and a sense of belonging.\n\nAs the sun set over the Andaman Sea, Sarah knew she was exactly where she was meant to be. The shadows of Gurney Drive were no longer mysterious; they were home.",
       snippet: "The story concludes with the launch of a heritage foundation and Sarah finding a true home in Penang."
+    },
+    {
+      chapter: 16,
+      title: "Chapter 16: The First Visitor",
+      content: "The launch of the Penang Pearl Foundation brought many new faces to the condo. Among them was an elegant woman who introduced herself as **Dr. Leong**, a scholar of maritime history. She had heard rumors of the Pearl and wanted to verify its connection to an old fleet of trading ships.\n\nSarah welcomed her into the rooftop observatory. As Dr. Leong examined the glass orb, she pointed to a faint engraving at the base. \"This isn't just a decoration. It's a coordinate system used by the 18th-century navigators.\"\n\nShe looked at Sarah and Mr. Tan. \"If we align the orb with the stars tonight, it might reveal more than just light. It might show us the path to the original shipyard.\"",
+      snippet: "A maritime historian visits the foundation and discovers a hidden navigation system in the glass orb."
+    },
+    {
+      chapter: 17,
+      title: "Chapter 17: The Whispering Walls",
+      content: "That night, as the stars aligned, the orb emitted a sequence of pulses. In the silence of the rooftop, Sarah thought she heard a faint whispering coming from the walls of the observatory. It sounded like voices from the past, speaking of a 'Golden Anchor'.\n\n\"The shipyard was located near the mouth of the **Prai River**,\" Dr. Leong translated from the light patterns. \"It was where the family first established their wealth before moving to the island.\"\n\nMei was intrigued. \"The original family home... my grandfather spoke of a place called the 'Golden Courtyard'. We should investigate the mainland.\"",
+      snippet: "Strange whispers and light patterns from the orb point the team toward the mainland and a place called the Golden Courtyard."
+    },
+    {
+      chapter: 18,
+      title: "Chapter 18: The Heritage Map",
+      content: "The team crossed the Penang Bridge to the mainland, guided by the coordinated from the orb. They found an overgrown area near the river where an old warehouse stood. Inside, they found a massive wooden map carved directly into the wall.\n\nIt wasn't a map of Penang, but of the trade routes that once connected the island to the rest of the world. One route, highlighted in gold leaf, led to a small island in the **Andaman Sea**.\n\n\"The Golden Courtyard wasn't a place on land,\" Mr. Tan realized. \"It was a floating village, a hub for the merchant families of the Straits settlements.\"",
+      snippet: "On the mainland, the team finds a carved wooden map revealing the family's ancient trade routes."
+    },
+    {
+      chapter: 19,
+      title: "Chapter 19: The Hidden Courtyard",
+      content: "Following the map, they rented a boat and searched the mangroves near the river delta. Tucked away behind a curtain of banyan trees, they found the remains of the **Golden Courtyard**. It was a collection of stilt houses, beautifully preserved by the elements.\n\nIn the center was a larger building with a courtyard filled with blooming lotuses. Sarah noticed that the architecture perfectly matched the descriptions in Mei's grandfather's journal.\n\nInside the main hall, they found a circular table with 12 chairs, each carved with a family crest. The Lim family crest was at the head of the table.",
+      snippet: "The group discovers the 'Golden Courtyard', a hidden stilt-house village that served as the family's original base."
+    },
+    {
+      chapter: 20,
+      title: "Chapter 20: The Ancestor's Journal",
+      content: "Under the main table, Sarah found a locked leather case. Inside was a journal belonging to the first Lim to settle in Penang. It documented the building of the mansion and the creation of the Pearl.\n\n*\"The Pearl is the sun for our community, but the anchor is our history. Without the records of those who came before, the light will eventually fade.\"*\n\nThe journal contained names of families who had worked with the Lims, many of whose descendants still lived in the condo today. Sarah realized the foundation's mission was even bigger than she thought.",
+      snippet: "An ancestor's journal reveals that the 'Pearl' is only as strong as the history that supports it."
+    },
+    {
+      chapter: 21,
+      title: "Chapter 21: The Calligraphy Clue",
+      content: "Back at the observatory, Sarah and Mei were studying the journal when they noticed a page with beautiful, flowing calligraphy. It wasn't just text; it was a poem that described a 'hidden garden of stars'.\n\nMei, who was skilled in traditional arts, recognized the style. \"This is a puzzle. The characters change meaning depending on the light they are viewed in.\"\n\nThey took the journal to the glass orb. When the light passed through the pages, it projected a map of the condo's own courtyard garden onto the wall. A specific spot near the koi pond was highlighted.",
+      snippet: "A calligraphy poem in the journal acts as a light puzzle, revealing a secret location in the condo's garden."
+    },
+    {
+      chapter: 22,
+      title: "Chapter 22: The Moonlit Bridge",
+      content: "That evening, they met by the koi pond. The moon was full, reflecting perfectly on the water. Sarah noticed that the moon's reflection aligned with the stones of the small bridge crossing the pond.\n\nUnderneath the third stone on the bridge, they found a small, waterproof cylinder. Inside was a collection of old coins from the British era and a silver compass.\n\n\"The compass always points to the Pearl, no matter where you are,\" Mr. Tan explained. \"It was meant to ensure that the Lims or their allies could always find their way back home if they were in danger.\"",
+      snippet: "A moonlit discovery at the koi pond leads to a silver compass that always points toward the Penang Pearl."
+    },
+    {
+      chapter: 23,
+      title: "Chapter 23: The Secret Archive",
+      content: "The silver compass had a small button on its side. When pressed, it didn't just point; it projected a beam of light. Sarah used the light to follow 'The Path of the Ancestors' through the building's hallways.\n\nThe beam led them to the library on the top floor. Behind one of the bookshelves, they found a secret door leading to the **Lim Private Archive**. It was a room filled with thousands of books and documents about Penang's history.\n\n\"This is a treasure trove!\" Dr. Leong exclaimed. \"This is enough material to keep the foundation busy for decades.\"",
+      snippet: "The silver compass reveals a secret library filled with invaluable documents about Penang's hidden history."
+    },
+    {
+      chapter: 24,
+      title: "Chapter 24: The Forgotten Recipe",
+      content: "While exploring the archive, Mei found an old, stained parchment tucked into a book of herbal medicine. It was a recipe for a 'Community Tea', a blend of local spices and herbs that the Lims used to serve during town meetings.\n\n\"My grandmother used to make something that smelled like this,\" Mei recalled. \"She called it the 'Peace Brew'.\"\n\nThey decided to recreate the tea for the foundation's next event. As the scent of cinnamon, cloves, and pandan filled the room, the residents felt a strange sense of familiarity and calm. It was another piece of the legacy being restored.",
+      snippet: "Mei discovers a traditional tea recipe that once helped foster peace and community in the old mansion."
+    },
+    {
+      chapter: 25,
+      title: "Chapter 25: The Shadow in the Garden",
+      content: "One night, Sarah saw a shadowy figure moving through the rooftop garden. Fearful that someone was trying to steal the Pearl, she alerted security and rushed upstairs with Mr. Tan.\n\nThey found a young boy huddled near the glass orb. He wasn't a thief; he was a resident from unit 4C. \"I just wanted to see if the Pearl really glows when you're sad,\" he whispered.\n\nSarah realized that the Pearl's true purpose was even simpler than she thought: it provided comfort to those who felt alone in the big building. She invited him to stay and learn about the stories behind the light.",
+      snippet: "Sarah finds a lonely boy in the garden and learns that the Pearl serves as a source of comfort for the residents."
+    },
+    {
+      chapter: 26,
+      title: "Chapter 26: The Silver Compass",
+      content: "Sarah spent her days organizing the archive and her nights watching the Pearl. The silver compass sat on her desk, its lotus head always pointing upward. She began to notice a pattern in the way the Pearl's light flickered.\n\nIt wasn't random; it was **Morose Code**, an old variation used by local sailors. \"S-E-A M-E-E-T-S M-O-O-N,\" she translated. \"The highest point... where the sun first touches.\"\n\nShe looked out at the horizon. The sun was just beginning to rise, and for a brief moment, the light from the Pearl hit a small, distant rocky outcrop in the ocean. There was another observatory out there.",
+      snippet: "Sarah translates a light signal from the Pearl that leads her to discover a second observatory in the ocean."
+    },
+    {
+      chapter: 27,
+      title: "Chapter 27: The Beacon's Light",
+      content: "With help from the local maritime police, Sarah and her team visited the rocky outcrop. They found a small tower, a twin to the one on their roof. Inside was another glass orb, though this one was dark.\n\nAs Sarah placed her silver compass on the pedestal, the second orb ignited. A bridge of light appeared between the two towers, spanning across the water like a rainbow.\n\n\"The twin lights... they were markers for the safest path into the harbor,\" Mr. Tan explained. \"By lighting the second one, you've restored the full protection of the Penang Pearl.\"",
+      snippet: "The team restores a second beacon on a rocky outcrop, completing the ancient maritime navigation system."
+    },
+    {
+      chapter: 28,
+      title: "Chapter 28: The Final Gathering",
+      content: "To celebrate the restoration, the foundation held a Grand Lantern Festival. Residents from all across Penang came to the condo. Mei served the Peace Brew, and Sarah shared stories from the archive.\n\nThe glass orb on the roof shone brighter than ever, its light reflected by the second beacon in the distance. The community felt a sense of unity that had been missing for years.\n\nMei's Laksa stall was now a successful cafe on the ground floor, and Mr. Tan was the foundation's chief historian. The shadows and secrets had been replaced by light and shared knowledge.",
+      snippet: "A grand festival celebrates the Pearl's restoration, bringing the entire Penang community together."
+    },
+    {
+      chapter: 29,
+      title: "Chapter 29: The New Chapter",
+      content: "Sarah stood on her balcony, looking at the two lights across the water. She had written down everything they had discovered into a new book, 'The Heart of the Pearl'.\n\nShe was no longer the newcomer; she was the guardian of the legacy. She had found a purpose that went beyond her own needs. She smiled at Mei and Mr. Tan as they joined her.\n\n\"What's next?\" Mei asked. Sarah looked at the coordinates at the base of the orb. \"There are more signals. The Lim family had connections across the whole of Southeast Asia. This is just the beginning of a much larger journey.\"",
+      snippet: "Sarah looks toward the future, realizing that the Penang Pearl is part of a much larger network of secrets."
+    },
+    {
+      chapter: 30,
+      title: "Chapter 30: The Eternal Pearl",
+      content: "The story of the Penang Pearl became a legend in the city. Every night, residents and tourists alike would look toward Gurney Drive to see the twin beacons glowing.\n\nFor Sarah, it was a reminder that even in a world of modern condos and high-speed lives, the ancient bonds of community and history still mattered. The Pearl wasn't just in the glass orbs; it was in the hearts of the people who cared for each other.\n\nAs the night sky filled with stars, the Pearl pulsed once, twice, three times—a heartbeat of light for the island of Penang. And Sarah, for the first time in her life, was perfectly at peace.",
+      snippet: "The story of the Penang Pearl becomes a local legend, a reminder of the enduring power of community and history."
     }
   ],
   columns: [
@@ -197,6 +287,96 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "The Iconic Penang Bridge",
       content: "The **Penang Bridge**, completed in 1985, is one of the longest bridges in Southeast Asia. It spans 13.5 kilometers, connecting the island to the mainland at Seberang Perai.\n\nBefore the bridge, the only way to cross was by ferry. Today, it stands as a symbol of Penang's modernization and economic growth. A second bridge, the **Sultan Abdul Halim Muadzam Shah Bridge**, was opened in 2014 to further improve connectivity.",
       snippet: "The history and significance of the iconic bridge that connects Penang to the world."
+    },
+    {
+      id: 16,
+      title: "The Magic of Hin Bus Depot",
+      content: "What was once an abandoned bus depot has been transformed into a vibrant art and community space. **Hin Bus Depot** is a must-visit for its rotating art exhibitions, artisan markets, and creative workshops.\n\nThe space is famous for its open-air gallery, where murals and installations blend seamlessly with the industrial architecture. It's a place where creativity is celebrated and local talent is given a platform to shine.",
+      snippet: "How an abandoned depot became Penang's most creative community hub."
+    },
+    {
+      id: 17,
+      title: "Armenian Street: Street Art Capital",
+      content: "**Armenian Street** is perhaps the most famous street in George Town's heritage zone. It's home to the iconic 'Children on a Bicycle' mural and a plethora of small heritage shops, cafes, and museums.\n\nThe street comes alive on weekends with local vendors selling everything from traditional snacks to handmade crafts. It's a perfect place to wander and soak in the atmosphere of historic Penang.",
+      snippet: "A guide to the most famous street for art and heritage in George Town."
+    },
+    {
+      id: 18,
+      title: "Penang's Traditional Trades",
+      content: "Despite the modernization of the city, many traditional trades still thrive in George Town. You can still find **joss stick makers**, **traditional lantern painters**, and **signboard carvers** working in their shophouses.\n\nThese artisans are the keepers of Penang's intangible heritage. Their skills have been passed down through generations, and their work is a vital part of the city's cultural identity. Supporting these trades is essential for preserving the soul of George Town.",
+      snippet: "Meeting the artisans who keep Penang's ancient skills alive."
+    },
+    {
+      id: 19,
+      title: "The Story of Gurney Drive",
+      content: "**Gurney Drive** is one of Penang's most popular seafront promenades. Known for its famous hawker center, it's a place where locals and tourists alike gather to enjoy delicious street food with a view of the Andaman Sea.\n\nOver the years, the area has seen significant development, with luxury condos and high-end malls now lining the waterfront. Despite the changes, the drive remains a symbol of Penang's coastal lifestyle and culinary richness.",
+      snippet: "The evolution of Penang's famous seafront promenade and hawker paradise."
+    },
+    {
+      id: 20,
+      title: "Nyonya Kuih: Sweet Treats of Penang",
+      content: "No Malaysian tea time is complete without **Nyonya Kuih**. these colorful, bite-sized snacks are a staple of Peranakan culture. Made from ingredients like glutinous rice, coconut milk, and pandan, they are as beautiful as they are delicious.\n\nFrom the layered **Kuih Lapis** to the coconut-filled **Ang Ku Kuih**, each variety has its own unique flavor and texture. Finding a stall that makes them traditional methods is a true delight for any sweets lover.",
+      snippet: "Exploring the colorful and delicious world of Peranakan snacks."
+    },
+    {
+      id: 21,
+      title: "Penang Botanic Gardens: A Green Sanctuary",
+      content: "Established by the British in 1884, the **Penang Botanic Gardens** (also known as the Waterfall Gardens) is a lush oasis at the foot of Penang Hill. It's home to a diverse collection of tropical plants and a large population of long-tailed macaques.\n\nThe gardens are a favorite spot for locals to exercise and enjoy nature. The central feature is a beautiful lily pond, and the paths lead through ancient trees and manicured lawns, offering a perfect escape from the city heat.",
+      snippet: "A peaceful retreat into one of Penang's oldest and most beautiful public parks."
+    },
+    {
+      id: 22,
+      title: "The Clan House Architecture",
+      content: "The Chinese clan houses, or **Kongsi**, are some of the most impressive buildings in Penang. The **Khoo Kongsi** is a masterpiece of ornate carving and traditional design, reflecting the wealth and importance of the clan in the 19th century.\n\nThese buildings served as social hubs and places of worship for immigrant families. Their architecture is filled with symbolic meanings, from the dragon pillars to the intricate roof ornaments. A visit to a Khoo Kongsi is a must for anyone interested in Chinese heritage.",
+      snippet: "Discovering the ornate beauty and cultural significance of Penang's clan houses."
+    },
+    {
+      id: 23,
+      title: "Balik Pulau: The Quiet Side of the Island",
+      content: "While the north and east of Penang are bustling with activity, **Balik Pulau** in the southwest offers a more relaxed pace. It's a place of paddy fields, fruit orchards, and traditional Malay villages.\n\nIt's the perfect destination for cycling, visiting durian farms, and enjoying authentic country-style laksa. The area's natural beauty and peaceful atmosphere provide a refreshing contrast to the more developed parts of the island.",
+      snippet: "Escape to the countryside and enjoy the natural charm of Balik Pulau."
+    },
+    {
+      id: 24,
+      title: "Penang's Coffee Culture",
+      content: "From traditional **Kopitiams** to modern specialty cafes, Penang has a deep and diverse coffee culture. The traditional 'Kopi' is roasted with margarine and sugar, resulting in a rich, dark brew served with condensed milk.\n\nIn recent years, a new wave of cafes has emerged in the heritage zone, offering high-quality beans and creative brewing methods. Whether you prefer a humble cup of Kopi O or a perfect latte, Penang has something for every coffee enthusiast.",
+      snippet: "The evolution of coffee in Penang, from traditional kopitiams to modern cafes."
+    },
+    {
+      id: 25,
+      title: "The White Crocodile of Air Itam",
+      content: "A local legend speaks of a **White Crocodile** that lives in the waters near Air Itam. Many locals believe it's a spiritual guardian of the area, and sightings are considered a sign of good fortune.\n\nWhile science might suggest otherwise, the story remains a part of the local folklore, adding a layer of mystery and magic to the hillside district. It's a testament to the enduring power of myths in shaping a community's identity.",
+      snippet: "Exploring the mysterious local legend of Air Itam's spiritual guardian."
+    },
+    {
+      id: 26,
+      title: "Penang's Waterfront Jetties",
+      content: "Beyond the famous Clan Jetties, Penang's waterfront is dotted with various piers that reflect its maritime history. From the **Swettenham Pier** for cruise ships to the old timber jetties used by fishermen, the coast is a hub of activity.\n\nThese jetties provide a unique perspective on the island's relationship with the sea and the historical trade routes that once made Penang a global gateway. Walking along the waterfront at sunset is a magical experience.",
+      snippet: "Discovering the diverse piers and maritime history of Penang's coastline."
+    },
+    {
+      id: 27,
+      title: "The Esplanade: A Colonial Legacy",
+      content: "The **Esplanade** (Padang Kota Lama) is a historic seafront field surrounded by colonial-era buildings like the **City Hall** and **Fort Cornwallis**. It's a place where major events and festivals are held.\n\nThe area is also famous for its **Food Court**, where you can enjoy local favorites while soaking in the sea breeze. The combination of historical architecture and vibrant community life makes the Esplanade a cornerstone of George Town.",
+      snippet: "A walk through the historic heart of colonial Penang by the sea."
+    },
+    {
+      id: 28,
+      title: "Penang's Festive Lights",
+      content: "Whether it's the lanterns of **Chinese New Year**, the oil lamps of **Deepavali**, or the decorations of **Christmas**, Penang comes alive with light during the festive seasons.\n\nThe entire city, from the shophouses of George Town to the malls of Bayan Lepas, is transformed into a sea of color. These celebrations are a beautiful reflection of Penang's multicultural spirit and the joy of shared traditions.",
+      snippet: "How Penang transforms into a city of lights during its many vibrant festivals."
+    },
+    {
+      id: 29,
+      title: "The Island of Temples",
+      content: "Penang is often called the **Island of Temples** due to the sheer number of religious sites across the island. From the Thai-style **Wat Chayamangkalaram** with its reclining Buddha to the Burmese-style **Dhammikarama**, the variety is incredible.\n\nThese temples are not just places of worship but also community centers and archival sites for the different groups that have settled in Penang over the centuries. Their architectural diversity is a key part of the island's unique charm.",
+      snippet: "A journey through the architectural and spiritual diversity of Penang's many temples."
+    },
+    {
+      id: 30,
+      title: "Future Penang: Smart City Initiatives",
+      content: "While deeply rooted in its heritage, Penang is also looking toward the future. The **Penang 2030** vision aims to transform the island into a 'family-focused, green, and smart state'.\n\nFrom smart traffic management systems to sustainable urban development, the city is embracing technology to improve the lives of its residents. The goal is to balance modernization with the preservation of its unique culture and natural environment.",
+      snippet: "How Penang is balancing heritage preservation with modern smart city technology."
     }
   ]
 };
