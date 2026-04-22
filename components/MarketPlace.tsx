@@ -483,19 +483,29 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
             <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{getCondoName(viewingItem.condoId, viewingItem.customCondoName)}</div>
           </div>
 
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
               <div className="flex gap-2">
                 <span className="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-teal-100">{t.rank} {viewingItem.condition}</span>
                 <span className="bg-gray-50 text-gray-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-gray-100">{viewingItem.type}</span>
               </div>
-              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter pt-2 leading-tight">{viewingItem.title}</h1>
-              <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingItem.description}</p>
+              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight">{viewingItem.title}</h1>
             </div>
-            <div className="text-right shrink-0">
-              <div className="text-2xl font-black text-teal-600 tracking-tighter">{viewingItem.type === 'FREE' ? t.free : `RM ${viewingItem.price}`}</div>
-              <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{t.via} {viewingItem.paymentMethod}</div>
+
+            <div className="flex items-center justify-between bg-teal-50/50 p-4 rounded-[28px] border border-teal-100/50">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-teal-500 uppercase tracking-widest mb-1">{t.price}</span>
+                <span className="text-2xl font-black text-teal-600 tracking-tighter leading-none">
+                  {viewingItem.type === 'FREE' ? t.free : `RM ${viewingItem.price}`}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.via}</span>
+                <span className="text-[10px] font-black text-gray-600 uppercase tracking-tight">{viewingItem.paymentMethod}</span>
+              </div>
             </div>
+
+            <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingItem.description}</p>
           </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -307,21 +307,36 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             </div>
           )}
 
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${viewingSkill.type === 'OFFER' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
-                {viewingSkill.type === 'OFFER' ? t.skillProvider : t.requestingHelp}
-              </span>
-              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter pt-2 leading-tight">{viewingSkill.title}</h1>
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${viewingSkill.type === 'OFFER' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                  {viewingSkill.type === 'OFFER' ? t.skillProvider : t.requestingHelp}
+                </span>
+              </div>
+              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight">{viewingSkill.title}</h1>
               <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                 {SKILL_ICONS[viewingSkill.category]} {viewingSkill.category}
               </div>
             </div>
-            <div className="text-right shrink-0">
-               <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">{viewingSkill.price}</div>
+
+            <div className="flex items-center justify-between bg-indigo-50/50 p-4 rounded-[28px] border border-indigo-100/50">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1">{t.reward}</span>
+                <span className="text-[18px] font-black text-indigo-600 leading-none">
+                  {viewingSkill.price}
+                </span>
+              </div>
+              <div className="text-right">
+                <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.condominium}</div>
+                <div className="text-[10px] font-black text-indigo-700 uppercase tracking-tight truncate max-w-[150px]">
+                  {getCondoName(viewingSkill.condoId, viewingSkill.customCondoName)}
+                </div>
+              </div>
             </div>
+
+            <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingSkill.description}</p>
           </div>
-          <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingSkill.description}</p>
           
           {isMine && (
             <div className="flex flex-col gap-3 pt-2">

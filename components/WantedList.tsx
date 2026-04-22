@@ -210,16 +210,30 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
             <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{getCondoName(viewingItem.condoId, viewingItem.customCondoName)}</div>
           </div>
 
-          <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <span className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">{t.lookingFor}</span>
-              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter pt-2 leading-tight">{viewingItem.title}</h1>
-              <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingItem.description}</p>
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <span className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">{t.lookingFor}</span>
+              </div>
+              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight">{viewingItem.title}</h1>
             </div>
-            <div className="text-right shrink-0">
-              <div className="text-2xl font-black text-amber-600 tracking-tighter">RM {viewingItem.hopePrice}</div>
-              <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{t.hopePrice}</div>
+
+            <div className="flex items-center justify-between bg-amber-50/50 p-4 rounded-[28px] border border-amber-100/50">
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-1">{t.hopePrice}</span>
+                <span className="text-2xl font-black text-amber-600 tracking-tighter leading-none">
+                  RM {viewingItem.hopePrice}
+                </span>
+              </div>
+              <div className="text-right">
+                <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.condominium}</div>
+                <div className="text-[10px] font-black text-amber-600 uppercase tracking-tight truncate max-w-[150px]">
+                  {getCondoName(viewingItem.condoId, viewingItem.customCondoName)}
+                </div>
+              </div>
             </div>
+
+            <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingItem.description}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
