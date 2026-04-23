@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { UserProfile, Skill } from '../types';
 import { SKILL_CATEGORIES, SKILL_ICONS, CONDO_OPTIONS } from '../constants';
 import { store } from '../services/store';
-import { ChevronLeft, X, BookOpen, MessageSquare, ShieldAlert, Award, CreditCard, Layers, Building2 } from 'lucide-react';
+import { ChevronLeft, X, BookOpen, MessageSquare, ShieldAlert, Award, CreditCard, Layers, Building2, Camera } from 'lucide-react';
 
 import { Language, translations } from '../translations';
 
@@ -15,6 +15,37 @@ interface Props {
   onCancel: () => void;
 }
 
+const compressImage = (base64Str: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800;
+      const MAX_HEIGHT = 800;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
+    };
+  });
+};
+
 export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSkill, onSubmit, onCancel }) => {
   const t = translations[language];
   const [title, setTitle] = useState(initialSkill?.title || '');
@@ -22,8 +53,40 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
   const [description, setDescription] = useState(initialSkill?.description || '');
   const [type, setType] = useState<'OFFER' | 'REQUEST'>(initialSkill?.type || 'OFFER');
   const [price, setPrice] = useState(initialSkill?.price || 'Free');
+  const [images, setImages] = useState<string[]>(initialSkill?.images || []);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [condoId, setCondoId] = useState(initialSkill?.condoId || profile.condoId || 'tamarind-penang');
   const [customCondoName, setCustomCondoName] = useState(initialSkill?.customCondoName || (initialSkill?.condoId === 'Other-Penang' ? '' : (profile.condoId === 'Other-Penang' ? profile.customCondoName : '')));
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const remainingSlots = 3 - images.length;
+    const selectedFiles = (Array.from(files) as File[]).slice(0, remainingSlots);
+
+    setIsCompressing(true);
+    const newImages: string[] = [];
+    for (const file of selectedFiles) {
+      const reader = new FileReader();
+      const base64: string = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file as Blob);
+      });
+      const compressed = await compressImage(base64);
+      newImages.push(compressed);
+    }
+    setImages(prev => [...prev, ...newImages]);
+    setIsCompressing(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +118,7 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
       status: initialSkill?.status || 'AVAILABLE',
       requestStatus: initialSkill?.requestStatus || 'NONE',
       price,
+      images,
       comments: initialSkill?.comments || [],
       createdAt: initialSkill?.createdAt || new Date().toISOString(),
       lastUpdated: new Date().toISOString()
@@ -80,6 +144,25 @@ export const SkillForm: React.FC<Props> = ({ profile, language = 'en', initialSk
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+        <div>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest ml-1">Images (Max 3)</label>
+          <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+            {images.map((img, idx) => (
+              <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-indigo-100 shadow-sm shrink-0">
+                <img src={img} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 p-1.5 bg-red-500/80 text-white rounded-full backdrop-blur-sm"><X size={12} /></button>
+              </div>
+            ))}
+            {images.length < 3 && (
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isCompressing} className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-300 hover:border-indigo-400 hover:text-indigo-400 transition-all shrink-0 active:scale-95">
+                {isCompressing ? <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin"></div> : <Camera size={24} />}
+                <span className="text-[8px] font-black uppercase">{isCompressing ? t.loading : t.add}</span>
+              </button>
+            )}
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+          </div>
+        </div>
+
         <div className="flex gap-3">
           {[
             { id: 'OFFER', label: t.iCanHelp },

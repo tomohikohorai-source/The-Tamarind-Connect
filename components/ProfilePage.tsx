@@ -559,7 +559,13 @@ export const ProfilePage: React.FC<Props> = ({
                 {mySkills.map(skill => (
                   <button key={skill.id} onClick={() => onGoToSkill(skill.id)} className="w-full p-4 rounded-[28px] border border-indigo-50 flex items-center justify-between bg-white text-left shadow-sm">
                     <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-2xl shrink-0">{SKILL_ICONS[skill.category] || '🌟'}</div>
+                       <div className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                         {skill.images && skill.images.length > 0 ? (
+                           <img src={skill.images[0]} className="w-full h-full object-cover" alt={skill.title} referrerPolicy="no-referrer" />
+                         ) : (
+                           SKILL_ICONS[skill.category] || '🌟'
+                         )}
+                       </div>
                        <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{skill.title}</div>
                     </div>
                     <ChevronRight size={14} className="text-gray-300"/>
@@ -586,8 +592,16 @@ export const ProfilePage: React.FC<Props> = ({
                     className="w-full p-4 rounded-[28px] border border-rose-50 flex items-center justify-between bg-white text-left shadow-sm"
                   >
                     <div className="flex items-center gap-4 min-w-0">
-                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border ${item.itemType === 'MARKET' ? 'bg-teal-50 border-teal-100' : item.itemType === 'SKILL' ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
-                         {item.itemType === 'MARKET' ? (GENRE_ICONS[(item as MarketItem).genre] || '📦') : item.itemType === 'SKILL' ? (SKILL_ICONS[(item as Skill).category] || '🌟') : (GENRE_ICONS[(item as WantedItem).genre] || '🔍')}
+                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border overflow-hidden ${item.itemType === 'MARKET' ? 'bg-teal-50 border-teal-100' : item.itemType === 'SKILL' ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
+                         {item.itemType === 'MARKET' ? (
+                           (item as MarketItem).images && (item as MarketItem).images.length > 0 ? (
+                             <img src={(item as MarketItem).images[0]} className="w-full h-full object-cover" alt={item.title} referrerPolicy="no-referrer" />
+                           ) : (GENRE_ICONS[(item as MarketItem).genre] || '📦')
+                         ) : item.itemType === 'SKILL' ? (
+                           (item as Skill).images && (item as Skill).images.length > 0 ? (
+                             <img src={(item as Skill).images[0]} className="w-full h-full object-cover" alt={item.title} referrerPolicy="no-referrer" />
+                           ) : (SKILL_ICONS[(item as Skill).category] || '🌟')
+                         ) : (GENRE_ICONS[(item as WantedItem).genre] || '🔍')}
                        </div>
                        <div className="flex flex-col min-w-0">
                          <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>

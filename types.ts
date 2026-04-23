@@ -142,6 +142,7 @@ export interface Skill {
   price: string; // e.g. "Free", "RM 20/hr", "Exchange for coffee"
   previousPrice?: string; // For discount tracking
   priceUpdatedAt?: string; // For discount timing
+  images?: string[];
   comments: SkillComment[];
   createdAt: string;
   lastUpdated: string;

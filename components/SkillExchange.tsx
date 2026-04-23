@@ -86,6 +86,17 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   
   const [viewingSkill, setViewingSkill] = useState<Skill | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  const scrollGallery = (direction: 'next' | 'prev') => {
+    if (galleryRef.current) {
+      const scrollAmount = galleryRef.current.clientWidth;
+      galleryRef.current.scrollBy({
+        left: direction === 'next' ? scrollAmount : -scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     setViewingSkill(null);
@@ -236,6 +247,28 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
         </div>
 
         <SkillStatusBanner skill={viewingSkill} profile={profile} t={t} />
+
+        <div className="bg-white rounded-[40px] border border-gray-100 overflow-hidden shadow-sm relative">
+          {viewingSkill.images && viewingSkill.images.length > 0 ? (
+            <>
+              <div ref={galleryRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
+                {viewingSkill.images.map((img, i) => (
+                  <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} loading="lazy" referrerPolicy="no-referrer" />
+                ))}
+              </div>
+              {viewingSkill.images.length > 1 && (
+                <>
+                  <button onClick={() => scrollGallery('prev')} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg text-gray-600 z-10"><ChevronLeft size={20} /></button>
+                  <button onClick={() => scrollGallery('next')} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg text-gray-600 z-10"><ChevronRight size={20} /></button>
+                </>
+              )}
+            </>
+          ) : (
+            <div className={`aspect-square flex items-center justify-center text-6xl ${viewingSkill.type === 'OFFER' ? 'bg-indigo-50 text-indigo-100' : 'bg-orange-50 text-orange-100'}`}>
+               {SKILL_ICONS[viewingSkill.category] || <BookOpen size={64} />}
+            </div>
+          )}
+        </div>
 
         {viewingSkill.status === 'RESERVED' && (
           <div className="bg-white p-6 rounded-[32px] border-2 border-orange-50 shadow-lg mb-6 animate-fade-in">
@@ -537,8 +570,12 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                  <BookOpen size={48} fill="currentColor" />
               </div>
               
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${skill.type === 'OFFER' ? 'bg-indigo-50 border border-indigo-100' : 'bg-orange-50 border border-orange-100'}`}>
-                 {SKILL_ICONS[skill.category] || '🌟'}
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0 overflow-hidden ${skill.type === 'OFFER' ? 'bg-indigo-50 border border-indigo-100' : 'bg-orange-50 border border-orange-100'}`}>
+                 {skill.images && skill.images.length > 0 ? (
+                   <img src={skill.images[0]} className="w-full h-full object-cover" alt={skill.title} referrerPolicy="no-referrer" />
+                 ) : (
+                   SKILL_ICONS[skill.category] || '🌟'
+                 )}
               </div>
               
               <div className="flex-grow min-w-0 pr-8">
