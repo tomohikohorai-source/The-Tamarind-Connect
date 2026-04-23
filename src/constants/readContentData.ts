@@ -195,6 +195,96 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "Chapter 30: The Eternal Pearl",
       content: "The story of the Penang Pearl became a legend in the city. Every night, residents and tourists alike would look toward Gurney Drive to see the twin beacons glowing.\n\nFor Sarah, it was a reminder that even in a world of modern condos and high-speed lives, the ancient bonds of community and history still mattered. The Pearl wasn't just in the glass orbs; it was in the hearts of the people who cared for each other.\n\nAs the night sky filled with stars, the Pearl pulsed once, twice, three times—a heartbeat of light for the island of Penang. And Sarah, for the first time in her life, was perfectly at peace.",
       snippet: "The story of the Penang Pearl becomes a local legend, a reminder of the enduring power of community and history."
+    },
+    {
+      chapter: 31,
+      title: "Chapter 31: The Forgotten Sketchbook",
+      content: "Months after the Penang Pearl Foundation was established, a new resident named **Kael** moved into the condo. An artist who specialized in digital restoration, Kael was drawn to the island's rich textures. While exploring a second-hand bookstore in George Town, he found an old, leather-bound sketchbook titled 'The Depot's Breath'.\n\nInside were detailed drawings of old buses, but not like any he had seen. They were ornate, with brass fittings and stained-glass windows. One sketch was of the **Hin Bus Depot**, and in the corner was a name he recognized from Sarah's museum: **Old Man Lim**.\n\nKael decided to visit the depot the following morning. He felt a strange pull toward the industrial space, as if the buildings themselves were trying to tell him a story.",
+      snippet: "A new artist, Kael, moves into the condo and discovers a sketchbook belonging to Old Man Lim."
+    },
+    {
+      chapter: 32,
+      title: "Chapter 32: The Mural that Moves",
+      content: "At the Hin Bus Depot, Kael met **Mei**, who was now managing a small community workshop there. When he showed her the sketchbook, she led him to a wall at the back of the depot that was usually covered by a heavy tarpaulin.\n\n\"This was my grandfather's favorite spot,\" she said, pulling the canvas aside. Behind it was a mural that seemed to change depending on where you stood. From one side, it looked like a busy bus terminal; from the other, it was a lush tropical garden.\n\nKael noticed a small, recessed area in the bricks that matched a symbol in his sketchbook. It was a QR code, but hand-carved into the stone. 'Scan the past,' the inscription read.",
+      snippet: "Mei reveals a hidden 'moving mural' at Hin Bus Depot with a mysterious carved QR code."
+    },
+    {
+      chapter: 33,
+      title: "Chapter 33: Behind the Iron Gate",
+      content: "Using his digital restoration tools, Kael 'scanned' the carved code. His phone screen flickered, revealing an AR overlay of the depot as it was in the 1940s. A ghostly bus sat in the bay, its headlights pointing toward an old iron gate that led to the basement.\n\n\"That gate has been locked for eighty years,\" Mr. Tan said, appearing behind them. \"They say the keys were lost when the bus company went bankrupt.\" Kael noticed a small brass compartment on the gate's handle, similar to the one Sarah had found in the mansion foundations.\n\nIt seemed the Lims had left more than one trail for the community. Kael realized his skills as a digital artist weren't just for his work; they were the key to unlocking this new layer of history.",
+      snippet: "Kael uses AR to see the depot's past, revealing a secret gate that has been locked for decades."
+    },
+    {
+      chapter: 34,
+      title: "Chapter 34: The Ghost of the Depot",
+      content: "That night, Kael returned to the depot with his tablet. He had programmed a special filter to detect electromagnetic shifts. As he panned across the empty workshop, a faint, glowing figure appeared on his screen. It was an old man sitting on a spectral bus, meticulously painting a tiger on its side.\n\n\"The Master Painter,\" Mr. Tan whispered. \"He disappeared on the same day as Old Man Lim. They said he was working on his 'final masterpiece'.\"\n\nKael followed the figure on his screen. The painter stood up and walked toward a brick pillar, gesturing for Kael to look closer. When Kael touched the pillar, a small panel clicked open, revealing a dusty, copper-plated bus ticket.",
+      snippet: "Kael encounters a 'digital ghost' of the depot's master painter, leading to the discovery of a copper bus ticket."
+    },
+    {
+      chapter: 35,
+      title: "Chapter 35: The Map in the Paint",
+      content: "The copper bus ticket was actually a template. When Kael placed it over the moving mural, the patterns on the wall aligned to reveal a hidden map of the depot's underground drainage system. But these weren't ordinary drains; they were built like tunnels.\n\n\"The Lims used these for transporting goods during the war,\" Mr. Tan recalled. \"They kept the city's supplies safe from the invaders.\" One tunnel was marked with a 'heart' symbol, located directly beneath the depot's central courtyard.\n\nKael and Mei decided to explore the tunnel. They found a small manhole in the courtyard's garden, hidden beneath a layer of decorative pebbles. The history of Penang was becoming more tangible with every step.",
+      snippet: "The copper ticket reveals a map of secret tunnels beneath the depot used during the war."
+    },
+    {
+      chapter: 36,
+      title: "Chapter 36: Secret of the Courtyard",
+      content: "Descending into the tunnel, the air grew cool and dry. The walls were lined with old spare parts for buses, some still preserved in grease. At the end of the tunnel was a large, circular room with a skylight that allowed the moon's reflection to hit the center of the floor.\n\nIn the middle of the room was a pedestal, and on it sat a 'Clockwork Heart'—a complex mechanism made of brass and silver. When Kael touched it, the gears began to turn, and a projection of old George Town appeared on the walls.\n\nIt was a visual archive of every bus route and every family that lived in the city. The Lims hadn't just built a condo; they had built a living memory of the entire community.",
+      snippet: "Kael and Mei find a 'Clockwork Heart' in a secret room beneath the courtyard, a living archive of Penang's history."
+    },
+    {
+      chapter: 37,
+      title: "Chapter 37: The Artist's Warning",
+      content: "As the projection played, Kael noticed a single red character flickering on the wall. 'Beware the Fire,' it read. Mr. Tan's expression changed. \"The Great Fire of the Depot... it wasn't an accident. Someone was trying to destroy the archive.\"\n\nA group of newcomers, posing as developers, had recently been asking about the depot's foundations. Kael realized the archive was still in danger. They needed to protect the Clockwork Heart before the modern 'innovators' got their hands on it.\n\nMei proposed turning the depot into a protected heritage site under the foundation, but they needed proof of its historical value that even the city council couldn't ignore.",
+      snippet: "A warning in the archive suggests the depot's past fire was no accident, and a new threat looms."
+    },
+    {
+      chapter: 38,
+      title: "Chapter 38: A Splash of Crimson",
+      content: "Kael found a bottle of 'Immortal Red' paint in the tunnel, a legendary pigment created by the Lims that never faded. He used his digital tools to trace where this paint had been used throughout George Town. It formed a trail leading toward an old shophouse on Armenian Street.\n\nInside the shophouse lived **Aunty Wah**, a retired calligrapher. When she saw the bottle, she smiled. \"The Lims gave this to me to sign the city charters. It's the blood of Penang, they used to say.\"\n\nShe showed Kael a hidden scroll that listed the true owners of the depot land. It wasn't the government; it was the 'People of Penang', a trust that the Lims had established nearly a century ago.",
+      snippet: "Kael discovers a legendary pigment that leads him to a scroll proving the depot belongs to the community."
+    },
+    {
+      chapter: 39,
+      title: "Chapter 39: The Hidden Basement",
+      content: "With the scroll as proof, the foundation moved quickly to secure the site. But during the inventory, they discovered a second, even deeper basement. This one was filled with the actual buses from the sketches, beautifully restored and hidden away.\n\n\"The Golden Fleet,\" Mr. Tan breathed. \"They were meant to be the core of a free transport system for the poor. The Lims believed that mobility was the key to equality.\"\n\nKael spent the night sketching the buses, his heart full. He wasn't just restoring images; he was helping to restore a vision for a better city. He decided to use his AR technology to let the community 'ride' the buses once again.",
+      snippet: "A second basement reveals a fleet of beautifully preserved buses, part of a forgotten plan for free public transport."
+    },
+    {
+      chapter: 40,
+      title: "Chapter 40: Clockwork Canvas",
+      content: "Preparation for the 'Secrets of the Depot' exhibition was in full swing. Kael developed a 'Clockwork Canvas'—a series of AR screens that allowed visitors to paint over the spectral buses and see how their designs would look in the past and future.\n\nThe energy in the depot was electric. Residents from the condo and locals from George Town came to help. Mei's cafe was providing refreshments, and the scent of Peace Brew was everywhere. The depot was becoming the heart of the community once again.\n\nBut as Kael worked, he noticed a suspicious figure lurking in the shadows of the workshop. The 'developers' were still watching.",
+      snippet: "The community prepares for a grand exhibition as Kael develops interactive AR screens for the depot."
+    },
+    {
+      chapter: 41,
+      title: "Chapter 41: The Midnight Exhibit",
+      content: "The exhibition opened at midnight, under the light of the full moon. Kael activated the Clockwork Heart in the tunnel, and the entire depot was bathed in a soft, golden projection of history. The spectral buses moved through the bays, and the murals came to life.\n\nThe city councillors and the 'developers' were all there. When they saw the beauty and the historical depth of the site, any thoughts of demolition vanished. The depot was officially declared a living museum.\n\nIn the middle of the crowd, Sarah, Mei, and Mr. Tan stood together, watching Kael. They had found another guardian, another person who understood that history wasn't something to be buried, but celebrated.",
+      snippet: "The midnight exhibition is a major success, securing the depot's future as a living museum."
+    },
+    {
+      chapter: 42,
+      title: "Chapter 42: Echoes of the Past",
+      content: "After the exhibition, Kael sat in the quiet of the depot. He was looking at the old bus ticket again. For the first time, he noticed a sequence of numbers on the back. They weren't just a date; they were a frequency.\n\nHe tuned his radio to the frequency and heard a faint, rhythmic sound. It was the sound of the 'Pearl' pulsing from the condo. The two sites were connected, part of a larger network of light and history across the island.\n\nHe realized that the 'Pearl' and the 'Heart' were meant to work together. One provided guidance, and the other provided memory. Together, they formed the soul of Penang.",
+      snippet: "Kael discovers a connection between the Penang Pearl and the Clockwork Heart, linking the two historic sites."
+    },
+    {
+      chapter: 43,
+      title: "Chapter 43: The Final Brushstroke",
+      content: "To complete the restoration, Kael decided to paint one last mural at the depot entrance. He used the 'Immortal Red' paint and combined it with a digital projector. The result was a 'Living Masterpiece' that updated itself based on the community's interactions.\n\nWhen a child laughed, the mural would glow with soft colors. When the community gathered, the murals would depict their shared stories. It was the ultimate expression of the Lims' legacy: a history that was always being written.\n\nKael felt a sense of completion. He had come to Penang for a second-hand sketchbook, but he had found a new life and a place where his art truly mattered.",
+      snippet: "Kael creates a 'Living Masterpiece' mural that responds to the community's emotions and actions."
+    },
+    {
+      chapter: 44,
+      title: "Chapter 44: Restoration of Memory",
+      content: "The foundation officially launched the 'Hin Bus Museum'. The fleet of buses from the secret basement was put into service as a free heritage shuttle for the city, run by the foundation. The vision of the Lims was finally realized.\n\nMei's cafe became the museum's social hub, and Mr. Tan was given a permanent office in the archive. Sarah continued her work at the condo observatory, the two sites now thriving together.\n\nPenang had changed, but its core remained the same. The culture was a living thing, nurtured by the stories and the people who were brave enough to look for them.",
+      snippet: "The Hin Bus Museum opens, and the Lims' vision of a free community shuttle is finally realized."
+    },
+    {
+      chapter: 45,
+      title: "Chapter 45: The Heritage Unveiled",
+      content: "The story of the depots and the mansions was compiled into a grand archive, open to everyone. Kael, Sarah, Mei, and Mr. Tan stood on the depot's roof, looking toward the condo. The twin beacons of the Pearl were visible in the distance.\n\n\"We did it,\" Mei said softly. \"We brought the heritage home.\" Kael smiled, looking at his sketchbook. The last page was no longer empty; it was filled with the faces of his new friends and the vibrant life of Penang.\n\nAs the night sky filled with stars, the island of Penang felt unified, its past and future finally at peace. The journey that had started with a loose tile in an apartment had transformed an entire city.",
+      snippet: "The journey concludes with the unification of the island's heritage and Kael finding his true home."
     }
   ],
   columns: [
@@ -377,6 +467,96 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "Future Penang: Smart City Initiatives",
       content: "While deeply rooted in its heritage, Penang is also looking toward the future. The **Penang 2030** vision aims to transform the island into a 'family-focused, green, and smart state'.\n\nFrom smart traffic management systems to sustainable urban development, the city is embracing technology to improve the lives of its residents. The goal is to balance modernization with the preservation of its unique culture and natural environment.",
       snippet: "How Penang is balancing heritage preservation with modern smart city technology."
+    },
+    {
+      id: 31,
+      title: "The Best Dim Sum in Penang",
+      content: "Mornings in **Penang** are incomplete without a visit to a bustling **Dim Sum** restaurant. From the historic **Tai Tong** in George Town to newer spots like **Fu Er Dai**, the variety of steamed and fried treats is staggering.\n\nBe sure to try the 'Siew Mai' (pork dumplings) and 'Char Siew Bao' (BBQ pork buns). The tradition of 'yum cha' (drinking tea while eating dim sum) is a vital part of the local lifestyle, especially on weekends when families gather for a leisurely breakfast.",
+      snippet: "A guide to the most delicious and traditional dim sum spots in Penang."
+    },
+    {
+      id: 32,
+      title: "Exploring the Prai River",
+      content: "On the mainland of Penang, the **Prai River** offers a different kind of beauty. This historic waterway was once the primary link between the inland plantations and the island's port.\n\nToday, you can take boat tours to explore the mangrove forests, spot local wildlife like kingfishers and monitor lizards, and visit the traditional stilt villages along its banks. It's a reminder of Penang's diverse geography and its deep connection to the water.",
+      snippet: "Discover the natural beauty and historic importance of the Prai River on the mainland."
+    },
+    {
+      id: 33,
+      title: "Penang's Street Art at Night",
+      content: "While most visitors hunt for murals during the day, **George Town's street art** takes on a magical quality at night. Many of the interactive pieces are beautifully illuminated, offering a different perspective for photographers.\n\nThe cooler evening temperatures also make it much more pleasant to wander through the alleys. Areas like **Armenian Street** and **Love Lane** are particularly vibrant, with the murals blending into the lively atmosphere of the night markets and cafes.",
+      snippet: "Why exploring George Town's mural scene at night is a must-do experience."
+    },
+    {
+      id: 34,
+      title: "The Best Coffee Roasters",
+      content: "Penang's third-wave coffee scene is thriving. Local roasters like **Aunty Gaik Lean's** and **Narrow Marrow** are perfecting their craft, sourcing high-quality beans from around the world and roasting them locally.\n\nThese cafes often double as creative spaces, hosting art shows and workshops. Whether you're a fan of a classic flat white or a complex cold brew, Penang's coffee artisans are raising the bar for the entire region's caffeine lovers.",
+      snippet: "Meeting the local artisans behind Penang's flourishing specialty coffee culture."
+    },
+    {
+      id: 35,
+      title: "Local Myths: The Lady in the Batik Dress",
+      content: "Every culture has its ghost stories, and Penang is no exception. One of the most enduring myths is that of 'The Lady in the Batik Dress', said to be the guardian of the old mansions near **Northam Road**.\n\nLocals say she appears during the autumn moon, walking through the gardens with a lantern. While researchers might dismiss it as folklore, these stories reflect the island's deep respect for its past and the spirits that 'watch over' its heritage buildings.",
+      snippet: "Exploring one of Penang's most poetic and mysterious local urban legends."
+    },
+    {
+      id: 36,
+      title: "Gardening in a Condo Balcony",
+      content: "Living in a high-rise doesn't mean you can't have a garden. Many **Penang condo** residents are transforming their balconies into lush green escapes. Herbs like **pandan**, **lemongrass**, and **curry leaves** grow exceptionally well in the tropical climate.\n\nUsing vertical planters and self-watering pots, you can create a productive and beautiful mini-garden even in a small space. It's a great way to improve air quality and have fresh ingredients for your home-cooked Malaysian meals.",
+      snippet: "Tips and tricks for creating a thriving tropical garden on your condo balcony."
+    },
+    {
+      id: 37,
+      title: "The History of Penang Bridge",
+      content: "The **Penang Bridge** is more than just a transportation link; it's a feat of engineering and a symbol of national pride. Completed in 1985, it revolutionized the island's economy and unified the state.\n\nBefore the bridge, the ferry was the only way to cross, often resulting in long queues. The bridge's aesthetic design, featuring a central cable-stayed span, has made it one of the most photographed landmarks in Malaysia, especially at sunset.",
+      snippet: "The engineering marvel and economic impact of Penang's first bridge."
+    },
+    {
+      id: 38,
+      title: "Best Spots for Sunset",
+      content: "Penang offers some of the most spectacular sunsets in Southeast Asia. For a classic beach view, head to **Batu Ferringhi**. For a city-meets-sea perspective, **Gurney Drive** is hard to beat.\n\nIf you're looking for something more adventurous, the view from the top of **Penang Hill** or the **Clan Jetties** offers a unique backdrop for the golden hour. No matter where you are, the sight of the sun dipping into the Andaman Sea is a magical end to any day.",
+      snippet: "A curated list of the most breathtaking locations to watch the sunset in Penang."
+    },
+    {
+      id: 39,
+      title: "Exploring the Mangroves",
+      content: "The mangrove forests of **Teluk Bahang** and **Prai** are vital ecosystems that protect the coast and provide a home for many species. Kayaking through these 'floating forests' is a peaceful way to connect with nature.\n\nYou'll see intricate root systems that look like natural sculptures and might even spot elusive wildlife like otters and sea eagles. These areas are a reminder of the raw, natural beauty that still exists on the island and its fringes.",
+      snippet: "Discover the ecological importance and serene beauty of Penang's mangrove forests."
+    },
+    {
+      id: 40,
+      title: "Penang's Hidden Waterfall",
+      content: "Tucked away in the hills near **Teluk Bahang**, the 'Secret Waterfall' is a favorite for local hikers. Unlike the more accessible falls, this one requires a bit of a trek through the jungle, but the reward is a tranquil pool of crystal-clear water.\n\nIt's the perfect place for a refreshing dip after a morning hike. It's important to respect the environment and pack out whatever you pack in, ensuring this hidden gem remains pristine for future generations of adventurers.",
+      snippet: "A guide to finding and enjoying Penang's most secluded jungle waterfall."
+    },
+    {
+      id: 41,
+      title: "The Best Laksa in Balik Pulau",
+      content: "**Balik Pulau** is considered by many to be the spiritual home of **Penang Laksa**. Stalls like **Jia Wei** and **Kim's Laksa** use traditional methods, emphasizing the freshness of the mackerel and the balance of herbs.\n\nWhat sets Balik Pulau's laksa apart is its rich, thick broth and the generous use of 'bunga kantan' (torch ginger flower). It's a flavor profile that is distinct from the version found in George Town, making it well worth the drive over the hill.",
+      snippet: "Why foodies flock to the countryside for the ultimate Penang Laksa experience."
+    },
+    {
+      id: 42,
+      title: "A Guide to Traditional Festive Foods",
+      content: "From the **Hokkien Mee** of Chinese New Year to the **Nasi Lemak** often served during Malay weddings, Penang is a city of festive flavors. Each celebration brings with it a specific set of must-have dishes.\n\nLearning about the symbolic meanings behind these foods—like longevity noodles or the auspicious red of the 'Ang Ku Kuih'—adds another layer of appreciation to the dining experience. Sharing these meals is one of the best ways to experience Penang's multicultural harmony.",
+      snippet: "Understanding the traditions and symbols behind Penang's favorite holiday dishes."
+    },
+    {
+      id: 43,
+      title: "Contemporary Art in Penang",
+      content: "While heritage art is everywhere, Penang's contemporary art scene is also booming. Galleries like **Hin Bus Depot** and **The Art Gallery** showcase modern works that range from abstract paintings to experimental installations.\n\nMany of these artists are using their work to comment on modern life in Penang, blending traditional motifs with digital technology. It's an exciting time for the local art community, as they find new ways to express the island's evolving identity.",
+      snippet: "Exploring the modern galleries and artists who are shaping Penang's future."
+    },
+    {
+      id: 44,
+      title: "The Best Vegetarian Eateries",
+      content: "Penang is a paradise for vegetarians. Thanks to the influence of Buddhist and Hindu traditions, you can find a vast array of plant-based options, from 'mock meat' dishes in George Town to authentic South Indian thalis in **Little India**.\n\nSpots like **BMS Organics** and **Idealite** are also leading the way in healthy, organic laksa and other local favorites. Whether you're a full-time vegetarian or just looking for a meat-free meal, Penang's culinary diversity will not disappoint.",
+      snippet: "A guide to the most creative and delicious plant-based dining in Penang."
+    },
+    {
+      id: 45,
+      title: "A Weekend in Seberang Perai",
+      content: "Often overlooked by those staying on the island, **Seberang Perai** (the mainland) is full of hidden gems. From the historic **St. Anne's Church** in Bukit Mertajam to the vibrant markets of Butterworth, there's much to explore.\n\nThe mainland offers a more local, less touristy experience, with unique food stalls and beautiful natural parks like **Kampung Agat**. It's a great place for a weekend road trip to discover the 'other side' of the Pearl of the Orient.",
+      snippet: "Why you should cross the bridge to explore the mainland's heritage and nature."
     }
   ]
 };

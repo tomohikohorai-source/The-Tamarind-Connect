@@ -218,6 +218,14 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
 
   useEffect(() => {
     if (viewingItem) {
+      window.scrollTo(0, 0);
+      const main = document.querySelector('main');
+      if (main) main.scrollTo(0, 0);
+    }
+  }, [viewingItem?.id]);
+
+  useEffect(() => {
+    if (viewingItem) {
       const updated = items.find(i => i.id === viewingItem.id);
       if (updated && JSON.stringify(updated) !== JSON.stringify(viewingItem)) {
         setViewingItem(updated);

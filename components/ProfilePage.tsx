@@ -169,7 +169,15 @@ export const ProfilePage: React.FC<Props> = ({
     return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   }, [marketItems, skills, wantedItems, profile.uid, isOwnProfile, dismissedNotifIds]);
 
-  const activeUnreadCount = useMemo(() => notifications.filter(n => !n.isDismissed).length, [notifications]);
+  const activeUnreadCount = useMemo(() => {
+    return notifications.filter(n => {
+      if (n.isDismissed) return false;
+      const isAcknowledged = (n.type === 'MARKET' ? acknowledgedMarketMap[n.itemId] : n.type === 'SKILL' ? acknowledgedSkillMap[n.itemId] : acknowledgedWantedMap[n.itemId]) === n.timestamp;
+      // Passive notifications (like comments) shouldn't count as unread if the item update is acknowledged
+      if (isAcknowledged && n.reason === t.notifNewComment) return false;
+      return true;
+    }).length;
+  }, [notifications, acknowledgedMarketMap, acknowledgedSkillMap, acknowledgedWantedMap, t.notifNewComment]);
 
   const myActiveSales = useMemo(() => marketItems.filter(i => i.userId === profile.uid && i.status !== 'SOLD'), [marketItems, profile.uid]);
   const myPurchases = useMemo(() => marketItems.filter(i => (i.buyerId === profile.uid || (i.comments.some(c => c.userId === profile.uid) && i.userId !== profile.uid))), [marketItems, profile.uid]);
@@ -195,6 +203,7 @@ export const ProfilePage: React.FC<Props> = ({
     }
     if (notif.type === 'MARKET') onGoToTransaction(notif.itemId);
     else if (notif.type === 'SKILL') onGoToSkill(notif.itemId);
+    else if (notif.type === 'WANTED') onGoToWanted(notif.itemId);
   };
 
   const handleSaveProfile = async () => {

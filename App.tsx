@@ -491,7 +491,7 @@ export const App: React.FC = () => {
       if (isOwner && item.requestStatus === 'PENDING' && !dismissedIds.includes(`${item.id}-req`)) return true;
       if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion && !dismissedIds.includes(`${item.id}-conf`)) return true;
       if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion && !dismissedIds.includes(`${item.id}-appr`)) return true;
-      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`)) return true;
+      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${item.id}-cmt`) && acknowledgedMarketMap[item.id] !== (item.lastUpdated || 'initial')) return true;
 
       const lastSeenUpdate = acknowledgedMarketMap[item.id];
       const isUnseenInformation = lastSeenUpdate !== (item.lastUpdated || 'initial');
@@ -510,7 +510,7 @@ export const App: React.FC = () => {
 
       if (isOwner && skill.requestStatus === 'PENDING' && !dismissedIds.includes(`${skill.id}-req`)) return true;
       if (isRequester && skill.status === 'RESERVED' && !dismissedIds.includes(`${skill.id}-appr`)) return true;
-      if (isInvolved && lastCommentFromOthers && !isCmtDismissed) return true;
+      if (isInvolved && lastCommentFromOthers && !isCmtDismissed && acknowledgedSkillMap[skill.id] !== (skill.lastUpdated || 'initial')) return true;
 
       const lastSeenUpdate = acknowledgedSkillMap[skill.id];
       if (lastSeenUpdate !== (skill.lastUpdated || 'initial') && isInvolved && !isCmtDismissed) return true;
@@ -524,7 +524,7 @@ export const App: React.FC = () => {
       const lastCommentFromOthers = wanted.comments.length > 0 && wanted.comments[wanted.comments.length - 1].userId !== profile.uid;
       const isInvolved = isOwner || hasParticipated;
       
-      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${wanted.id}-cmt`)) return true;
+      if (isInvolved && lastCommentFromOthers && !dismissedIds.includes(`${wanted.id}-cmt`) && acknowledgedWantedMap[wanted.id] !== (wanted.lastUpdated || 'initial')) return true;
       
       const lastSeenUpdate = acknowledgedWantedMap[wanted.id];
       if (lastSeenUpdate !== (wanted.lastUpdated || 'initial') && isInvolved && !dismissedIds.some(id => id.startsWith(wanted.id))) return true;

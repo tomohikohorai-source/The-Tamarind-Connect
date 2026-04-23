@@ -113,6 +113,14 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
 
   useEffect(() => {
     if (viewingItem) {
+      window.scrollTo(0, 0);
+      const main = document.querySelector('main');
+      if (main) main.scrollTo(0, 0);
+    }
+  }, [viewingItem?.id]);
+
+  useEffect(() => {
+    if (viewingItem) {
       const updated = items.find(i => i.id === viewingItem.id);
       if (updated) setViewingItem(updated);
     }

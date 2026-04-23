@@ -89,14 +89,19 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
     const hasTodayColumn = existingContents.some(c => c.type === 'COLUMN' && c.createdAt.startsWith(today));
     
     if (!hasTodayNovel || !hasTodayColumn) {
-      isGeneratingRef.current = true;
-      try {
-        await postDailyContent(today, hasTodayNovel, hasTodayColumn);
-      } catch (error) {
-        console.error("Failed to post daily content:", error);
-      } finally {
-        isGeneratingRef.current = false;
+      if (existingContents.length > 0) {
+        isGeneratingRef.current = true;
+        setGenerating(true);
+        try {
+          await postDailyContent(today, hasTodayNovel, hasTodayColumn);
+        } catch (error) {
+          console.error("Failed to post daily content:", error);
+        } finally {
+          setGenerating(false);
+          isGeneratingRef.current = false;
+        }
       }
+      return;
     }
   };
 
@@ -216,8 +221,8 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       state = stateDoc.data() as ReadSeriesState;
     }
 
-    // Don't generate if already generated today (double check)
-    if (state.lastGeneratedDate === today && skipNovel && skipColumn) return;
+    // Don't generate if already generated today (STRICT CHECK)
+    if (state.lastGeneratedDate === today) return; 
 
     const batch = [];
 
@@ -226,13 +231,31 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       const chapterIndex = state.currentChapter - 1;
       if (chapterIndex >= 0 && chapterIndex < PRE_CREATED_CONTENT.novels.length) {
         const novelData = PRE_CREATED_CONTENT.novels[chapterIndex];
+        
+        // Logic for 15 chapters per story going forward
+        let novelChapter = novelData.chapter;
+        let seriesId = state.currentSeriesId;
+        let displayTitle = novelData.title;
+
+        // The user says 1-30 (The Penang Pearl) is fine as is.
+        // From chapter 31 onwards, we treat every 15 chapters as a new story.
+        if (state.currentChapter > 30) {
+          const storyIndex = Math.floor((state.currentChapter - 31) / 15);
+          const storyNumber = storyIndex + 3; // Story 1 & 2 are the first 30 chapters
+          seriesId = `series_story_${storyNumber}`;
+          novelChapter = ((state.currentChapter - 31) % 15) + 1;
+          
+          // Replace absolute chapter number in title with relative one
+          displayTitle = displayTitle.replace(/^Chapter \d+: /, `Chapter ${novelChapter}: `);
+        }
+
         batch.push(addDoc(collection(db, "readContent"), {
-          title: novelData.title,
+          title: displayTitle,
           content: novelData.content,
           snippet: novelData.snippet,
           type: 'NOVEL',
-          chapterNumber: novelData.chapter,
-          seriesId: state.currentSeriesId,
+          chapterNumber: novelChapter,
+          seriesId: seriesId,
           createdAt: new Date().toISOString()
         }));
       }

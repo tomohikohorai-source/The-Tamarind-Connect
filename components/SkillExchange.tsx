@@ -122,6 +122,14 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
 
   useEffect(() => {
     if (viewingSkill) {
+      window.scrollTo(0, 0);
+      const main = document.querySelector('main');
+      if (main) main.scrollTo(0, 0);
+    }
+  }, [viewingSkill?.id]);
+
+  useEffect(() => {
+    if (viewingSkill) {
       const updated = skills.find(s => s.id === viewingSkill.id);
       if (updated && JSON.stringify(updated) !== JSON.stringify(viewingSkill)) {
         setViewingSkill(updated);
