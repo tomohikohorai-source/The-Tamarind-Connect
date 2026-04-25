@@ -249,7 +249,7 @@ export const App: React.FC = () => {
       else if (path === '#sell') setShowMarketForm(true);
       else if (path === '#post-skill') setShowSkillForm(true);
       else if (path === '#post-wanted') setShowWantedForm(true);
-      else { 
+      else if (path !== '#about' && path !== '#privacy') { 
         setShowAbout(false);
         setShowPrivacy(false);
         setShowCheckIn(false); 
