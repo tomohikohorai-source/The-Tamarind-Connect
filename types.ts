@@ -194,6 +194,7 @@ export interface ReadContent {
   content: string;
   snippet: string;
   chapterNumber?: number;
+  columnNumber?: number;
   seriesId?: string;
   createdAt: string;
 }

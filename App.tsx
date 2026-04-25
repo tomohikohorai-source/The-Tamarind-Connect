@@ -13,6 +13,8 @@ import { SkillForm } from './components/SkillForm';
 import { WantedList } from './components/WantedList';
 import { WantedItemForm } from './components/WantedItemForm';
 import { ReadTab } from './components/ReadTab';
+import { About } from './components/About';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { LoginRequiredModal } from './components/LoginRequiredModal';
 import { store } from './services/store';
 import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
@@ -38,6 +40,8 @@ export const App: React.FC = () => {
   const [readItems, setReadItems] = useState<ReadContent[]>([]);
   
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
+  const [showAbout, setShowAbout] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [tabResetToggle, setTabResetToggle] = useState(false);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'en');
   const t = translations[language];
@@ -225,6 +229,8 @@ export const App: React.FC = () => {
       const id = params.get('id');
 
       if (path === '#profile') setActiveTab('PROFILE');
+      else if (path === '#about') setShowAbout(true);
+      else if (path === '#privacy') setShowPrivacy(true);
       else if (path === '#market' || path === '') {
         setActiveTab('MARKET');
         setTargetMarketId(id);
@@ -244,6 +250,8 @@ export const App: React.FC = () => {
       else if (path === '#post-skill') setShowSkillForm(true);
       else if (path === '#post-wanted') setShowWantedForm(true);
       else { 
+        setShowAbout(false);
+        setShowPrivacy(false);
         setShowCheckIn(false); 
         setEditingActivity(undefined);
         setShowMarketForm(false);
@@ -1406,6 +1414,18 @@ export const App: React.FC = () => {
           <div className="w-full max-w-lg mx-auto relative z-10 animate-slide-up">
             <WantedItemForm profile={profile} language={language} initialItem={editingWantedItem} onSubmit={handleWantedSubmit} onCancel={closeModals} />
           </div>
+        </div>
+      )}
+
+      {showAbout && (
+        <div className="fixed inset-0 z-[600]">
+          <About onBack={closeModals} language={language} />
+        </div>
+      )}
+
+      {showPrivacy && (
+        <div className="fixed inset-0 z-[600]">
+          <PrivacyPolicy onBack={closeModals} language={language} />
         </div>
       )}
 

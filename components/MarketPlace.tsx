@@ -497,17 +497,17 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                 <span className="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-teal-100">{t.rank} {viewingItem.condition}</span>
                 <span className="bg-gray-50 text-gray-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-gray-100">{viewingItem.type}</span>
               </div>
-              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight">{viewingItem.title}</h1>
+              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight break-words line-clamp-3">{viewingItem.title}</h1>
             </div>
 
-            <div className="flex items-center justify-between bg-teal-50/50 p-4 rounded-[28px] border border-teal-100/50">
-              <div className="flex flex-col">
+            <div className="flex items-center justify-between bg-teal-50/50 p-4 rounded-[28px] border border-teal-100/50 gap-2">
+              <div className="flex flex-col min-w-0">
                 <span className="text-[8px] font-black text-teal-500 uppercase tracking-widest mb-1">{t.price}</span>
-                <span className="text-2xl font-black text-teal-600 tracking-tighter leading-none">
+                <span className="text-2xl font-black text-teal-600 tracking-tighter leading-none break-all">
                   {viewingItem.type === 'FREE' ? t.free : `RM ${viewingItem.price}`}
                 </span>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.via}</span>
                 <span className="text-[10px] font-black text-gray-600 uppercase tracking-tight">{viewingItem.paymentMethod}</span>
               </div>

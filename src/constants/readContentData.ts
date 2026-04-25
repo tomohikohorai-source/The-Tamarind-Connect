@@ -285,6 +285,96 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "Chapter 45: The Heritage Unveiled",
       content: "The story of the depots and the mansions was compiled into a grand archive, open to everyone. Kael, Sarah, Mei, and Mr. Tan stood on the depot's roof, looking toward the condo. The twin beacons of the Pearl were visible in the distance.\n\n\"We did it,\" Mei said softly. \"We brought the heritage home.\" Kael smiled, looking at his sketchbook. The last page was no longer empty; it was filled with the faces of his new friends and the vibrant life of Penang.\n\nAs the night sky filled with stars, the island of Penang felt unified, its past and future finally at peace. The journey that had started with a loose tile in an apartment had transformed an entire city.",
       snippet: "The journey concludes with the unification of the island's heritage and Kael finding his true home."
+    },
+    {
+      chapter: 46,
+      title: "Chapter 46: The Solar Alignment",
+      content: "Following the success of the museum, Kael and Sarah noticed a new phenomenon. When the sun reached its highest point during the summer solstice, a third beam of light appeared from the glass orb, pointing straight into the heart of the **Andaman Sea**.\n\n\"It's an alignment,\" Dr. Leong explained. \"The Lims were obsessed with solar cycles. This third beam only appears once every fifty years.\" They followed the light using a high-powered telescope and saw a faint shimmer on the horizon.\n\nCould there be a third location? Sarah felt a surge of excitement. The map of the Pearl was far from complete. They decided to prepare an expedition to find what lay at the end of the third beam.",
+      snippet: "A rare solar alignment reveals a third beam of light pointing deep into the Andaman Sea."
+    },
+    {
+      chapter: 47,
+      title: "Chapter 47: The Midnight Tide",
+      content: "The expedition set sail at midnight, timed with the peak of the tide. Sarah, Kael, and Mei were joined by a team of local divers. The water was exceptionally clear, illuminated by the twin beacons back on land.\n\nAs they approached the coordinates, the sonar began to pick up a massive structure beneath the waves. It wasn't a wreck; it was a series of perfectly preserved stone pillars. \"An underwater temple?\" Mei whispered.\n\nKael used his underwater AR cameras to scan the site. The pillars formed a circle, and in the center was a large metal plate inscribed with the lotus symbol. They had found the **Sunken Archive**.",
+      snippet: "The team discovers a perfectly preserved underwater structure that seems to be a Sunken Archive."
+    },
+    {
+      chapter: 48,
+      title: "Chapter 48: Signal from the Shadows",
+      content: "As the divers explored the Sunken Archive, Kael's sensors picked up a rhythmic clicking sound coming from within the central pedestal. It was another signal, but this one was faster, more urgent.\n\n\"It's a distress call... or a warning,\" Sarah said, her voice heavy with concern. The signal was being transmitted toward the island, but it was also being bounced back from a point even further out at sea.\n\nThey realized that the archive wasn't just a place of storage; it was a communication hub. But who were they communicating with? And why was the signal still active after all these years?",
+      snippet: "An urgent signal from the underwater archive suggests it's still communicating with something further out at sea."
+    },
+    {
+      chapter: 49,
+      title: "Chapter 49: The Legend of the Lost Island",
+      content: "Back on the boat, Mr. Tan shared an old legend he had heard in his youth. \"The **Island of Whispers**. They say it only appears when the two Pearls are aligned and the heart is pure. It was where the Lims' ancestors first sought refuge during the Great Storm.\"\n\nAccording to the legend, the island was protected by a barrier of light that could only be pierced by those who carried the silver compass. Sarah held the compass tightly. It was vibrating, its lotus head spinning toward the open ocean.\n\nThey decided to follow the compass, leaving the safety of the known waters behind. The stars above seemed to guide them, their light reflected in the shimmering path of the Pearl.",
+      snippet: "Mr. Tan tells a legend of a 'Lost Island' that only appears under specific conditions, guided by the silver compass."
+    },
+    {
+      chapter: 50,
+      title: "Chapter 50: The Map on the Shell",
+      content: "While waiting for the next tide, Kael found a large, fossilized nautilus shell near the base of one of the underwater pillars. When he analyzed its patterns with a specialized light, he discovered a microscopic map etched into the calcium.\n\nIt was a navigational chart for the 'Island of Whispers'. It showed a series of underwater currents and reefs that acted as a natural defense system. \"We don't just sail there,\" Mei realized. \"We have to move with the water.\"\n\nKael mapped the currents into their navigation system. It was a delicate dance between their boat and the ocean, a test of their trust in the ancient wisdom of the Lims.",
+      snippet: "A map etched into a fossilized shell reveals the secret currents needed to navigate to the lost island."
+    },
+    {
+      chapter: 51,
+      title: "Chapter 51: The Underwater Archive",
+      content: "They returned to the Sunken Archive for one last dive before heading further out. This time, they managed to activate a pressurized chamber inside the central structure. The water was pushed out, allowing them to enter a dry, preserved room.\n\nThe walls were lined with thousands of glass jars, each containing a preserved specimen of a local plant or seed. \"It's a seed bank!\" Mei cried out. \"They were preserving the entire biodiversity of Penang!\"\n\nEverything from rare herbs to ancient varieties of paddy were kept here. This wasn't just a archive of stories; it was a safeguard for the very life of the island. Sarah felt a profound respect for the foresight of the Lims.",
+      snippet: "The team discovers a dry chamber within the sunken archive that houses a massive seed bank of Penang's flora."
+    },
+    {
+      chapter: 52,
+      title: "Chapter 52: The Crystal Compass",
+      content: "In the center of the seed bank stood a pedestal with a crystal compass, ten times larger than Sarah's. When she approached it, the silver compass in her pocket began to glow with a brilliant white light.\n\nThe two instruments synchronized, and a holograph of the 'Lost Island' appeared in the air. It showed a lush paradise with a great lighthouse at its peak. \"The **Lighthouse of the Ancestors**,\" the holograph whispered.\n\nSarah realized that the Pearl on the condo and the beacon on the outcrop were just relays. This lighthouse was the true source of the power. They needed to find it to ensure the safety of the entire system.",
+      snippet: "A large crystal compass in the seed bank reveals a holographic map of the 'Lost Island' and its great lighthouse."
+    },
+    {
+      chapter: 53,
+      title: "Chapter 53: The Guardians of the Reef",
+      content: "As they sailed toward the island's supposed location, they were surrounded by a pod of dolphins. These weren't ordinary dolphins; they were larger and had strange, luminescent markings on their fins.\n\n\"The Guardians of the Reef,\" Mr. Tan said, his eyes filled with awe. \"They have protected these waters for generations. If they are here, we are on the right path.\"\n\nThe dolphins guided the boat through a treacherous gap in the coral reefs that hadn't been on any modern map. The water became calm and turquoise, and for the first time, a dark silhouette appeared on the horizon.",
+      snippet: "Luminescent dolphins guide the team through a hidden reef toward the mysterious silhouette of the island."
+    },
+    {
+      chapter: 54,
+      title: "Chapter 54: The Sunken Library",
+      content: "Before reaching the main island, they found a secondary structure that was partially submerged. It was a grand library built of white stone, its lower floors under the sea. Schools of colorful fish swam through the bookshelves.\n\nSarah and Mei dived down, using waterproof tablets to scan the books. They were made of a strange, synthetic material that didn't rot in the water. They contained records of every agreement, every peace treaty, and every shared resource in the history of the Straits.\n\n\"This is the foundation of our community,\" Sarah thought. \"A record of how we learned to live together.\" They collected several key documents that proved the shared heritage of the island nations.",
+      snippet: "A partially submerged library contains records of ancient peace treaties and community agreements."
+    },
+    {
+      chapter: 55,
+      title: "Chapter 55: The Song of the Whale",
+      content: "As they approached the island shore, a deep, resonant sound filled the air. It was a whale song, but it was being amplified by the hollow structures of the island's cliffs. The song seemed to be telling a story of migration and resilience.\n\nKael recorded the frequency and realized it was the same one he had found on the back of the bus ticket. The depot, the condo, and this island were all 'singing' the same song of unity.\n\nThe sound acted as a welcoming gesture, easing the team's fears. They stepped onto the pristine white sand of the island, feeling a sense of sacredness. They were the first visitors in fifty years.",
+      snippet: "The island 'sings' a welcoming song that matches the frequencies found at the depot and the condo."
+    },
+    {
+      chapter: 56,
+      title: "Chapter 56: The Lighthouse Ignition",
+      content: "At the highest point of the island stood the Great Lighthouse. It was a magnificent structure of glass, metal, and light, its lens made of the largest pearl Sarah had ever seen. But it was dark, its internal fire gone cold.\n\nSarah climbed to the top and placed her silver compass and the crystal compass into the dual slots on the pedestal. Kael connected his digital tablet to synchronize the light patterns. For a moment, nothing happened.\n\nThen, with a roar like a thousand candles, the lighthouse ignited. A pillar of white light shot into the sky, visible for miles. The Penang Pearl back on the condo responded, its own light intensifying in a bridge of shared energy.",
+      snippet: "Sarah and Kael successfully reignite the Great Lighthouse, connecting it back to the Pearl on the island."
+    },
+    {
+      chapter: 57,
+      title: "Chapter 57: The Bridge of Stars",
+      content: "The light from the lighthouse didn't just shine forward; it formed a bridge across the water, a path of solid-looking light that seemed to connect all the heritage sites they had found. People on the mainland and the island look up in wonder.\n\n\"It's the Bridge of Stars,\" Mr. Tan said, tears in his eyes. \"It's a way for our spirits to connect, no matter how far apart we are physically.\" The bridge wasn't just light; it was a transmission of knowledge and emotion.\n\nSarah felt herself connected to everyone she had met—Mei, Mr. Tan, Kael, the lonely boy in the garden, and even the ancestors who had built this. The community was no longer just a building; it was an entire ecosystem.",
+      snippet: "The lighthouse creates a 'Bridge of Stars' that connects the heritage sites and the hearts of the community."
+    },
+    {
+      chapter: 58,
+      title: "Chapter 58: The Unveiled Horizon",
+      content: "With the lighthouse restored, the fog that usually surrounded the island lifted, revealing its true beauty. It was a thriving ecosystem of rare plants and birds that were thought to be extinct. The Lims had created a sanctuary that was self-sustaining.\n\n\"We need to protect this place,\" Mei said. \"But not by keeping it a secret. We need to integrate it into the foundation's work.\" They planned to create a sustainable education center where researchers and students could learn about biodiversity and history.\n\nThe island was the ultimate classroom, a living example of how humanity and nature could thrive together if they respected the past.",
+      snippet: "The team decides to turn the newly unveiled island into a sustainable heritage and nature education center."
+    },
+    {
+      chapter: 59,
+      title: "Chapter 59: The Final Pledge",
+      content: "Before leaving the island, the team gathered at the foot of the lighthouse. They made a pledge to protect the legacy of the Lims and to ensure that the light of the Penang Pearl would never go out again.\n\n\"To the past that guides us, the present we share, and the future we build,\" Sarah recited. Kael used his digital tools to record their pledge into the archive, making it a permanent part of the history of the island.\n\nAs they sailed back toward Penang, the two Pearls and the Great Lighthouse formed a perfect triangle of light. The island was no longer lost; it was the anchor for their new world.",
+      snippet: "The team makes a formal pledge to protect the island's legacy, securing the future of the heritage network."
+    },
+    {
+      chapter: 60,
+      title: "Chapter 60: The Eternal Guardian",
+      content: "Sarah returned to her balcony, the silver compass now a permanent part of a new display in the rooftop museum. The foundation was stronger than ever, its influence reaching across the entire state. The 'Penang Pearl' was now a household name.\n\nShe looked out at the two lights across the water, and then toward the distant horizon where she knew the Lighthouse was shining. She had found more than a home; she had found a family that spanned generations.\n\nThe shadows of the city were no longer something to be feared, but a canvas for new stories. As the sun set, the first pulses of light began to flicker. One, two, three—the heartbeat of a community that would never be forgotten.",
+      snippet: "The journey reaches a beautiful conclusion as Sarah reflects on the power of community and the eternal light of the Pearl."
     }
   ],
   columns: [
@@ -557,6 +647,96 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "A Weekend in Seberang Perai",
       content: "Often overlooked by those staying on the island, **Seberang Perai** (the mainland) is full of hidden gems. From the historic **St. Anne's Church** in Bukit Mertajam to the vibrant markets of Butterworth, there's much to explore.\n\nThe mainland offers a more local, less touristy experience, with unique food stalls and beautiful natural parks like **Kampung Agat**. It's a great place for a weekend road trip to discover the 'other side' of the Pearl of the Orient.",
       snippet: "Why you should cross the bridge to explore the mainland's heritage and nature."
+    },
+    {
+      id: 46,
+      title: "The Art of Penang Coffee Roasting",
+      content: "Penang's coffee culture isn't just about drinking; it's about the craft. Traditional roasters still use charcoal-fired drums to roast beans with sugar and margarine, creating the unique 'Kopi' flavor that is synonymous with Malaysian kopitiams.\n\nNewer specialty roasters are bringing global techniques to the island, sourcing beans from Ethiopia to Brazil and roasting them with precision to highlight their natural profiles. This blend of old and new makes Penang a true paradise for caffeine enthusiasts of all generations.",
+      snippet: "An exploration of the traditional and modern coffee roasting techniques that define Penang."
+    },
+    {
+      id: 47,
+      title: "Hidden Gems of Butterworth",
+      content: "Butterworth is more than just a transit hub. The **Penang Bird Park**, the first of its kind in Malaysia, is home to over 300 species. For art lovers, the **Butterworth Art Walk** features murals that tell the story of the town's industrial and agricultural past.\n\nThe local food scene here is also incredible, with many stalls serving dishes that are hard to find on the island. Whether it's a specific type of 'Apom' or a unique mainland curry, Butterworth is a destination that rewards those who take the time to explore.",
+      snippet: "Discover the parks, art, and unique food stalls that make Butterworth a mainland treasure."
+    },
+    {
+      id: 48,
+      title: "The Legend of the Tiger of Penang",
+      content: "Centuries ago, Malaya was home to many Royal Tigers. In Penang, legends speak of a spectral tiger that protected the sacred hills. Some early settlers claimed to have seen its glowing eyes near the caves of **Batu Maung**.\n\nWhile the tigers have long been protected in deep jungles, their image remains a symbol of strength and guardianship in local culture. These stories remind us of the island's wild past and the importance of respecting the natural world that surrounds our modern developments.",
+      snippet: "Exploring the local folklore and cultural significance of the legendary Penang tiger."
+    },
+    {
+      id: 49,
+      title: "Exploring the Armenian Street Markets",
+      content: "Armenian Street is the heart of George Town's heritage zone, especially on weekends when the street markets are in full swing. You can find everything from handmade jewelry and vintage postcards to traditional Peranakan snacks.\n\nThe atmosphere is vibrant and inclusive, with street performers adding to the charm. It's the perfect place to pick up unique souvenirs and support local artisans who are keeping traditional crafts alive in a modernizing world.",
+      snippet: "A guide to the crafts, snacks, and vibrant energy of the Armenian Street weekend markets."
+    },
+    {
+      id: 50,
+      title: "The Future of Public Transport in George Town",
+      content: "As George Town continues to grow, its transport needs are evolving. The proposed **Penang Bay** project aims to rejuvenate the waterfront and introduce more sustainable transport options like water taxis and improved cycling lanes.\n\nThe integration of smart technology into the public bus system is also improving efficiency and accessibility. The goal is to create a city where residents and tourists can move freely and sustainably, preserving the heritage while embracing modern mobility.",
+      snippet: "How Penang is planning for a more sustainable and efficient transport future."
+    },
+    {
+      id: 51,
+      title: "Growing Your Own Herbs in a Condo",
+      content: "You don't need a backyard to have a garden. Many Penangites are successfully growing herbs like **Laksa leaf (Kesum)**, **Mint**, and **Bird's Eye Chili** in small balcony pots. The tropical humidity is perfect for these plants.\n\nKey to success is ensuring good drainage and the right amount of morning sun. Fresh herbs not only elevate your home-cooked meals but also bring a touch of green serenity to high-rise living. It's a small but meaningful way to connect with nature every day.",
+      snippet: "A beginner's guide to successful herb gardening on a tropical condo balcony."
+    },
+    {
+      id: 52,
+      title: "The Best Late-Night Eats in Penang",
+      content: "Penang never sleeps when it comes to food. From the legendary **Nasi Kandar Beratur** that only opens at 10 PM to the 24-hour dim sum spots, there's always something to satisfy your midnight cravings.\n\nFor a lighter snack, many roadside burger stalls (Ramly burgers) offer a uniquely Malaysian experience. Exploring the city's food scene after dark reveals a different, more laid-back character that every visitor should experience at least once.",
+      snippet: "Where to find the most delicious and iconic street food after the sun goes down."
+    },
+    {
+      id: 53,
+      title: "Traditional Batik Making: A Dying Art?",
+      content: "Batik is one of the most beautiful expressions of Malay culture. In Penang, several workshops still use traditional wax-resist dyeing techniques to create intricate patterns on silk and cotton.\n\nWhile modern printing is faster, the soul and detail of hand-painted batik are irreplaceable. Supporting local batik artists ensures that this ancient skill is passed down to future generations, keeping our cultural tapestry rich and vibrant. Many workshops even offer classes for those who want to try it themselves.",
+      snippet: "An introduction to the heritage and delicate process of hand-painted batik in Penang."
+    },
+    {
+      id: 54,
+      title: "The History of the Penang Ferry",
+      content: "The iconic car ferries were once the only way to reach the island. While most have been replaced by faster passenger catamarans, their historical significance remains. They were a symbol of the connection between the island and the mainland for almost a century.\n\nMany residents still have fond memories of the slow, breezy crossing that marked the beginning of many a holiday. Modernizing the ferry service while honoring its heritage is a key part of Penang's ongoing maritime legacy.",
+      snippet: "The evolution and nostalgia of the ferry system that defined Penang for generations."
+    },
+    {
+      id: 55,
+      title: "The Best Hiking Trails for Families",
+      content: "Penang is a hiker's paradise. Trails like the **Botanical Garden path** and the **Cherok Tok Kun** on the mainland are perfect for families with children. They offer well-maintained paths and plenty of opportunities to see monkeys and diverse plant life.\n\nFor a more challenging hike with a great reward, the trail to **Muka Head Lighthouse** offers stunning coastal views. Always remember to bring plenty of water, wear proper shoes, and respect the jungle's natural residents.",
+      snippet: "A curated list of family-friendly hiking spots that offer both exercise and nature education."
+    },
+    {
+      id: 56,
+      title: "Exploring the Clan Jetties at Night",
+      content: "While popular during the day, the **Clan Jetties** take on a peaceful, atmospheric quality at night. The sound of the water lapping against the stilts and the faint glow of lanterns from the homes create a sense of timelessness.\n\nRespecting the residents' privacy is key, but a quiet walk along the jetties after dinner is a wonderful way to soak in the coastal heritage. Some jetties also have small, hidden cafes that serve tea with a mesmerizing view of the channel.",
+      snippet: "Experience the quiet beauty and maritime magic of the clan jetties after dark."
+    },
+    {
+      id: 57,
+      title: "The Influence of British Colonialism on Penang's Architecture",
+      content: "Penang's landscape is dotted with magnificent colonial-era buildings, from the **City Hall** to the grand mansions along **Millionaires' Row**. This architectural style blended Western classical elements with adaptations for the tropical climate.\n\nHigh ceilings, large windows for ventilation, and ornate porticos characterize these structures. Today, many have been beautifully restored as boutique hotels and museums, serving as a reminder of the island's complex and diverse history under British rule.",
+      snippet: "How colonial-era design shaped the unique architectural character of George Town."
+    },
+    {
+      id: 58,
+      title: "The Secret Gardens of George Town",
+      content: "Beyond the public parks, many of George Town's historic shophouses hide beautiful internal courtyards. These 'secret gardens' were designed for air circulation and light, and often featured elaborate tilework and small water features.\n\nSome of these courtyards are now part of boutique hotels and cafes, allowing visitors to experience the tranquility that these traditional designs offered. They are a testament to the sophisticated urban planning of the city's early developers.",
+      snippet: "Step inside the hidden courtyards that provide peace and light in the heart of the city."
+    },
+    {
+      id: 59,
+      title: "The Best Spots for Bird Watching",
+      content: "Penang's diverse environments, from mangroves to hills, make it a haven for bird watchers. At **Air Itam Dam**, you can spot raptors and smaller tropical birds, while the **Seberang Perai** rice fields are perfect for seeing migratory species.\n\nThe **Penang Bird Park** on the mainland also offers a great introduction to regional and exotic species. Whether you're an experienced birder or a curious beginner, the island's avian residents are sure to delight.",
+      snippet: "Where to go to see the beautiful and diverse bird species that call Penang home."
+    },
+    {
+      id: 60,
+      title: "Community Living: Tips for Happy Neighbors",
+      content: "Living in a condo is all about shared space. Small gestures like holding the lift, keeping noise levels low in the evenings, and participating in community events can make a huge difference in building a positive environment.\n\nUsing community apps to share resources or organize group activities also helps build a sense of belonging. The 'Nearby Exchange' is a great example of how technology can bring us closer together, proving that even in a big building, we can all be good neighbors.",
+      snippet: "How small actions and community engagement can lead to a happier life for all residents."
     }
   ]
 };

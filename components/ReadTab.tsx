@@ -172,6 +172,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
         content: c1.content,
         snippet: c1.snippet,
         type: 'COLUMN',
+        columnNumber: 1,
         createdAt: yesterdayStr
       }));
     }
@@ -184,6 +185,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
         content: c2.content,
         snippet: c2.snippet,
         type: 'COLUMN',
+        columnNumber: 2,
         createdAt: todayStr
       }));
     }
@@ -271,6 +273,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
           content: columnData.content,
           snippet: columnData.snippet,
           type: 'COLUMN',
+          columnNumber: columnData.id,
           createdAt: new Date().toISOString()
         }));
       }
@@ -330,7 +333,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
           <h1 className="text-2xl font-black text-gray-900 leading-tight">{selectedItem.title}</h1>
 
           <div className="prose prose-sm max-w-none prose-indigo">
-            {profile ? (
+            {profile || (selectedItem.type === 'NOVEL' && selectedItem.chapterNumber <= 15) || (selectedItem.type === 'COLUMN' && (selectedItem.columnNumber || 0) <= 15) ? (
               <div className="text-gray-700 leading-relaxed font-medium">
                 <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
               </div>
@@ -436,7 +439,7 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
                     <div className="flex-grow min-w-0 text-left">
                       <h4 className="text-xs font-black text-gray-700 truncate uppercase tracking-tight">{item.title}</h4>
                       <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-                        {format(new Date(item.createdAt), 'MMM dd')} • {item.type === 'NOVEL' ? `Chapter ${item.chapterNumber}` : 'Local Insight'}
+                        {format(new Date(item.createdAt), 'MMM dd')} • {item.type === 'NOVEL' ? `Chapter ${item.chapterNumber}` : `Column ${item.columnNumber || ''}`}
                       </p>
                     </div>
                     <ChevronRight size={14} className="text-gray-200 group-hover:text-indigo-300" />
