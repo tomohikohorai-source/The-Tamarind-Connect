@@ -56,11 +56,6 @@ service cloud.firestore {
 
     // Rules for Collections
 
-    // Connection check
-    match /test/connection {
-      allow read: if true;
-    }
-
     match /users/{userId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
@@ -81,20 +76,11 @@ service cloud.firestore {
     match /marketItems/{itemId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isValidMarketItem(incoming());
-      allow update: if (
-        isSignedIn() && (
-          // Action: Edit (Owner)
-          (existing().userId == request.auth.uid && isValidMarketItem(incoming()) && 
-           incoming().userId == existing().userId) || // userId is immutable
-          
-          // Action: Process Transaction (Buyer or Seller)
-          (incoming().diff(existing()).affectedKeys().hasOnly([
-            'requestStatus', 'buyerId', 'buyerNickname', 'buyerAvatarIcon', 
-            'comments', 'likes', 'lastUpdated', 'status',
-            'buyerConfirmedCompletion', 'sellerConfirmedCompletion', 
-            'buyerRequestedCancellation', 'sellerRequestedCancellation'
-          ]) && incoming().lastUpdated == request.time)
-        )
+      allow update: if isSignedIn() && (
+        // Action: Edit (Owner)
+        (existing().userId == request.auth.uid && isValidMarketItem(incoming())) ||
+        // Action: Request/Comment (Others)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['requestStatus', 'buyerId', 'buyerNickname', 'buyerAvatarIcon', 'comments', 'likes', 'lastUpdated']))
       );
       allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
     }
@@ -115,19 +101,12 @@ service cloud.firestore {
 
     match /readContent/{contentId} {
       allow read: if true;
-      allow create: if isSignedIn(); 
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-
-    match /readSeriesState/{stateId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /condos/{condoId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSignedIn(); // Temporarily allow for migration, should be isAdmin() in production
     }
   }
 }

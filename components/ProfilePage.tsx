@@ -645,21 +645,6 @@ export const ProfilePage: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <button 
-            onClick={() => window.location.hash = '#about'} 
-            className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-pink-500 transition-colors text-left pl-6"
-          >
-            {t.about}
-          </button>
-          <button 
-            onClick={() => window.location.hash = '#privacy'} 
-            className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-pink-500 transition-colors text-left pl-6"
-          >
-            {t.privacyPolicy}
-          </button>
-        </div>
-
         {isOwnProfile && (
           <button onClick={onLogout} className="w-full py-5 bg-white border-2 border-red-50 text-red-400 rounded-[32px] font-black uppercase text-[11px] tracking-[0.2em] shadow-sm active:bg-red-50 transition-all mt-4">
             {t.logout}

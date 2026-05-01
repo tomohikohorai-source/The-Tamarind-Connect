@@ -70,6 +70,16 @@ export const About: React.FC<AboutProps> = ({ onBack, language }) => {
           </div>
         </div>
 
+        <div className="space-y-4 pt-4 border-t border-gray-100 italic">
+          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Operator Information</h3>
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-gray-700">Nearby Exchange Secretariat</p>
+            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+              Our Goal: To activate mutual aid within the condominium and make life more convenient.
+            </p>
+          </div>
+        </div>
+
         <div className="space-y-4 pt-4 border-t border-gray-100">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Contact Us</h3>
           <div className="flex items-center gap-3 text-gray-700">

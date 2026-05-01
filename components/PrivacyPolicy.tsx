@@ -41,7 +41,9 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, language }
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
               We collect information that you provide directly to us, including your name, email address, 
-              condo residency details, and any content you post in our marketplace or skill exchange.
+              condo residency details, and any content you post in our marketplace or skill exchange. 
+              We also automatically collect certain technical information, such as your IP address and 
+              device characteristics, when you use our services.
             </p>
           </section>
 
@@ -53,31 +55,46 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, language }
             <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
               <li>To provide and maintain our Service</li>
               <li>To notify you about changes to our Service</li>
-              <li>To allow residents to connect with each other</li>
+              <li>To allow residents to connect with each other securely</li>
               <li>To provide customer care and support</li>
               <li>To monitor the usage of the Service for security purposes</li>
+              <li>To improve user experience and interface</li>
             </ul>
           </section>
 
           <section className="space-y-3">
             <div className="flex items-center gap-2 text-indigo-500">
               <Scale size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">3. Data Sharing</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest">3. Data Sharing & Third Parties</h3>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              We do not sell your personal data. Your contact information is only shared with other users 
-              when you explicitly initiate or accept an exchange, or when you interact in the community forum.
+              We do not sell your personal data. We may use third-party service providers (like Google Analytics and AdSense) 
+              to monitor and analyze the use of our Service or to show advertisements. 
+              These third parties have their own privacy policies regarding how they handle data.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-indigo-500">
+              <ShieldCheck size={16} />
+              <h3 className="text-xs font-black uppercase tracking-widest">4. Cookies and AdSense</h3>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Nearby Exchange uses cookies to enhance your experience. Third party vendors, including Google, 
+              use cookies to serve ads based on a user's prior visits to your website or other websites. 
+              Google's use of advertising cookies enables it and its partners to serve ads to users based 
+              on their visit to your sites and/or other sites on the Internet.
             </p>
           </section>
 
           <section className="space-y-3">
             <div className="flex items-center gap-2 text-indigo-500">
               <FileText size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">4. Security</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest">5. Your Rights</h3>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">
-              The security of your data is important to us, and we use industry-standard encryption 
-              to protect your personal information during transmission and storage.
+              You have the right to access, update, or delete the personal information we hold about you. 
+              If you wish to exercise these rights, please contact us at the email address provided below.
             </p>
           </section>
         </div>

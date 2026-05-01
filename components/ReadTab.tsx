@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { db, collection, query, orderBy, onSnapshot, addDoc, getDocs, where, limit, doc, getDoc, setDoc, updateDoc, deleteDoc } from '../firebase';
+import { db, auth, collection, query, orderBy, onSnapshot, addDoc, getDocs, where, limit, doc, getDoc, setDoc, updateDoc, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
 import { ReadContent, ReadSeriesState, UserProfile } from '../types';
 import { translations } from '../translations';
 import { Book, Lightbulb, ChevronRight, Lock, Clock, History, BookOpen } from 'lucide-react';
@@ -27,6 +27,10 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
   const hasCleanedUpRef = React.useRef(false);
 
   useEffect(() => {
+    if (!auth.currentUser) {
+      setLoading(false);
+      return;
+    }
     const q = query(collection(db, "readContent"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
       const data: ReadContent[] = [];
@@ -44,12 +48,14 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
         data.forEach(item => {
           const key = `${item.type}-${item.title}-${item.chapterNumber || ''}`;
           if (seen.has(key)) {
-            deleteDoc(doc(db, "readContent", item.id)).catch(console.error);
+            deleteDoc(doc(db, "readContent", item.id)).catch(err => handleFirestoreError(err, OperationType.DELETE, `readContent/${item.id}`));
           } else {
             seen.add(key);
           }
         });
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, "readContent");
     });
     return () => unsub();
   }, []);

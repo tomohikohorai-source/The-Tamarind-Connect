@@ -1,6 +1,6 @@
 {
   "name": "Nearby Exchange",
-  "description": "A community-focused scheduling and real-time status app for condominium playground facilities.",
+  "description": "A community marketplace and skill exchange platform for condominium residents to connect, share resources, and build neighborhood trust.",
   "requestFramePermissions": [
     "camera",
     "geolocation"

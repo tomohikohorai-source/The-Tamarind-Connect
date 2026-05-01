@@ -15,6 +15,7 @@ import { WantedItemForm } from './components/WantedItemForm';
 import { ReadTab } from './components/ReadTab';
 import { About } from './components/About';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
 import { LoginRequiredModal } from './components/LoginRequiredModal';
 import { store } from './services/store';
 import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
@@ -25,7 +26,8 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { 
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
-  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where, setDoc
+  onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where, setDoc,
+  handleFirestoreError, OperationType, serverTimestamp
 } from './firebase';
 
 export const App: React.FC = () => {
@@ -42,6 +44,7 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>('MARKET');
   const [showAbout, setShowAbout] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTos, setShowTos] = useState(false);
   const [tabResetToggle, setTabResetToggle] = useState(false);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'en');
   const t = translations[language];
@@ -172,13 +175,15 @@ export const App: React.FC = () => {
   // Migration: Set condoId for all users to "The Tamarind" if missing
   useEffect(() => {
     const migrateUser = async () => {
-      // Ensure all condo master data exists
-      try {
-        for (const condo of CONDOS) {
-          await setDoc(doc(db, "condos", condo.id), condo, { merge: true });
+      // Ensure all condo master data exists - ONLY for admins
+      if (profile?.role === 'admin' || auth.currentUser?.email === 'tomohiko.horai@gmail.com') {
+        try {
+          for (const condo of CONDOS) {
+            await setDoc(doc(db, "condos", condo.id), condo, { merge: true });
+          }
+        } catch (e) {
+          console.error("Condo master data error:", e);
         }
-      } catch (e) {
-        console.error("Condo master data error:", e);
       }
 
       if (profile && !profile.condoId) {
@@ -231,6 +236,7 @@ export const App: React.FC = () => {
       if (path === '#profile') setActiveTab('PROFILE');
       else if (path === '#about') setShowAbout(true);
       else if (path === '#privacy') setShowPrivacy(true);
+      else if (path === '#tos') setShowTos(true);
       else if (path === '#market' || path === '') {
         setActiveTab('MARKET');
         setTargetMarketId(id);
@@ -249,9 +255,10 @@ export const App: React.FC = () => {
       else if (path === '#sell') setShowMarketForm(true);
       else if (path === '#post-skill') setShowSkillForm(true);
       else if (path === '#post-wanted') setShowWantedForm(true);
-      else if (path !== '#about' && path !== '#privacy') { 
+      else if (path !== '#about' && path !== '#privacy' && path !== '#tos') { 
         setShowAbout(false);
         setShowPrivacy(false);
+        setShowTos(false);
         setShowCheckIn(false); 
         setEditingActivity(undefined);
         setShowMarketForm(false);
@@ -271,7 +278,13 @@ export const App: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        let userDoc;
+        try {
+          userDoc = await getDoc(doc(db, "users", user.uid));
+        } catch (error) {
+          handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+          return;
+        }
         if (userDoc.exists()) {
           let userData = userDoc.data() as UserProfile;
           const today = new Date();
@@ -308,7 +321,7 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (appState === 'READY') {
+    if (appState === 'READY' && auth.currentUser) {
       const qAct = query(
         collection(db, "activities")
       );
@@ -323,7 +336,10 @@ export const App: React.FC = () => {
 
         filtered.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
         setActivities(filtered);
-      }, (error) => { setIsLive(false); });
+      }, (error) => { 
+        setIsLive(false);
+        handleFirestoreError(error, OperationType.GET, "activities");
+      });
 
       const qMarket = query(
         collection(db, "marketItems")
@@ -349,6 +365,7 @@ export const App: React.FC = () => {
       }, (error) => {
         console.error("Market snapshot error:", error);
         setMarketLoading(false);
+        handleFirestoreError(error, OperationType.GET, "marketItems");
       });
 
       const qSkills = query(
@@ -375,6 +392,7 @@ export const App: React.FC = () => {
       }, (error) => {
         console.error("Skills snapshot error:", error);
         setSkillsLoading(false);
+        handleFirestoreError(error, OperationType.GET, "skills");
       });
 
       const qWanted = query(
@@ -401,6 +419,7 @@ export const App: React.FC = () => {
       }, (error) => {
         console.error("Wanted snapshot error:", error);
         setWantedLoading(false);
+        handleFirestoreError(error, OperationType.GET, "wantedItems");
       });
 
       const qRead = query(
@@ -793,6 +812,9 @@ export const App: React.FC = () => {
     setEditingMarketItem(undefined);
     setEditingSkill(undefined);
     setEditingWantedItem(undefined);
+    setShowAbout(false);
+    setShowPrivacy(false);
+    setShowTos(false);
     window.location.hash = activeTab === 'PLAY' ? 'play' : activeTab.toLowerCase();
   };
 
@@ -821,12 +843,20 @@ export const App: React.FC = () => {
         });
       }
       closeModals();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { 
+      const op = editingActivity ? OperationType.UPDATE : OperationType.CREATE;
+      const path = editingActivity ? `activities/${editingActivity.id}` : "activities";
+      handleFirestoreError(e, op, path);
+    }
   };
 
   const handleDeleteActivity = async (id: string) => {
     if (confirm(t.deleteConfirm)) {
-      try { await deleteDoc(doc(db, "activities", id)); } catch (e: any) { alert(e.message); }
+      try { 
+        await deleteDoc(doc(db, "activities", id)); 
+      } catch (e: any) { 
+        handleFirestoreError(e, OperationType.DELETE, `activities/${id}`);
+      }
     }
   };
 
@@ -844,7 +874,11 @@ export const App: React.FC = () => {
         });
       }
       closeModals();
-    } catch (e: any) { alert(e.message); }
+    } catch (e: any) { 
+      const op = editingMarketItem ? OperationType.UPDATE : OperationType.CREATE;
+      const path = editingMarketItem ? `marketItems/${editingMarketItem.id}` : "marketItems";
+      handleFirestoreError(e, op, path);
+    }
   };
 
   const handleMarketDelete = async (id: string) => {
@@ -1329,6 +1363,23 @@ export const App: React.FC = () => {
             <AuthScreen language={language} onLanguageChange={handleLanguageChange} />
           )
         )}
+
+        {/* Footer Area for AdSense Compliance & Professionalism */}
+        <footer className="py-12 px-6 border-t border-gray-100 mt-8 mb-32 text-center space-y-6">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            <button onClick={() => setShowAbout(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">About Us</button>
+            <button onClick={() => setShowPrivacy(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Privacy Policy</button>
+            <button onClick={() => setShowTos(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Terms of Service</button>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter italic">
+              Nearby Exchange • Connecting Neighbors in Penang
+            </p>
+            <p className="text-[8px] text-gray-200 uppercase tracking-[0.2em]">
+              © 2026 Nearby Exchange Community
+            </p>
+          </div>
+        </footer>
       </main>
 
       {showLoginRequired && (
@@ -1426,6 +1477,12 @@ export const App: React.FC = () => {
       {showPrivacy && (
         <div className="fixed inset-0 z-[600]">
           <PrivacyPolicy onBack={closeModals} language={language} />
+        </div>
+      )}
+
+      {showTos && (
+        <div className="fixed inset-0 z-[600]">
+          <TermsOfService onBack={closeModals} language={language} />
         </div>
       )}
 

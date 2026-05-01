@@ -1,24 +1,80 @@
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch, where } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBBh6tz0moZgu9f346ECjFBAzw_-KSCiTQ",
-  authDomain: "the-tamarind-connect.firebaseapp.com",
-  projectId: "the-tamarind-connect",
-  storageBucket: "the-tamarind-connect.firebasestorage.app",
-  messagingSenderId: "936861918762",
-  appId: "1:936861918762:web:73c991a8a4449812118553",
-  measurementId: "G-XCK1G5KLQX"
-};
+import { 
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, 
+  query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, 
+  writeBatch, where, getDocFromServer, serverTimestamp 
+} from 'firebase/firestore';
+import { 
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+  onAuthStateChanged, signOut, updateProfile 
+} from 'firebase/auth';
+import firebaseConfig from './firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Using firestoreDatabaseId from config as per instructions
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId); 
 export const auth = getAuth(app);
 
-// Added getDocs and writeBatch to the export list to fix the error in App.tsx
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Test connection on boot as suggested in instructions
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+    console.log("Firestore connection check successful");
+  } catch (error) {
+    console.log("Firestore connection check (optional):", error);
+  }
+}
+testConnection();
+
 export { 
-  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch, where,
+  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch, where, serverTimestamp,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile
 };
