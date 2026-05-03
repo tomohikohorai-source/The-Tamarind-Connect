@@ -27,10 +27,6 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
   const hasCleanedUpRef = React.useRef(false);
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      setLoading(false);
-      return;
-    }
     const q = query(collection(db, "readContent"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
       const data: ReadContent[] = [];
@@ -38,11 +34,13 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
       setContents(data);
       setLoading(false);
       
-      // Check if we need to post today's content
-      checkAndPost(data);
+      // Check if we need to post today's content (only for signed in users to avoid permission errors)
+      if (auth.currentUser) {
+        checkAndPost(data);
+      }
 
-      // One-time cleanup for duplicates
-      if (!hasCleanedUpRef.current && data.length > 0) {
+      // One-time cleanup for duplicates (only for signed in users)
+      if (auth.currentUser && !hasCleanedUpRef.current && data.length > 0) {
         hasCleanedUpRef.current = true;
         const seen = new Set<string>();
         data.forEach(item => {
