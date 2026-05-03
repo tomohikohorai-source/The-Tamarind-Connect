@@ -321,7 +321,7 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (appState === 'READY' && auth.currentUser) {
+    if (appState === 'READY') {
       const qAct = query(
         collection(db, "activities")
       );
