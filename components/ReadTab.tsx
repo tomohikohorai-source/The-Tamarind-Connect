@@ -12,11 +12,12 @@ interface ReadTabProps {
   profile: UserProfile | null;
   language: 'en' | 'zh' | 'ko' | 'ja';
   onShowAuth: () => void;
+  tabResetToggle?: boolean;
 }
 
 import { ReadSkeleton } from './Skeleton';
 
-export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth }) => {
+export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth, tabResetToggle }) => {
   const t = translations[language];
   const [contents, setContents] = useState<ReadContent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +26,21 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth 
   const lastCheckRef = React.useRef<number>(0);
   const [selectedItem, setSelectedItem] = useState<ReadContent | null>(null);
   const hasCleanedUpRef = React.useRef(false);
+
+  useEffect(() => {
+    setSelectedItem(null);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const main = document.querySelector('main');
+    if (main) main.scrollTo(0, 0);
+  }, [tabResetToggle]);
+
+  useEffect(() => {
+    if (selectedItem) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      const main = document.querySelector('main');
+      if (main) main.scrollTo(0, 0);
+    }
+  }, [selectedItem?.id]);
 
   useEffect(() => {
     const q = query(collection(db, "readContent"), orderBy("createdAt", "desc"));

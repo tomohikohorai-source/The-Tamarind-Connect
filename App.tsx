@@ -1297,6 +1297,7 @@ export const App: React.FC = () => {
             profile={profile}
             language={language}
             onShowAuth={() => setShowAuthOverlay(true)}
+            tabResetToggle={tabResetToggle}
           />
         )}
         {activeTab === 'SKILLS' && (

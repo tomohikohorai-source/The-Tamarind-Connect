@@ -230,10 +230,16 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                <ChevronLeft size={16} /> {t.skill}
              </button>
              <button 
-               onClick={() => onLike(viewingSkill.id)} 
-               className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingSkill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+               onClick={() => {
+                 if (ensureAuth) {
+                   ensureAuth(() => onLike(viewingSkill.id));
+                 } else {
+                   onLike(viewingSkill.id);
+                 }
+               }} 
+               className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${viewingSkill.likes?.includes(profile?.uid || '') ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
              >
-               <Heart size={16} fill={viewingSkill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+               <Heart size={16} fill={viewingSkill.likes?.includes(profile?.uid || '') ? "currentColor" : "none"} />
                {viewingSkill.likes && viewingSkill.likes.length > 0 && <span>{viewingSkill.likes.length}</span>}
              </button>
              <button 
@@ -444,7 +450,13 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                     onKeyDown={e => e.key === 'Enter' && handleSendComment(viewingSkill.id)}
                   />
                   <button 
-                    onClick={() => handleSendComment(viewingSkill.id)} 
+                    onClick={() => {
+                      if (ensureAuth) {
+                        ensureAuth(() => handleSendComment(viewingSkill.id));
+                      } else {
+                        handleSendComment(viewingSkill.id);
+                      }
+                    }} 
                     disabled={!(commentInputs[viewingSkill.id] || '').trim()}
                     className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingSkill.id] || '').trim() ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-300'}`}
                   >
@@ -561,7 +573,14 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               className={`bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex items-center gap-4 relative overflow-hidden group ${!canClick ? 'opacity-80 grayscale-[0.5]' : ''}`}
             >
               <div 
-                onClick={(e) => { e.stopPropagation(); onLike(skill.id); }}
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (ensureAuth) {
+                    ensureAuth(() => onLike(skill.id));
+                  } else {
+                    onLike(skill.id);
+                  }
+                }}
                 className={`absolute top-2 right-2 z-30 p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 cursor-pointer ${profile && skill.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
               >
                 <Heart size={10} fill={profile && skill.likes?.includes(profile.uid) ? "currentColor" : "none"} />
