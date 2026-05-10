@@ -279,7 +279,14 @@ export const translations = {
     discussion: "Discussion",
     genres: "Genres",
     newComment: "New Comment",
-    statusUpdate: "Status Update"
+    statusUpdate: "Status Update",
+    badgeCriteria: "Badge Criteria",
+    listingsCount: "Listings",
+    salesCount: "Sales",
+    purchasesCount: "Purchases",
+    likesReceived: "Likes Received",
+    likesGiven: "Likes Given",
+    criteriaAny: "Unlock with any one of:"
   },
   zh: {
     appName: "邻里交换",
@@ -1118,6 +1125,13 @@ export const translations = {
     discussion: "ディスカッション",
     genres: "ジャンル",
     newComment: "新着コメント",
-    statusUpdate: "ステータスの更新"
+    statusUpdate: "ステータスの更新",
+    badgeCriteria: "バッジ獲得基準",
+    listingsCount: "出品数",
+    salesCount: "販売数",
+    purchasesCount: "購入数",
+    likesReceived: "いいね獲得数",
+    likesGiven: "いいね実施数",
+    criteriaAny: "いずれか一つの条件を満たすと獲得:"
   }
 };

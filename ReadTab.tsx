@@ -1,0 +1,278 @@
+
+import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
+import { Activity, LocationType, UserProfile } from '../types';
+import { LOCATION_METADATA } from '../constants';
+import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 'date-fns';
+import { enUS } from 'date-fns/locale';
+import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles } from 'lucide-react';
+import { AffiliateBanner } from './AffiliateBanner';
+
+import { Language, translations } from '../translations';
+
+interface Props {
+  activities: Activity[];
+  profile: UserProfile | null;
+  language?: Language;
+  acknowledgedMap: Record<string, string>;
+  onEdit: (activity: Activity) => void;
+  onDelete: (id: string) => void;
+  onUpdateProfile: (profile: UserProfile) => void;
+  onViewProfile?: (userId: string) => void;
+}
+
+const ActivityCard = memo(({ a, profile, meta, isNow, isNew, isUpdated, onEdit, onDelete, onViewProfile, language = 'en' }: { 
+  a: Activity, 
+  profile: UserProfile | null, 
+  meta: any, 
+  isNow: boolean, 
+  isNew: boolean, 
+  isUpdated: boolean,
+  onEdit: (a: Activity) => void,
+  onDelete: (a: string) => void,
+  onViewProfile?: (userId: string) => void,
+  language?: Language
+}) => {
+  const t = translations[language];
+  const isMine = profile && a.userId === profile.uid;
+
+  return (
+    <div className={`p-5 rounded-[32px] bg-white border-2 ${isNow ? meta.borderColor : 'border-gray-50'} shadow-sm relative transition-all active:scale-[0.98]`}>
+      {(isNew || isUpdated) && (
+        <div className="absolute -top-1 -left-1 flex z-10">
+          <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter text-white shadow-lg animate-bounce flex items-center gap-1 ${isNew ? 'bg-pink-400' : 'bg-blue-400'}`}>
+            <Sparkles size={8} /> {isNew ? t.new : t.updated}
+          </div>
+        </div>
+      )}
+
+      <div className="absolute top-0 right-0 flex items-center">
+        {a.isInvitation && (
+          <div className="bg-orange-400 text-white px-3 py-1.5 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 rounded-bl-xl shadow-sm animate-pulse">
+            <Megaphone size={12} /> Invite
+          </div>
+        )}
+        {isNow && (
+          <div className={`px-4 py-1.5 text-[9px] font-black uppercase ${a.isInvitation ? 'rounded-bl-none' : 'rounded-bl-2xl'} ${meta.bgColor} ${meta.textColor} tracking-widest border-l border-white/20`}>Live</div>
+        )}
+      </div>
+      <div className="flex justify-between items-center mb-5">
+        <div className="flex items-center gap-2 text-gray-800 font-black">
+          <Clock size={16} className="text-pink-300" />
+          <span className="text-sm tracking-tight">{format(new Date(a.startTime), 'HH:mm')} - {format(new Date(a.endTime), 'HH:mm')}</span>
+        </div>
+        {isMine && (
+          <div className="flex gap-2 mr-10">
+            <button onClick={() => onEdit(a)} className="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-pink-50 hover:text-pink-400 border border-gray-100 transition-colors"><Edit3 size={14} /></button>
+            <button onClick={() => { if(confirm(t.deleteItem)) onDelete(a.id); }} className="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-50 hover:text-red-400 border border-gray-100 transition-colors"><Trash2 size={14} /></button>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex -space-x-4 items-center">
+          {(a.childAvatars || []).map((avatar, idx) => (
+            <div key={idx} className="w-14 h-14 rounded-[20px] bg-white flex items-center justify-center text-3xl shadow-lg border-2 border-gray-50 relative" style={{ zIndex: 10 - idx }}>{avatar}</div>
+          ))}
+        </div>
+        <div className="flex-grow min-w-0">
+          <div className="text-[10px] text-pink-500 font-black uppercase tracking-widest mb-1 opacity-80">{t.players}</div>
+          <div className="text-[15px] font-black text-gray-800 truncate">{a.childNicknames.join(', ')}</div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 border-t border-gray-50 pt-4 mt-2">
+        <button 
+          onClick={() => onViewProfile && onViewProfile(a.userId)}
+          className="flex flex-col items-center gap-1 bg-gray-50/80 px-3 py-2 rounded-2xl shrink-0 hover:bg-pink-50 transition-colors"
+        >
+          <div className="text-lg leading-none">{a.parentAvatarIcon}</div>
+          <div className="text-[8px] font-black text-gray-400 uppercase tracking-tighter max-w-[50px] truncate text-center leading-tight">
+            {a.parentNickname}
+          </div>
+        </button>
+        <div className="flex-grow min-w-0">
+          {a.message ? (
+            <div className="flex gap-2 items-start">
+              <MessageCircle size={10} className="text-pink-300 mt-0.5 shrink-0" />
+              <p className="text-[11px] text-gray-400 font-medium truncate italic">{a.message}</p>
+            </div>
+          ) : (
+             <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">{t.noMessage}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export const Timeline: React.FC<Props> = ({ activities, profile, language = 'en', acknowledgedMap, onEdit, onDelete, onViewProfile }) => {
+  const t = translations[language];
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchY, setTouchY] = useState<number | null>(null);
+  const [animationKey, setAnimationKey] = useState(0);
+  
+  const dateButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const dates = useMemo(() => {
+    return Array.from({ length: 8 }, (_, i) => addDays(new Date(), i - 1));
+  }, []);
+
+  useEffect(() => {
+    const activeIndex = dates.findIndex(d => isSameDay(d, selectedDate));
+    if (activeIndex !== -1 && dateButtonsRef.current[activeIndex]) {
+      dateButtonsRef.current[activeIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [selectedDate, dates]);
+
+  const filteredActivities = useMemo(() => {
+    return activities.filter(a => isSameDay(new Date(a.startTime), selectedDate));
+  }, [activities, selectedDate]);
+
+  const checkIsNow = (activity: Activity) => {
+    const now = new Date();
+    return isWithinInterval(now, { start: new Date(activity.startTime), end: new Date(activity.endTime) });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+    setTouchY(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null || touchY === null) return;
+    
+    const touchEnd = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const xDiff = touchStart - touchEnd;
+    const yDiff = touchY - touchEndY;
+
+    if (Math.abs(xDiff) > Math.abs(yDiff) && Math.abs(xDiff) > 70) {
+      if (xDiff > 0) {
+        const nextDay = addDays(selectedDate, 1);
+        const maxDate = dates[dates.length - 1];
+        if (isBefore(selectedDate, maxDate)) {
+          setSelectedDate(nextDay);
+          setAnimationKey(prev => prev + 1);
+        }
+      } else {
+        const prevDay = addDays(selectedDate, -1);
+        const minDate = dates[0];
+        if (isAfter(selectedDate, minDate)) {
+          setSelectedDate(prevDay);
+          setAnimationKey(prev => prev + 1);
+        }
+      }
+    }
+    
+    setTouchStart(null);
+    setTouchY(null);
+  };
+
+  const renderSection = (type: LocationType) => {
+    const meta = LOCATION_METADATA[type];
+    const sectionActivities = filteredActivities.filter(a => a.location === type).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    return (
+      <div key={type} className="mb-8">
+        <div className={`flex items-center gap-2 mb-4 p-3.5 rounded-2xl ${meta.bgColor} ${meta.textColor} shadow-sm border ${meta.borderColor}`}>
+          <span className="text-xl">{meta.icon}</span>
+          <h3 className="font-extrabold text-[12px] uppercase tracking-[0.1em]">{meta.label}</h3>
+        </div>
+        {sectionActivities.length > 0 ? (
+          <div className="space-y-5">
+            {sectionActivities.map(a => {
+              const isMine = profile && a.userId === profile.uid;
+              const prevSeenUpdated = acknowledgedMap[a.id];
+              const isNew = !prevSeenUpdated && !isMine;
+              const isUpdated = prevSeenUpdated && prevSeenUpdated !== a.lastUpdated && !isMine;
+
+              return (
+                <ActivityCard 
+                  key={a.id}
+                  a={a}
+                  profile={profile}
+                  meta={meta}
+                  isNow={checkIsNow(a)}
+                  isNew={isNew}
+                  isUpdated={isUpdated}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onViewProfile={onViewProfile}
+                  language={language}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-300 text-[10px] font-black border-2 border-dashed border-gray-100 rounded-[32px] uppercase tracking-[0.2em] bg-gray-50/30">{t.emptySchedule}</div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-4 space-y-6 select-none">
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-10 pt-2 px-2 items-start">
+        {dates.map((d, i) => {
+          const isToday = isSameDay(d, new Date());
+          const isSelected = isSameDay(d, selectedDate);
+          
+          return (
+            <button 
+              key={i} 
+              ref={el => { dateButtonsRef.current[i] = el; }}
+              onClick={() => { setSelectedDate(d); setAnimationKey(prev => prev + 1); }} 
+              className={`flex flex-col items-center min-w-[72px] p-4 rounded-[28px] transition-all relative ${
+                isSelected 
+                  ? 'bg-pink-400 text-white shadow-xl scale-105 font-black' 
+                  : isToday
+                    ? 'bg-white text-pink-400 border-2 border-pink-100 shadow-sm' 
+                    : 'bg-white text-gray-400 border-2 border-transparent shadow-sm'
+              }`}
+            >
+              <span className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isSelected ? 'opacity-80' : 'opacity-60'}`}>
+                {format(d, 'EEE', { locale: enUS })}
+              </span>
+              <span className="text-xl leading-none">{format(d, 'd')}</span>
+              
+              {isToday && (
+                <>
+                  <div className={`absolute -bottom-1.5 w-1 h-1 rounded-full ${isSelected ? 'bg-white/50' : 'bg-pink-400'}`} />
+                  <span className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-tighter shadow-sm border border-white/50 z-10 whitespace-nowrap transition-colors ${
+                    isSelected ? 'bg-white text-pink-500' : 'bg-pink-50 text-white'
+                  }`}>
+                    {t.today}
+                  </span>
+                </>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div 
+        className="pb-24 transition-opacity duration-300" 
+        key={animationKey}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{ animation: 'day-slide 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
+      >
+        {renderSection(LocationType.POOL)}
+        <AffiliateBanner />
+        {renderSection(LocationType.OUTDOOR)}
+        {renderSection(LocationType.INDOOR)}
+      </div>
+
+      <style>{`
+        @keyframes day-slide {
+          from { opacity: 0; transform: translateX(10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+    </div>
+  );
+};
