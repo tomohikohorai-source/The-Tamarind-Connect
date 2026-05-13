@@ -774,8 +774,7 @@ export const translations = {
     returnAvailableMsg: "양측 모두 취소에 동의했습니다. 이 물품을 '판매중' 상태로 되돌리시겠습니까?",
     transactionPrivateMsg: "액세스 제한: 이 거래 상세 내용은 현재 당사자들에게만 공개됩니다.",
     buyerApplicationReceived: "구매 신청 접수",
-    waitingForSeller: "신청 완료 - 판매자 확인 대기 중" +
-      " 중",
+    waitingForSeller: "신청 완료 - 판매자 확인 대기 중",
     completeTransaction: "거래 완료",
     pickedUp: "수령했습니다",
     noMatchingItems: "일치하는 물품이 없습니다",
@@ -1054,8 +1053,7 @@ export const translations = {
     handoverCompleteMsg: "受け渡し完了！下の「取引を完了する」をタップしてください。",
     reservedFor: "予約先:",
     arrangePickupMsg: "隣人とチャットして、受け渡し時間や場所を調整しましょう。",
-    confirmReceipt: "アイテムを受け取ったことを確認しますか？" +
-      "か？",
+    confirmReceipt: "アイテムを受け取ったことを確認しますか？",
     endTransactionMsg: "購入者が受け取りを確認しました。この取引を終了し、「解決済み」にしますか？",
     cancelTradeSeller: "出品者としてこの取引のキャンセルをリクエストしますか？",
     cancelTradeBuyer: "購入者としてこの取引のキャンセルをリクエストしますか？",
