@@ -33,6 +33,8 @@ export const translations = {
     confirm: "Confirm",
     ok: "OK",
     translationNotice: "Posted content may be sent to external services for translation purposes.",
+    loginRequired: "Login Required",
+    proceedToLogin: "Proceed to Login",
     // Profile Setup
     profileSetup: "Profile Setup",
     connectNeighbors: "Connect with your neighbors",
@@ -319,6 +321,8 @@ export const translations = {
     confirm: "确认",
     ok: "确定",
     translationNotice: "发布的内容可能会被发送到外部服务以进行翻译。",
+    loginRequired: "需要登录",
+    proceedToLogin: "前往登录",
     // Profile Setup
     profileSetup: "个人资料设置",
     connectNeighbors: "与邻居建立联系",
@@ -605,6 +609,8 @@ export const translations = {
     confirm: "확인",
     ok: "확인",
     translationNotice: "게시된 콘텐츠는 번역 기능을 위해 외부 서비스로 전송될 수 있습니다.",
+    loginRequired: "로그인 필요",
+    proceedToLogin: "로그인으로 이동",
     // Profile Setup
     profileSetup: "프로필 설정",
     connectNeighbors: "이웃과 연결하세요",
@@ -891,6 +897,8 @@ export const translations = {
     confirm: "確認",
     ok: "OK",
     translationNotice: "投稿内容は翻訳機能のために外部サービスに送られる場合があります",
+    loginRequired: "ログインが必要です",
+    proceedToLogin: "ログインに進む",
     // Profile Setup
     profileSetup: "プロフィール設定",
     connectNeighbors: "隣人とつながりましょう",
