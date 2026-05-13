@@ -1,10 +1,15 @@
-{
-  "projectId": "the-tamarind-connect",
-  "appId": "1:936861918762:web:73c991a8a4449812118553",
-  "apiKey": "AIzaSyBBh6tz0moZgu9f346ECjFBAzw_-KSCiTQ",
-  "authDomain": "the-tamarind-connect.firebaseapp.com",
-  "storageBucket": "the-tamarind-connect.firebasestorage.app",
-  "messagingSenderId": "936861918762",
-  "measurementId": "G-XCK1G5KLQX",
-  "firestoreDatabaseId": "(default)"
+/* Global Styles */
+body {
+    font-family: 'Noto+Sans+JP', sans-serif;
+    background-color: #fdfbf7;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }

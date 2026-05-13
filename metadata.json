@@ -1,54 +1,8 @@
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Nearby Exchange">
-    <title>Nearby Exchange | Condominium Community Marketplace</title>
-    <meta name="description" content="Connect with your neighbors at The Tamarind and surrounding condominiums. Exchange skills, buy and sell items, and build a stronger community.">
-    <meta name="robots" content="index, follow">
-    <link rel="manifest" href="manifest.json">
-    <!-- Building shaped Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23f472b6'/%3E%3Cpath d='M30 70V30h40v40H30z M40 40h5v5h-5z M40 50h5v5h-5z M55 40h5v5h-5z M55 50h5v5h-5z' fill='white'/%3E%3C/svg%3E">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23f472b6'/%3E%3Cpath d='M30 70V30h40v40H30z M40 40h5v5h-5z M40 50h5v5h-5z M55 40h5v5h-5z M55 50h5v5h-5z' fill='white'/%3E%3C/svg%3E">
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Noto+Sans+JP', sans-serif;
-            background-color: #fdfbf7;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-<script type="importmap">
 {
-  "imports": {
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "date-fns/": "https://esm.sh/date-fns@^4.1.0/",
-    "date-fns": "https://esm.sh/date-fns@^4.1.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0"
-  }
+  "name": "Nearby Exchange",
+  "description": "A community marketplace and skill exchange platform for condominium residents to connect, share resources, and build neighborhood trust.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
 }
-</script>
-<link rel="stylesheet" href="index.css">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3553079944254804"
-     crossorigin="anonymous"></script>
-</head>
-<body>
-    <div id="root"></div>
-<script type="module" src="index.tsx"></script>
-</body>
-</html>

@@ -1,20 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
 
-# Run and deploy your AI Studio app
+// Cache name updated to current app branding
+const CACHE_NAME = 'nearby-exchange-cache-v1';
 
-This contains everything you need to run your app locally.
+// Execute on install
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        '/',
+        '/index.html',
+        '/manifest.json'
+      ]);
+    })
+  );
+  self.skipWaiting();
+});
 
-View your app in AI Studio: https://ai.studio/apps/e0228f09-7eaa-4626-a716-39e2655509b4
+// Execute on activate
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+// Execute on fetch
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
+  );
+});

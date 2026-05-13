@@ -1,213 +1,47 @@
 
-export enum LocationType {
-  POOL = 'POOL',
-  OUTDOOR = 'OUTDOOR',
-  INDOOR = 'INDOOR'
+import React from 'react';
+import { LogIn, X, ChevronLeft } from 'lucide-react';
+import { Language, translations } from '../src/translations';
+
+interface Props {
+  language: Language;
+  onProceed: () => void;
+  onCancel: () => void;
 }
 
-export interface Condo {
-  id: string;
-  name: string;
-  address: string;
-  lat: number;
-  lng: number;
-  radius: number; // in meters
-}
+export const LoginRequiredModal: React.FC<Props> = ({ language, onProceed, onCancel }) => {
+  const t = translations[language];
 
-export interface Child {
-  id: string;
-  nickname: string;
-  age: string;
-  gender: 'boy' | 'girl' | 'other';
-  intro: string;
-  avatarIcon: string;
-}
-
-export interface PrivacySettings {
-  showChildren: boolean;
-  showListings: boolean;
-  showPastSales: boolean;
-  showBuying: boolean;
-  showSkills?: boolean;
-  showWanted?: boolean;
-}
-
-export interface UserProfile {
-  uid: string;
-  customUserId: string;
-  parentNickname: string;
-  roomNumber: string;
-  condoCode: string;
-  children: Child[];
-  avatarIcon: string;
-  totalLoginDays: number;
-  lastLoginDate: string; // ISO String
-  privacySettings?: PrivacySettings;
-  role?: 'admin' | 'user';
-  condoId?: string;
-  customCondoName?: string;
-}
-
-export interface Activity {
-  id: string;
-  userId: string;
-  condoCode: string;
-  parentNickname: string;
-  roomNumber: string;
-  parentAvatarIcon: string;
-  location: LocationType;
-  startTime: string; 
-  endTime: string;   
-  message: string;
-  childNicknames: string[];
-  childAvatars: string[]; 
-  isInvitation: boolean;
-  lastUpdated: string; // ISO String
-  condoId?: string;
-  customCondoName?: string;
-}
-
-export interface MarketComment {
-  id: string;
-  userId: string;
-  userNickname: string;
-  userAvatar: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface MarketItem {
-  id: string;
-  userId: string;
-  condoCode: string;
-  parentNickname: string;
-  roomNumber: string;
-  parentAvatarIcon: string;
-  title: string;
-  genre: string;
-  description: string;
-  price: number;
-  previousPrice?: number; // For discount tracking
-  priceUpdatedAt?: string; // For discount timing
-  type: 'SALE' | 'FREE';
-  status: 'AVAILABLE' | 'RESERVED' | 'SOLD';
-  requestStatus: 'NONE' | 'PENDING' | 'REJECTED';
-  rejectionReason?: string;
-  paymentMethod: 'CASH' | 'TNG' | 'FREE';
-  pickupLocation: string;
-  pickupDateTime: string; 
-  condition: 'S' | 'A' | 'B' | 'C'; 
-  comments: MarketComment[];
-  buyerId?: string;
-  buyerNickname?: string;
-  buyerAvatarIcon?: string;
-  images: string[]; 
-  createdAt: string;
-  lastUpdated: string;
-  likes?: string[];
-  condoId?: string;
-  customCondoName?: string;
-  // Transaction flow flags
-  buyerConfirmedCompletion?: boolean;
-  sellerConfirmedCompletion?: boolean;
-  buyerRequestedCancellation?: boolean;
-  sellerRequestedCancellation?: boolean;
-}
-
-export interface SkillComment {
-  id: string;
-  userId: string;
-  userNickname: string;
-  userAvatar: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface Skill {
-  id: string;
-  userId: string;
-  condoCode: string;
-  parentNickname: string;
-  parentAvatarIcon: string;
-  roomNumber: string;
-  title: string;
-  category: string;
-  description: string;
-  type: 'OFFER' | 'REQUEST'; // Providing a skill or asking for one
-  status: 'AVAILABLE' | 'RESERVED' | 'CLOSED';
-  requestStatus: 'NONE' | 'PENDING' | 'REJECTED';
-  requesterId?: string;
-  requesterNickname?: string;
-  requesterAvatarIcon?: string;
-  price: string; // e.g. "Free", "RM 20/hr", "Exchange for coffee"
-  previousPrice?: string; // For discount tracking
-  priceUpdatedAt?: string; // For discount timing
-  images?: string[];
-  comments: SkillComment[];
-  createdAt: string;
-  lastUpdated: string;
-  likes?: string[];
-  condoId?: string;
-  customCondoName?: string;
-  requesterRequestedCancellation?: boolean;
-  sellerRequestedCancellation?: boolean;
-}
-
-export interface WantedComment {
-  id: string;
-  userId: string;
-  userNickname: string;
-  userAvatar: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface WantedItem {
-  id: string;
-  userId: string;
-  condoCode: string;
-  parentNickname: string;
-  roomNumber: string;
-  parentAvatarIcon: string;
-  title: string;
-  genre: string;
-  description: string;
-  hopePrice: number;
-  previousHopePrice?: number;
-  hopePriceUpdatedAt?: string;
-  pickupLocation: string;
-  preferredTiming: string;
-  images: string[];
-  comments: WantedComment[];
-  status: 'OPEN' | 'CLOSED';
-  createdAt: string;
-  lastUpdated: string;
-  likes?: string[];
-  condoId?: string;
-  customCondoName?: string;
-}
-
-export interface ReadContent {
-  id: string;
-  type: 'NOVEL' | 'COLUMN';
-  title: string;
-  content: string;
-  snippet: string;
-  chapterNumber?: number;
-  columnNumber?: number;
-  seriesId?: string;
-  createdAt: string;
-}
-
-export interface ReadSeriesState {
-  id: string;
-  currentSeriesId: string;
-  currentChapter: number;
-  lastGeneratedDate: string;
-  characters: string;
-  plotPoints: string;
-  title: string;
-}
-
-export type AppTab = 'MARKET' | 'WANTED' | 'SKILLS' | 'READ' | 'PROFILE' | 'PLAY';
-export type AppState = 'AUTH' | 'SETUP' | 'READY';
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-fade-in">
+      <div className="bg-white rounded-[40px] w-full max-w-sm overflow-hidden shadow-2xl border-4 border-teal-400 animate-slide-up">
+        <div className="p-8 space-y-6 text-center">
+          <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 mx-auto border-4 border-white shadow-lg mb-2">
+            <LogIn size={32} />
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">
+              {t.loginRequired}
+            </h3>
+          </div>
+          
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={onProceed} 
+              className="w-full py-4 bg-teal-400 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-teal-100 active:scale-95 transition-all border-2 border-white"
+            >
+              {t.proceedToLogin}
+            </button>
+            <button 
+              onClick={onCancel} 
+              className="w-full py-4 bg-gray-100 text-gray-400 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <ChevronLeft size={16} /> {t.back}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
