@@ -6,8 +6,8 @@ import { Heart, Search, SlidersHorizontal, ChevronLeft, ChevronRight, MessageCir
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
 import { calculateUserStats, getBadgeLevel, getBadgeColor } from '../services/badgeService';
-
 import { Language, translations } from '../translations';
+import { WantedSkeleton } from './Skeleton';
 
 interface Props {
   items: WantedItem[];
@@ -85,8 +85,6 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
     </button>
   );
 });
-
-import { WantedSkeleton } from './Skeleton';
 
 export const WantedList: React.FC<Props> = ({ items, marketItems, skills, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, condos = [] }) => {
   const t = translations[language];

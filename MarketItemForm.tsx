@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { LogIn, X, ChevronLeft } from 'lucide-react';
-import { Language, translations } from '../src/translations';
+import { Language, translations } from '../translations';
 
 interface Props {
   language: Language;

@@ -6,7 +6,8 @@ import { translations } from '../translations';
 import { Book, Lightbulb, ChevronRight, Lock, Clock, History, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
-import { PRE_CREATED_CONTENT } from '../src/constants/readContentData';
+import { PRE_CREATED_CONTENT } from '../services/readContentData';
+import { ReadSkeleton } from './Skeleton';
 
 interface ReadTabProps {
   profile: UserProfile | null;
@@ -14,8 +15,6 @@ interface ReadTabProps {
   onShowAuth: () => void;
   tabResetToggle?: boolean;
 }
-
-import { ReadSkeleton } from './Skeleton';
 
 export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth, tabResetToggle }) => {
   const t = translations[language];

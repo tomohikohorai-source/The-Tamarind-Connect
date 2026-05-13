@@ -6,6 +6,7 @@ import { SKILL_CATEGORIES, SKILL_ICONS, getCondoName } from '../constants';
 import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, User, MessageCircle, Send, Plus, X, ArrowUpDown, Lock, BookOpen, Star, Info, MessageSquare, AlertTriangle, ExternalLink, Flame, Sparkles, Handshake, Clock, CheckCircle, Heart, Share2, Edit2, Trash2, MapPin } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { calculateUserStats, getBadgeLevel, getBadgeColor } from '../services/badgeService';
+import { SkillSkeleton } from './Skeleton';
 
 interface Props {
   skills: Skill[];
@@ -76,8 +77,6 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
   }
   return null;
 });
-
-import { SkillSkeleton } from './Skeleton';
 
 export const SkillExchange: React.FC<Props> = ({ skills, marketItems, wantedItems, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth, condos = [] }) => {
   const t = translations[language];
