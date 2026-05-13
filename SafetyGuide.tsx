@@ -12,7 +12,7 @@ export const CommunityGuide: React.FC<Props> = ({ onBack, language }) => {
   const t = translations[language];
 
   return (
-    <div className="h-full overflow-y-auto bg-[#fdfbf7] flex flex-col animate-fade-in pb-40">
+    <div className="flex flex-col h-full bg-[#fdfbf7] animate-fade-in touch-auto">
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-4 border-b border-gray-100 flex items-center justify-between">
         <button onClick={onBack} className="p-2 text-gray-400 hover:text-pink-500 transition-colors">
           <ChevronLeft size={24} />
@@ -21,7 +21,7 @@ export const CommunityGuide: React.FC<Props> = ({ onBack, language }) => {
         <div className="w-10"></div>
       </header>
 
-      <div className="flex-grow p-6 space-y-8 max-w-lg mx-auto">
+      <div className="flex-grow overflow-y-auto p-6 space-y-8 max-w-lg mx-auto pb-44">
         <section className="space-y-4">
           <div className="w-16 h-16 bg-pink-50 rounded-3xl flex items-center justify-center text-pink-500 shadow-sm border-2 border-white">
             <Heart size={32} />

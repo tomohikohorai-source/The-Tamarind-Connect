@@ -88,7 +88,7 @@ const WantedItemCard = memo(({ item, onClick, profile, onLike, language = 'en' }
 
 import { WantedSkeleton } from './Skeleton';
 
-export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, condos = [] }) => {
+export const WantedList: React.FC<Props> = ({ items, marketItems, skills, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, condos = [] }) => {
   const t = translations[language];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);

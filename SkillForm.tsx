@@ -79,7 +79,7 @@ const SkillStatusBanner = memo(({ skill, profile, t }: { skill: Skill, profile: 
 
 import { SkillSkeleton } from './Skeleton';
 
-export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth, condos = [] }) => {
+export const SkillExchange: React.FC<Props> = ({ skills, marketItems, wantedItems, profile, initialActiveSkillId, onEdit, onDelete, onStatusChange, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, language = 'en', loading = false, tabResetToggle, ensureAuth, condos = [] }) => {
   const t = translations[language];
   const [filterType, setFilterType] = useState<'ALL' | 'OFFER' | 'REQUEST'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');

@@ -565,7 +565,14 @@ export const translations = {
     discussion: "讨论",
     genres: "类别",
     newComment: "新评论",
-    statusUpdate: "状态更新"
+    statusUpdate: "状态更新",
+    badgeCriteria: "勋章标准",
+    listingsCount: "发布数量",
+    salesCount: "销售数量",
+    purchasesCount: "购买数量",
+    likesReceived: "收到点赞",
+    likesGiven: "送出点赞",
+    criteriaAny: "满足以下任意一项即可解锁:"
   },
   ko: {
     appName: "이웃 교환",
@@ -845,7 +852,14 @@ export const translations = {
     discussion: "토론",
     genres: "카테고리",
     newComment: "새 댓글",
-    statusUpdate: "상태 업데이트"
+    statusUpdate: "상태 업데이트",
+    badgeCriteria: "배지 기준",
+    listingsCount: "등록 수",
+    salesCount: "판매 수",
+    purchasesCount: "구매 수",
+    likesReceived: "받은 좋아요",
+    likesGiven: "준 좋아요",
+    criteriaAny: "다음 중 하나를 충족하면 잠금 해제:"
   },
   ja: {
     appName: "Nearby Exchange",

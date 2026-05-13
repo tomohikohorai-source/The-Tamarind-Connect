@@ -1182,7 +1182,7 @@ export const App: React.FC = () => {
   const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isWanted ? 'shadow-amber-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+    <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-auto sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-3 sm:p-5 border-b border-gray-100">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full gap-2">
            <div className="flex items-center">

@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { MarketItem, UserProfile, MarketComment } from '../types';
 import { MARKET_GENRES, GENRE_ICONS, getCondoName } from '../constants';
-import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart, Share2 } from 'lucide-react';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart, Share2, Star } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
 import { MarketSkeleton } from './Skeleton';
@@ -181,7 +181,7 @@ const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketI
 
 type SortOption = 'newest' | 'price_low' | 'price_high';
 
-export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, ensureAuth, condos = [] }) => {
+export const MarketPlace: React.FC<Props> = ({ items, skills, wantedItems, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, ensureAuth, condos = [] }) => {
   const t = translations[language];
   const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
