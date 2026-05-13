@@ -1,258 +1,233 @@
 
-import React, { useState, useRef } from 'react';
-import { UserProfile, WantedItem } from '../types';
-import { MARKET_GENRES, CONDO_OPTIONS } from '../constants';
-import { store } from '../services/store';
-import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar, Building2 } from 'lucide-react';
-import { format } from 'date-fns';
+import React, { useMemo } from 'react';
+import { UserProfile } from '../types';
+import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock, TrendingUp } from 'lucide-react';
 
 import { Language, translations } from '../translations';
 
 interface Props {
   profile: UserProfile;
   language?: Language;
-  initialItem?: WantedItem;
-  onSubmit: (item: WantedItem) => void;
-  onCancel: () => void;
 }
 
-const compressImage = (base64Str: string): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800; // Increased from 400 for better resolution
-      const MAX_HEIGHT = 800; // Increased from 400 for better resolution
-      let width = img.width;
-      let height = img.height;
-      if (width > height) {
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-      } else {
-        if (height > MAX_HEIGHT) {
-          width *= MAX_HEIGHT / height;
-          height = MAX_HEIGHT;
-        }
-      }
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.75)); // Increased quality from 0.6 to 0.75
-    };
-  });
-};
+interface PetStage {
+  icon: string;
+  name: string;
+  level: string;
+  threshold: number;
+}
 
-export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', initialItem, onSubmit, onCancel }) => {
+interface EvolutionInfo {
+  current: PetStage;
+  next: PetStage | null;
+  pathLabel: string;
+  pathId: string;
+  gradient: string;
+  textColor: string;
+  accentColor: string;
+}
+
+export const PetGarden: React.FC<Props> = ({ profile, language = 'en' }) => {
   const t = translations[language];
-  const [title, setTitle] = useState(initialItem?.title || '');
-  const [genre, setGenre] = useState(initialItem?.genre || MARKET_GENRES[0]);
-  const [description, setDescription] = useState(initialItem?.description || '');
-  const [hopePrice, setHopePrice] = useState(initialItem?.hopePrice?.toString() || '10');
-  const [images, setImages] = useState<string[]>(initialItem?.images || []);
-  const [preferredTiming, setPreferredTiming] = useState(initialItem?.preferredTiming || format(new Date(), 'yyyy-MM-dd'));
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [condoId, setCondoId] = useState(initialItem?.condoId || profile.condoId || 'tamarind-penang');
-  const [customCondoName, setCustomCondoName] = useState(initialItem?.customCondoName || (initialItem?.condoId === 'Other-Penang' ? '' : (profile.condoId === 'Other-Penang' ? profile.customCondoName : '')));
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const days = profile.totalLoginDays || 1;
 
-  const today = format(new Date(), 'yyyy-MM-dd');
+  // Stable hash based on UID
+  const getHash = (seed: string) => seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const mainBranchIndex = getHash(profile.uid) % 3; // 0: Forest, 1: Ocean, 2: Cosmic
+  const subBranchIndex = getHash(profile.uid + 'v2') % 2; // 0: Alpha, 1: Beta
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const remainingSlots = 3 - images.length;
-    const selectedFiles = (Array.from(files) as File[]).slice(0, remainingSlots);
-    setIsCompressing(true);
-    const newImages: string[] = [];
-    for (const file of selectedFiles) {
-      const reader = new FileReader();
-      const base64: string = await new Promise((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file as Blob);
-      });
-      const compressed = await compressImage(base64);
-      newImages.push(compressed);
+  const evolution = useMemo((): EvolutionInfo => {
+    // 1. Common Stages (1-14 days)
+    const COMMON: PetStage[] = [
+      { icon: '🥚', name: 'Mysterious Egg', level: 'Seed', threshold: 1 },
+      { icon: '🐣', name: 'Shell-capped Peep', level: 'Hatchling', threshold: 3 },
+      { icon: '🐥', name: 'Aspirant Chick', level: 'Junior', threshold: 7 },
+    ];
+
+    // 2. Main Branches (15-99 days)
+    const BRANCHES = [
+      { // Forest Path
+        id: 'forest', label: 'Forest Soul', gradient: 'from-green-50 to-emerald-50/40', text: 'text-emerald-600', accent: 'bg-emerald-100',
+        stages: [
+          { icon: ' foxes', name: 'Forest Fox', level: 'Ranger', threshold: 15 },
+          { icon: '🦌', name: 'Glade Deer', level: 'Scout', threshold: 30 },
+          { icon: '🐅', name: 'Jade Tiger', level: 'Warrior', threshold: 60 },
+        ],
+        sub: [
+          [ // Forest A: Ancient Protector
+            { icon: '🐘', name: 'Elder Elephant', level: 'Guardian', threshold: 100 },
+            { icon: '🦍', name: 'Jungle King', level: 'Chieftain', threshold: 150 },
+            { icon: '🦕', name: 'Ancient Titan', level: 'God', threshold: 250 },
+          ],
+          [ // Forest B: Wild Hunter
+            { icon: '🐺', name: 'Silver Wolf', level: 'Hunter', threshold: 100 },
+            { icon: '🦁', name: 'Sun Lion', level: 'Sovereign', threshold: 150 },
+            { icon: '🐉', name: 'Wood Dragon', level: 'Overlord', threshold: 250 },
+          ]
+        ]
+      },
+      { // Ocean Path
+        id: 'ocean', label: 'Ocean Soul', gradient: 'from-blue-50 to-cyan-50/40', text: 'text-blue-600', accent: 'bg-blue-100',
+        stages: [
+          { icon: '🐠', name: 'Coral Fish', level: 'Social', threshold: 15 },
+          { icon: '🐢', name: 'Sea Turtle', level: 'Steady', threshold: 30 },
+          { icon: '🐬', name: 'Sky Dolphin', level: 'Ace', threshold: 60 },
+        ],
+        sub: [
+          [ // Ocean A: Mythic Depth
+            { icon: '🐙', name: 'Deep Kraken', level: 'Genius', threshold: 100 },
+            { icon: '🐳', name: 'Island Whale', level: 'Leviathan', threshold: 150 },
+            { icon: '🧜‍♂️', name: 'Sea God', level: 'Eternal', threshold: 250 },
+          ],
+          [ // Ocean B: Coastal King
+            { icon: '🦈', name: 'Great Shark', level: 'Striker', threshold: 100 },
+            { icon: '🐊', name: 'Deep Gator', level: 'Fearless', threshold: 150 },
+            { icon: '🐋', name: 'Glacier Whale', level: 'Ancient', threshold: 250 },
+          ]
+        ]
+      },
+      { // Cosmic Path
+        id: 'cosmic', label: 'Cosmic Soul', gradient: 'from-purple-50 to-pink-50/40', text: 'text-purple-600', accent: 'bg-purple-100',
+        stages: [
+          { icon: '🦄', name: 'Star Pony', level: 'Mystic', threshold: 15 },
+          { icon: '🧚', name: 'Pixie Star', level: 'Fairy', threshold: 30 },
+          { icon: '🤖', name: 'Neon Bot', level: 'Cyber', threshold: 60 },
+        ],
+        sub: [
+          [ // Cosmic A: Celestial Being
+            { icon: '🐲', name: 'Galaxy Dragon', level: 'Astral', threshold: 100 },
+            { icon: '🛰️', name: 'Orbital Eye', level: 'Oracle', threshold: 150 },
+            { icon: '👑', name: 'Cosmic King', level: 'Divinity', threshold: 250 },
+          ],
+          [ // Cosmic B: Dimension Walker
+            { icon: '🛸', name: 'Space Pilot', level: 'Visitor', threshold: 100 },
+            { icon: '👾', name: 'Void Entity', level: 'Stranger', threshold: 150 },
+            { icon: '🧿', name: 'Eye of Time', level: 'Abyss', threshold: 250 },
+          ]
+        ]
+      }
+    ];
+
+    let currentBranch = BRANCHES[mainBranchIndex];
+    let allStages: PetStage[] = [...COMMON];
+
+    if (days >= 15 && days < 100) {
+      allStages = [...COMMON, ...currentBranch.stages];
+    } else if (days >= 100) {
+      allStages = [...COMMON, ...currentBranch.stages, ...currentBranch.sub[subBranchIndex]];
     }
-    setImages(prev => [...prev, ...newImages]);
-    setIsCompressing(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+    // Find current stage
+    let currentIdx = 0;
+    for (let i = 0; i < allStages.length; i++) {
+      if (days >= allStages[i].threshold) {
+        currentIdx = i;
+      }
+    }
 
-    const currentHopePrice = Math.max(0, Number(hopePrice));
-    const isPriceChanged = initialItem && currentHopePrice !== initialItem.hopePrice;
-    
-    const itemData: any = {
-      id: initialItem?.id || crypto.randomUUID(),
-      userId: profile.uid,
-      condoCode: profile.condoCode || store.getPasscode() || '',
-      condoId: condoId,
-      customCondoName: condoId === 'Other-Penang' ? customCondoName : '',
-      parentNickname: profile.parentNickname,
-      roomNumber: profile.roomNumber,
-      parentAvatarIcon: profile.avatarIcon,
-      title,
-      genre,
-      description,
-      hopePrice: currentHopePrice,
-      pickupLocation: '', // Removed preference field
-      preferredTiming,
-      images,
-      comments: initialItem?.comments || [],
-      status: initialItem?.status || 'OPEN',
-      createdAt: initialItem?.createdAt || new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
+    const current = allStages[currentIdx];
+    const next = allStages[currentIdx + 1] || null;
+
+    // Visual styles adapt based on phase
+    const isCommon = days < 15;
+    return {
+      current,
+      next,
+      pathLabel: isCommon ? 'Common Soul' : (days >= 100 ? `${currentBranch.label} (Final)` : currentBranch.label),
+      pathId: isCommon ? 'common' : currentBranch.id,
+      gradient: isCommon ? 'from-orange-50 to-pink-50/40' : currentBranch.gradient,
+      textColor: isCommon ? 'text-pink-600' : currentBranch.text,
+      accentColor: isCommon ? 'bg-pink-100' : currentBranch.accent,
     };
+  }, [days, mainBranchIndex, subBranchIndex]);
 
-    if (isPriceChanged && initialItem) {
-        itemData.previousHopePrice = initialItem.hopePrice;
-        itemData.hopePriceUpdatedAt = new Date().toISOString();
-    } else if (initialItem?.previousHopePrice !== undefined) {
-        itemData.previousHopePrice = initialItem.previousHopePrice;
-        itemData.hopePriceUpdatedAt = initialItem.hopePriceUpdatedAt;
-    }
-
-    onSubmit(itemData as WantedItem);
-  };
+  const prevThreshold = evolution.current.threshold;
+  const nextThreshold = evolution.next ? evolution.next.threshold : prevThreshold + 100;
+  const progress = Math.min(100, ((days - prevThreshold) / (nextThreshold - prevThreshold)) * 100);
+  const remainingDays = evolution.next ? (evolution.next.threshold - days) : 0;
 
   return (
-    <div className="bg-white p-8 rounded-t-[40px] shadow-2xl overflow-y-auto max-h-[95vh] border-t border-amber-50 hide-scrollbar relative">
-      <div className="flex justify-between items-center mb-10">
-        <button type="button" onClick={onCancel} className="flex items-center gap-2 text-gray-500 font-black text-xs bg-gray-50 px-4 py-2.5 rounded-2xl border border-gray-100 uppercase tracking-widest shadow-sm active:scale-95 transition-all"><ChevronLeft size={18} /> {t.back}</button>
-        <h2 className="text-xl font-black text-gray-800 tracking-tighter uppercase">{initialItem ? t.editWanted : t.postWanted}</h2>
-        <button onClick={onCancel} className="text-gray-300"><X size={24} /></button>
+    <div className="mx-4 mt-1 mb-4">
+      <div className={`bg-gradient-to-br ${evolution.gradient} rounded-[32px] border-2 border-white shadow-lg p-4 relative overflow-hidden group`}>
+        
+        {/* Branch-specific background icons */}
+        <div className={`absolute -right-4 -top-4 ${evolution.textColor} opacity-10 rotate-12 pointer-events-none`}>
+          {evolution.pathId === 'forest' ? <Trees size={100} fill="currentColor" /> : 
+           evolution.pathId === 'ocean' ? <Waves size={100} fill="currentColor" /> : 
+           evolution.pathId === 'cosmic' ? <Stars size={100} fill="currentColor" /> : 
+           <Zap size={100} fill="currentColor" />}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 bg-white rounded-[24px] shadow-inner border border-white flex items-center justify-center text-4xl animate-float-mini">
+                {evolution.current.icon}
+              </div>
+              <div className={`absolute -bottom-1 -right-1 ${evolution.textColor.replace('text', 'bg')} text-[8px] font-black text-white px-2 py-0.5 rounded-full border border-white shadow-sm`}>
+                Lv.{days}
+              </div>
+            </div>
+
+            <div className="flex-grow min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`${evolution.accentColor} ${evolution.textColor} text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest whitespace-nowrap flex items-center gap-1`}>
+                  {days < 15 ? <HelpCircle size={10}/> : (days >= 100 ? (subBranchIndex === 0 ? <Shield size={10}/> : <Sword size={10}/>) : <Zap size={10}/>)}
+                  {evolution.current.level}
+                </span>
+                <span className="text-[15px] font-black text-gray-800 tracking-tight flex items-center gap-1 truncate">
+                  {evolution.current.name} <Sparkles size={12} className="text-yellow-400 shrink-0" />
+                </span>
+              </div>
+              
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${evolution.textColor} opacity-60`}>{t.growthProgress}</span>
+                  <span className={`text-[9px] font-black ${evolution.textColor}`}>{Math.round(progress)}%</span>
+                </div>
+                <div className="flex-grow h-3 bg-white/60 rounded-full overflow-hidden border border-white p-0.5 shadow-inner">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${evolution.textColor.replace('text', 'from').replace('-600', '-300')} ${evolution.textColor.replace('text', 'to').replace('-600', '-500')} rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden`}
+                    style={{ width: `${progress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-white/50 pt-3 px-1">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={12} className={`${evolution.textColor} opacity-60`} />
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                {evolution.next ? (
+                  <><span className={evolution.textColor}>{remainingDays} {language === 'ja' ? '日' : 'days'}</span> {t.nextEvolution}</>
+                ) : (
+                  <>{t.ultimateForm}</>
+                )}
+              </span>
+            </div>
+            
+            {evolution.next && (
+              <div className="flex items-center gap-2 bg-white/40 px-2 py-1 rounded-xl border border-white/20">
+                <Lock size={10} className={`${evolution.textColor} opacity-40`} />
+                <span className={`text-[10px] grayscale opacity-30`}>{evolution.next.icon}</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 pb-12">
-        <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest ml-1">{t.add} (Optional)</label>
-          <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
-            {images.map((img, idx) => (
-              <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-amber-100 shadow-sm shrink-0">
-                <img src={img} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
-                <button type="button" onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1.5 bg-red-500/80 text-white rounded-full backdrop-blur-sm"><X size={12} /></button>
-              </div>
-            ))}
-            {images.length < 3 && (
-              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isCompressing} className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-300 hover:border-amber-400 hover:text-amber-400 transition-all shrink-0 active:scale-95">
-                {isCompressing ? <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div> : <Camera size={24} />}
-                <span className="text-[8px] font-black uppercase">{t.add}</span>
-              </button>
-            )}
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.condoLocation}</label>
-            <div className="relative">
-              <Building2 className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <select 
-                value={condoId} 
-                onChange={e => setCondoId(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none focus:ring-2 ring-amber-50"
-              >
-                {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
-              </select>
-            </div>
-            {condoId === 'Other-Penang' && (
-              <div className="animate-fade-in mt-2">
-                <input 
-                  type="text" 
-                  value={customCondoName} 
-                  onChange={e => setCustomCondoName(e.target.value)} 
-                  placeholder="Enter condominium name" 
-                  className="w-full p-3.5 rounded-2xl bg-gray-50 border-2 border-amber-100 outline-none font-bold text-sm" 
-                />
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.lookingFor}</label>
-            <div className="relative">
-              <Package className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <input 
-                type="text" 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
-                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity('Please fill in this field')}
-                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
-                placeholder="..." 
-                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm focus:ring-2 ring-amber-50" 
-                required 
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.genre}</label>
-            <div className="relative">
-              <Layers className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none focus:ring-2 ring-amber-50">
-                {MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.hopePrice} (RM)</label>
-            <div className="relative">
-              <Coins className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <input 
-                type="number" 
-                min="0" 
-                value={hopePrice} 
-                onChange={e => setHopePrice(e.target.value)} 
-                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity('Please fill in this field')}
-                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
-                placeholder="10" 
-                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-black text-lg text-amber-600 focus:ring-2 ring-amber-50" 
-                required 
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.additionalDetails}</label>
-            <p className="text-[9px] text-gray-400 font-bold italic mb-2 ml-1">{t.translationNotice}</p>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="..." className="w-full p-4 bg-gray-50 border-none rounded-2xl outline-none font-medium text-sm h-24 resize-none focus:ring-2 ring-amber-50" />
-          </div>
-
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.wantedByDate}</label>
-            <div className="relative">
-              <Calendar className="absolute left-4 top-3.5 text-amber-200" size={18} />
-              <input 
-                type="date" 
-                min={today}
-                value={preferredTiming} 
-                onChange={e => setPreferredTiming(e.target.value)} 
-                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm focus:ring-2 ring-amber-50" 
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-amber-50 p-6 rounded-[32px] border border-amber-100">
-          <div className="flex items-start gap-3">
-            <ShieldAlert size={18} className="text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-[9px] font-bold text-amber-600 leading-relaxed uppercase tracking-widest text-left">
-              {t.wantedDisclaimer}
-            </p>
-          </div>
-        </div>
-
-        <button type="submit" className="w-full py-5 rounded-[28px] font-black bg-amber-400 text-white shadow-2xl shadow-amber-100 uppercase tracking-[0.2em] text-[13px] active:scale-95 transition-all">{t.submitWishlist}</button>
-      </form>
+      <style>{`
+        @keyframes float-mini {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .animate-float-mini {
+          animation: float-mini 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,746 +1,451 @@
-import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
-import { UserProfile, Child, MarketItem, Skill, WantedItem, PrivacySettings } from '../types';
-import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS, getCondoName } from '../constants';
-import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages, Building2, MapPin, Info } from 'lucide-react';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { db, auth, collection, query, orderBy, onSnapshot, addDoc, getDocs, where, limit, doc, getDoc, setDoc, updateDoc, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
+import { ReadContent, ReadSeriesState, UserProfile } from '../types';
+import { translations } from '../translations';
+import { Book, Lightbulb, ChevronRight, Lock, Clock, History, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
-import { db, doc, setDoc, updateDoc } from '../firebase';
-import { Language, translations } from '../translations';
-import { translateText } from '../services/geminiService';
-import { calculateUserStats, getBadgeLevel, getBadgeLabel, getBadgeColor, BADGE_CRITERIA } from '../services/badgeService';
+import ReactMarkdown from 'react-markdown';
+import { PRE_CREATED_CONTENT } from '../src/constants/readContentData';
 
-interface Props {
-  profile: UserProfile; 
-  currentUser: UserProfile; 
-  marketItems: MarketItem[];
-  skills: Skill[];
-  wantedItems: WantedItem[];
-  onLogout: () => void;
-  onUpdateProfile: (profile: UserProfile) => void;
-  onEditMarket: (item: MarketItem) => void;
-  onDeleteMarket: (id: string) => void;
-  onMarketStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
-  onAddMarket: () => void;
-  onAddSkill: () => void;
-  onEditSkill: (skill: Skill) => void;
-  onDeleteSkill: (id: string) => void;
-  onAddMarketComment: (itemId: string, text: string) => void;
-  onGoToTransaction: (itemId: string) => void;
-  onGoToSkill: (skillId: string) => void;
-  onGoToWanted: (wantedId: string) => void;
-  onClose?: () => void; 
-  acknowledgedMarketMap?: Record<string, string>;
-  acknowledgedSkillMap?: Record<string, string>;
-  acknowledgedWantedMap?: Record<string, string>;
-  language: Language;
+interface ReadTabProps {
+  profile: UserProfile | null;
+  language: 'en' | 'zh' | 'ko' | 'ja';
+  onShowAuth: () => void;
   tabResetToggle?: boolean;
-  isAdminMode?: boolean;
-  onToggleAdminMode?: (val: boolean) => void;
 }
 
-const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }: { title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }) => (
-  <button onClick={onToggle} className="flex items-center justify-between w-full py-4 px-3 group transition-all text-left">
-    <div className="flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl transition-colors ${isOpen ? 'bg-pink-100 text-pink-500' : 'bg-gray-50 text-gray-400 group-hover:text-pink-400'} relative`}>
-        {icon}
-        {hasBadge && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm animate-pulse"></div>}
-      </div>
-      <div className="flex flex-col items-start">
-        <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{title} {count > 0 && <span className="text-pink-400 ml-1.5 opacity-60">({count})</span>}</h3>
-        {hasBadge && badgeLabel && <span className="text-[7px] font-black text-red-500 uppercase tracking-tighter mt-0.5 animate-pulse flex items-center gap-1"><AlertTriangle size={8}/> {badgeLabel}</span>}
-      </div>
-    </div>
-    <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-      <ChevronDown size={18} className="text-gray-300" />
-    </div>
-  </button>
-));
+import { ReadSkeleton } from './Skeleton';
 
-interface AppNotification {
-  id: string;
-  type: 'MARKET' | 'SKILL' | 'WANTED';
-  itemId: string;
-  title: string;
-  message: string;
-  reason: string;
-  isActionRequired: boolean;
-  isDismissed: boolean;
-  timestamp: string;
-}
-
-export const ProfilePage: React.FC<Props> = ({ 
-  profile, currentUser, marketItems, skills, wantedItems, onLogout, onUpdateProfile, 
-  onEditMarket, onDeleteMarket, onMarketStatusChange, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
-  onAddMarketComment, onGoToTransaction, onGoToSkill, onGoToWanted, onClose,
-  acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {},
-  language, tabResetToggle, isAdminMode, onToggleAdminMode
-}) => {
+export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth, tabResetToggle }) => {
   const t = translations[language];
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showBadgeInfo, setShowBadgeInfo] = useState(false);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
-  
-  const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>(() => {
-    return JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
-  });
-
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    activeSales: true,
-    pastSales: false,
-    buying: true,
-    wanted: true,
-    skills: true,
-    notifications: true,
-    likes: true
-  });
-
-  const toggleSection = useCallback((key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] })), []);
-
-  const [editNickname, setEditNickname] = useState(profile.parentNickname);
-  const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
-  const [editCondoId, setEditCondoId] = useState(profile.condoId || '');
-  const [editCustomCondoName, setEditCustomCondoName] = useState(profile.customCondoName || '');
-  const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
-
-  const isOwnProfile = profile.uid === currentUser.uid;
+  const [contents, setContents] = useState<ReadContent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const isGeneratingRef = React.useRef(false);
+  const lastCheckRef = React.useRef<number>(0);
+  const [selectedItem, setSelectedItem] = useState<ReadContent | null>(null);
+  const hasCleanedUpRef = React.useRef(false);
 
   useEffect(() => {
-    setIsEditingProfile(false);
-    setShowSettings(false);
+    setSelectedItem(null);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    const main = document.querySelector('main');
+    if (main) main.scrollTo(0, 0);
   }, [tabResetToggle]);
 
-  const stats = useMemo(() => {
-    return calculateUserStats(profile.uid, profile, marketItems, skills, wantedItems);
-  }, [profile, marketItems, skills, wantedItems]);
-
-  const badgeLevel = getBadgeLevel(stats);
-  const badgeLabel = getBadgeLabel(badgeLevel);
-  const badgeColor = getBadgeColor(badgeLevel);
-
-  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showSkills: true, showWanted: true };
-
-  const notifications = useMemo(() => {
-    if (!isOwnProfile) return [];
-    
-    const list: AppNotification[] = [];
-    marketItems.forEach(item => {
-      const isOwner = item.userId === profile.uid;
-      const isBuyer = item.buyerId === profile.uid;
-      const hasParticipated = item.comments.some(c => c.userId === profile.uid);
-      const lastComment = item.comments.length > 0 ? item.comments[item.comments.length - 1] : null;
-      const lastUpdate = item.lastUpdated || 'initial';
-      const checkIsDismissed = (id: string) => dismissedNotifIds.includes(id);
-      
-      const isSold = item.status === 'SOLD';
-      const isAcknowledged = acknowledgedMarketMap[item.id] === lastUpdate;
-      
-      // If item is SOLD and already acknowledged, don't show any notifications for it
-      if (isSold && isAcknowledged) return;
-
-      if (isOwner && item.requestStatus === 'PENDING') {
-        list.push({ id: `${item.id}-req`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request received!', reason: t.notifRequestReceived, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-req`), timestamp: lastUpdate });
-      }
-      if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion) {
-        list.push({ id: `${item.id}-conf`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Buyer reported pickup!', reason: t.notifPickupReported, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-conf`), timestamp: lastUpdate });
-      }
-      if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion) {
-        list.push({ id: `${item.id}-appr`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request approved!', reason: t.notifRequestApproved, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-appr`), timestamp: lastUpdate });
-      }
-      if ((isOwner || isBuyer || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${item.id}-cmt`, type: 'MARKET', itemId: item.id, title: item.title, message: lastComment.text, reason: t.notifNewComment, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-cmt`), timestamp: lastUpdate });
-      }
-    });
-
-    skills.forEach(skill => {
-      const isOwner = skill.userId === profile.uid;
-      const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
-      const lastComment = skill.comments.length > 0 ? skill.comments[skill.comments.length - 1] : null;
-      const lastUpdate = skill.lastUpdated || 'initial';
-
-      const isClosed = skill.status === 'CLOSED';
-      const isAcknowledged = acknowledgedSkillMap[skill.id] === lastUpdate;
-
-      if (isClosed && isAcknowledged) return;
-
-      if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${skill.id}-cmt`, type: 'SKILL', itemId: skill.id, title: skill.title, message: lastComment.text, reason: t.notifNewComment, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${skill.id}-cmt`), timestamp: skill.lastUpdated });
-      }
-    });
-
-    wantedItems.forEach(wanted => {
-      const isOwner = wanted.userId === profile.uid;
-      const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
-      const lastComment = wanted.comments.length > 0 ? wanted.comments[wanted.comments.length - 1] : null;
-      if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${wanted.id}-cmt`, type: 'WANTED', itemId: wanted.id, title: wanted.title, message: lastComment.text, reason: t.notifDiscussion, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${wanted.id}-cmt`), timestamp: wanted.lastUpdated });
-      }
-    });
-
-    return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [marketItems, skills, wantedItems, profile.uid, isOwnProfile, dismissedNotifIds]);
-
-  const activeUnreadCount = useMemo(() => {
-    return notifications.filter(n => {
-      if (n.isDismissed) return false;
-      const isAcknowledged = (n.type === 'MARKET' ? acknowledgedMarketMap[n.itemId] : n.type === 'SKILL' ? acknowledgedSkillMap[n.itemId] : acknowledgedWantedMap[n.itemId]) === n.timestamp;
-      // Passive notifications (like comments) shouldn't count as unread if the item update is acknowledged
-      if (isAcknowledged && n.reason === t.notifNewComment) return false;
-      return true;
-    }).length;
-  }, [notifications, acknowledgedMarketMap, acknowledgedSkillMap, acknowledgedWantedMap, t.notifNewComment]);
-
-  const myActiveSales = useMemo(() => marketItems.filter(i => i.userId === profile.uid && i.status !== 'SOLD'), [marketItems, profile.uid]);
-  const myPurchases = useMemo(() => marketItems.filter(i => (i.buyerId === profile.uid || (i.comments.some(c => c.userId === profile.uid) && i.userId !== profile.uid))), [marketItems, profile.uid]);
-  const mySkills = useMemo(() => skills.filter(s => (s.userId === profile.uid || s.comments.some(c => c.userId === profile.uid))), [skills, profile.uid]);
-  const myWanted = useMemo(() => wantedItems.filter(w => (w.userId === profile.uid || w.comments.some(c => c.userId === profile.uid))), [wantedItems, profile.uid]);
-  const myLikes = useMemo(() => {
-    const likedMarket = marketItems.filter(i => i.likes?.includes(profile.uid));
-    const likedSkills = skills.filter(s => s.likes?.includes(profile.uid));
-    const likedWanted = wantedItems.filter(w => w.likes?.includes(profile.uid));
-    
-    return [
-      ...likedMarket.map(i => ({ ...i, itemType: 'MARKET' as const })),
-      ...likedSkills.map(s => ({ ...s, itemType: 'SKILL' as const })),
-      ...likedWanted.map(w => ({ ...w, itemType: 'WANTED' as const }))
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [marketItems, skills, wantedItems, profile.uid]);
-
-  const handleNotificationJump = (notif: AppNotification) => {
-    if (!notif.isDismissed) {
-      const nextDismissed = [...dismissedNotifIds, notif.id];
-      setDismissedNotifIds(nextDismissed);
-      localStorage.setItem('play_share_dismissed_notifs', JSON.stringify(nextDismissed));
+  useEffect(() => {
+    if (selectedItem) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      const main = document.querySelector('main');
+      if (main) main.scrollTo(0, 0);
     }
-    if (notif.type === 'MARKET') onGoToTransaction(notif.itemId);
-    else if (notif.type === 'SKILL') onGoToSkill(notif.itemId);
-    else if (notif.type === 'WANTED') onGoToWanted(notif.itemId);
-  };
+  }, [selectedItem?.id]);
 
-  const handleSaveProfile = async () => {
-    if (!editNickname.trim() || !editCondoId) return;
-    if (editCondoId === 'Other-Penang' && !editCustomCondoName.trim()) return;
+  useEffect(() => {
+    const q = query(collection(db, "readContent"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const data: ReadContent[] = [];
+      snapshot.forEach((doc) => data.push({ ...doc.data(), id: doc.id } as ReadContent));
+      setContents(data);
+      setLoading(false);
+      
+      // Check if we need to post today's content (only for signed in users to avoid permission errors)
+      if (auth.currentUser) {
+        checkAndPost(data);
+      }
+
+      // One-time cleanup for duplicates (only for signed in users)
+      if (auth.currentUser && !hasCleanedUpRef.current && data.length > 0) {
+        hasCleanedUpRef.current = true;
+        const seen = new Set<string>();
+        data.forEach(item => {
+          const key = `${item.type}-${item.title}-${item.chapterNumber || ''}`;
+          if (seen.has(key)) {
+            deleteDoc(doc(db, "readContent", item.id)).catch(err => handleFirestoreError(err, OperationType.DELETE, `readContent/${item.id}`));
+          } else {
+            seen.add(key);
+          }
+        });
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, "readContent");
+    });
+    return () => unsub();
+  }, []);
+
+  const checkAndPost = async (existingContents: ReadContent[]) => {
+    if (isGeneratingRef.current) return;
     
-    const updatedProfile: UserProfile = { 
-      ...profile, 
-      parentNickname: editNickname, 
-      avatarIcon: editAvatar, 
-      condoId: editCondoId, 
-      customCondoName: editCondoId === 'Other-Penang' ? editCustomCondoName : '',
-      children: editChildren 
-    };
-    try {
-      await setDoc(doc(db, "users", profile.uid), updatedProfile);
-      onUpdateProfile(updatedProfile);
-      setIsEditingProfile(false);
-    } catch (e: any) { alert("Error: " + e.message); }
+    // Throttle checks to once every 30 seconds to prevent loops/jitter
+    const nowTime = Date.now();
+    if (nowTime - lastCheckRef.current < 30000) return;
+    lastCheckRef.current = nowTime;
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    // Check for our specific pre-created content
+    const preCreatedNovels = existingContents.filter(c => c.type === 'NOVEL' && c.seriesId === 'pre_created_series_1');
+    const preCreatedColumns = existingContents.filter(c => c.type === 'COLUMN');
+
+    const hasChapter1 = preCreatedNovels.some(n => n.chapterNumber === 1);
+    const hasChapter2 = preCreatedNovels.some(n => n.chapterNumber === 2);
+    const hasColumn1 = preCreatedColumns.some(c => c.title === PRE_CREATED_CONTENT.columns[0].title);
+    const hasColumn2 = preCreatedColumns.some(c => c.title === PRE_CREATED_CONTENT.columns[1].title);
+
+    // Requirement: 2 chapters/columns as of today.
+    if (!hasChapter1 || !hasChapter2 || !hasColumn1 || !hasColumn2) {
+      isGeneratingRef.current = true;
+      try {
+        await seedInitialContent(existingContents, today);
+      } catch (error) {
+        console.error("Failed to seed initial content:", error);
+      } finally {
+        isGeneratingRef.current = false;
+      }
+      return;
+    }
+
+    const hasTodayNovel = existingContents.some(c => c.type === 'NOVEL' && c.createdAt.startsWith(today));
+    const hasTodayColumn = existingContents.some(c => c.type === 'COLUMN' && c.createdAt.startsWith(today));
+    
+    if (!hasTodayNovel || !hasTodayColumn) {
+      if (existingContents.length > 0) {
+        isGeneratingRef.current = true;
+        setGenerating(true);
+        try {
+          await postDailyContent(today, hasTodayNovel, hasTodayColumn);
+        } catch (error) {
+          console.error("Failed to post daily content:", error);
+        } finally {
+          setGenerating(false);
+          isGeneratingRef.current = false;
+        }
+      }
+      return;
+    }
   };
 
-  const togglePrivacy = async (key: keyof PrivacySettings) => {
-    const nextPrivacy = { ...privacy, [key]: !privacy[key] };
-    const updatedProfile = { ...profile, privacySettings: nextPrivacy };
-    try {
-      await updateDoc(doc(db, "users", profile.uid), { privacySettings: nextPrivacy });
-      onUpdateProfile(updatedProfile);
-    } catch (e: any) { alert("Update failed: " + e.message); }
+  const seedInitialContent = async (existingContents: ReadContent[], today: string) => {
+    const novels = existingContents.filter(c => c.type === 'NOVEL' && c.seriesId === 'pre_created_series_1');
+    const columns = existingContents.filter(c => c.type === 'COLUMN' && c.title.includes('Penang'));
+    
+    const stateDoc = await getDoc(doc(db, "readSeriesState", "current_novel"));
+    let state: ReadSeriesState;
+    
+    if (!stateDoc.exists()) {
+      state = {
+        id: "current_novel",
+        currentSeriesId: "pre_created_series_1",
+        currentChapter: 1,
+        lastGeneratedDate: "",
+        characters: "",
+        plotPoints: "",
+        title: "The Penang Pearl"
+      };
+    } else {
+      state = stateDoc.data() as ReadSeriesState;
+    }
+
+    const batch = [];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(9, 0, 0, 0);
+    const yesterdayStr = yesterday.toISOString();
+    
+    const todayDate = new Date();
+    todayDate.setHours(10, 0, 0, 0);
+    const todayStr = todayDate.toISOString();
+
+    // Post Chapter 1 if missing
+    if (!novels.some(n => n.chapterNumber === 1)) {
+      const n1 = PRE_CREATED_CONTENT.novels[0];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: n1.title,
+        content: n1.content,
+        snippet: n1.snippet,
+        type: 'NOVEL',
+        chapterNumber: 1,
+        seriesId: "pre_created_series_1",
+        createdAt: yesterdayStr
+      }));
+    }
+
+    // Post Chapter 2 if missing
+    if (!novels.some(n => n.chapterNumber === 2)) {
+      const n2 = PRE_CREATED_CONTENT.novels[1];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: n2.title,
+        content: n2.content,
+        snippet: n2.snippet,
+        type: 'NOVEL',
+        chapterNumber: 2,
+        seriesId: "pre_created_series_1",
+        createdAt: todayStr
+      }));
+    }
+
+    // Post Column 1 if missing
+    if (!columns.some(c => c.title === PRE_CREATED_CONTENT.columns[0].title)) {
+      const c1 = PRE_CREATED_CONTENT.columns[0];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: c1.title,
+        content: c1.content,
+        snippet: c1.snippet,
+        type: 'COLUMN',
+        columnNumber: 1,
+        createdAt: yesterdayStr
+      }));
+    }
+
+    // Post Column 2 if missing
+    if (!columns.some(c => c.title === PRE_CREATED_CONTENT.columns[1].title)) {
+      const c2 = PRE_CREATED_CONTENT.columns[1];
+      batch.push(addDoc(collection(db, "readContent"), {
+        title: c2.title,
+        content: c2.content,
+        snippet: c2.snippet,
+        type: 'COLUMN',
+        columnNumber: 2,
+        createdAt: todayStr
+      }));
+    }
+
+    if (batch.length > 0) {
+      await Promise.all(batch);
+    }
+
+    await setDoc(doc(db, "readSeriesState", "current_novel"), {
+      ...state,
+      currentSeriesId: "pre_created_series_1",
+      currentChapter: 3,
+      lastGeneratedDate: today
+    });
   };
 
-  const addChild = () => {
-    setEditChildren([...editChildren, {
-      id: crypto.randomUUID(),
-      nickname: '',
-      age: '3',
-      gender: 'boy',
-      intro: '',
-      avatarIcon: AVATAR_ICONS.CHILDREN[0]
-    }]);
+  const postDailyContent = async (today: string, skipNovel = false, skipColumn = false) => {
+    // 1. Get Series State
+    const stateDoc = await getDoc(doc(db, "readSeriesState", "current_novel"));
+    let state: ReadSeriesState;
+    
+    if (!stateDoc.exists()) {
+      // This case should be handled by seedInitialContent, but for safety:
+      state = {
+        id: "current_novel",
+        currentSeriesId: "pre_created_series_1",
+        currentChapter: 1,
+        lastGeneratedDate: "",
+        characters: "",
+        plotPoints: "",
+        title: "The Penang Pearl"
+      };
+      await setDoc(doc(db, "readSeriesState", "current_novel"), state);
+    } else {
+      state = stateDoc.data() as ReadSeriesState;
+    }
+
+    // Don't generate if already generated today (STRICT CHECK)
+    if (state.lastGeneratedDate === today) return; 
+
+    const batch = [];
+
+    // 2. Post Novel Chapter from Pre-created list
+    if (!skipNovel) {
+      const chapterIndex = state.currentChapter - 1;
+      if (chapterIndex >= 0 && chapterIndex < PRE_CREATED_CONTENT.novels.length) {
+        const novelData = PRE_CREATED_CONTENT.novels[chapterIndex];
+        
+        // Logic for 15 chapters per story going forward
+        let novelChapter = novelData.chapter;
+        let seriesId = state.currentSeriesId;
+        let displayTitle = novelData.title;
+
+        // The user says 1-30 (The Penang Pearl) is fine as is.
+        // From chapter 31 onwards, we treat every 15 chapters as a new story.
+        if (state.currentChapter > 30) {
+          const storyIndex = Math.floor((state.currentChapter - 31) / 15);
+          const storyNumber = storyIndex + 3; // Story 1 & 2 are the first 30 chapters
+          seriesId = `series_story_${storyNumber}`;
+          novelChapter = ((state.currentChapter - 31) % 15) + 1;
+          
+          // Replace absolute chapter number in title with relative one
+          displayTitle = displayTitle.replace(/^Chapter \d+: /, `Chapter ${novelChapter}: `);
+        }
+
+        batch.push(addDoc(collection(db, "readContent"), {
+          title: displayTitle,
+          content: novelData.content,
+          snippet: novelData.snippet,
+          type: 'NOVEL',
+          chapterNumber: novelChapter,
+          seriesId: seriesId,
+          createdAt: new Date().toISOString()
+        }));
+      }
+    }
+
+    // 3. Post Column from Pre-created list
+    if (!skipColumn) {
+      const columnIndex = state.currentChapter - 1;
+      if (columnIndex >= 0 && columnIndex < PRE_CREATED_CONTENT.columns.length) {
+        const columnData = PRE_CREATED_CONTENT.columns[columnIndex];
+        batch.push(addDoc(collection(db, "readContent"), {
+          title: columnData.title,
+          content: columnData.content,
+          snippet: columnData.snippet,
+          type: 'COLUMN',
+          columnNumber: columnData.id,
+          createdAt: new Date().toISOString()
+        }));
+      }
+    }
+
+    if (batch.length > 0) {
+      await Promise.all(batch);
+    }
+
+    // 4. Update Series State
+    await updateDoc(doc(db, "readSeriesState", "current_novel"), {
+      currentChapter: state.currentChapter + 1,
+      lastGeneratedDate: today
+    });
   };
+
+  const { latestNovel, latestColumn, archiveItems } = useMemo(() => {
+    const sorted = [...contents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const novel = sorted.find(c => c.type === 'NOVEL');
+    const column = sorted.find(c => c.type === 'COLUMN');
+    
+    const latestIds = new Set([novel?.id, column?.id].filter(Boolean));
+    const archive = sorted.filter(item => !latestIds.has(item.id));
+    
+    return { latestNovel: novel, latestColumn: column, archiveItems: archive };
+  }, [contents]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full bg-[#fdfbf7]">
+        <ReadSkeleton />
+      </div>
+    );
+  }
+
+  if (selectedItem) {
+    return (
+      <div className="flex flex-col h-full bg-white animate-in fade-in slide-in-from-right duration-300">
+        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-100">
+          <button onClick={() => setSelectedItem(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <ChevronRight className="rotate-180 text-gray-400" size={24} />
+          </button>
+          <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight truncate">{selectedItem.title}</h2>
+        </div>
+        
+        <div className="flex-grow overflow-y-auto p-6 space-y-6 pb-24">
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${selectedItem.type === 'NOVEL' ? 'bg-indigo-100 text-indigo-600' : 'bg-teal-100 text-teal-600'}`}>
+              {selectedItem.type === 'NOVEL' ? t.dailyNovel : t.penangColumn}
+            </span>
+            <span className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
+              <Clock size={10} />
+              {format(new Date(selectedItem.createdAt), 'MMM dd, yyyy')}
+            </span>
+          </div>
+
+          <h1 className="text-2xl font-black text-gray-900 leading-tight">{selectedItem.title}</h1>
+
+          <div className="prose prose-sm max-w-none prose-indigo">
+            <div className="text-gray-700 leading-relaxed font-medium">
+              <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
-      {onClose && (
-        <button onClick={onClose} className="flex items-center gap-2 text-gray-400 font-black text-[11px] uppercase tracking-widest bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm mb-6 active:scale-95 transition-all">
-          <ChevronLeft size={16} /> {t.back}
-        </button>
-      )}
-
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-5">
-          <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-5xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
-          <div className="min-w-0">
-            <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate leading-none mb-2">{profile.parentNickname}</h2>
-            {badgeLevel !== 'NONE' && (
-              <div className="flex flex-col items-start gap-1">
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${badgeColor} shadow-sm animate-fade-in group relative`}>
-                  <Star size={10} fill="currentColor" />
-                  <span className="text-[9px] font-black uppercase tracking-widest leading-none">{badgeLabel}</span>
-                </div>
-                <button 
-                  onClick={() => setShowBadgeInfo(true)}
-                  className="flex items-center gap-1 text-[8px] font-black text-pink-400 uppercase tracking-widest hover:text-pink-600 transition-colors ml-1"
-                >
-                  <Info size={10} /> {t.badgeCriteria}
-                </button>
-              </div>
-            )}
-            {badgeLevel === 'NONE' && isOwnProfile && (
-              <button 
-                onClick={() => setShowBadgeInfo(true)}
-                className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-pink-400 transition-colors ml-1 mb-2"
-              >
-                <Info size={10} /> {t.badgeCriteria}
-              </button>
-            )}
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <MapPin size={12} className="shrink-0" />
-              <span className="text-[10px] font-black uppercase tracking-widest truncate">
-                {getCondoName(profile.condoId, profile.customCondoName)}
-              </span>
-            </div>
+    <div className="flex flex-col h-full bg-[#fdfbf7]">
+      <div className="p-6 space-y-8">
+        {/* Header Section */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-indigo-500">
+            <BookOpen size={16} />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t.read}</span>
           </div>
+          <h2 className="text-3xl font-black text-gray-900 tracking-tighter uppercase leading-none">
+            Daily Stories<br/>& Insights
+          </h2>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">
+            Fresh content every day, curated for the community.
+          </p>
         </div>
-        {isOwnProfile && (
-          <div className="flex gap-2">
-            <button onClick={() => setShowSettings(true)} className={`p-4 rounded-2xl border transition-all bg-white text-gray-400 border-gray-100 shadow-sm active:scale-95`}><Settings size={20} /></button>
-            <button onClick={() => setIsEditingProfile(true)} className="p-4 bg-pink-50 text-pink-500 rounded-2xl border border-pink-100 shadow-sm active:scale-95 transition-all"><Edit3 size={20} /></button>
-          </div>
-        )}
-      </div>
 
-      {currentUser.customUserId === 'testtest' && (
-        <div className="bg-white p-6 rounded-[32px] border-2 border-pink-100 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <ShieldAlert size={20} className="text-pink-500" />
-            <div>
-              <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">{t.adminMode}</h3>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">{t.adminModeDesc}</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => onToggleAdminMode?.(!isAdminMode)} 
-            className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98] ${isAdminMode ? 'bg-pink-50 border-2 border-pink-200' : 'bg-gray-50 border-2 border-transparent'}`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={isAdminMode ? 'text-pink-500' : 'text-gray-400'}>
-                {isAdminMode ? <Eye size={18}/> : <EyeOff size={18}/>}
+        {/* Sections */}
+        <div className="space-y-10 pb-24 min-h-[400px]">
+          {/* Today's Picks */}
+          {(latestNovel || latestColumn) ? (
+            <div className="space-y-4 animate-in fade-in duration-500">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <Clock size={14} />
+                  Latest Updates
+                </h3>
               </div>
-              <span className={`text-[12px] font-black uppercase tracking-tight ${isAdminMode ? 'text-pink-600' : 'text-gray-500'}`}>
-                {isAdminMode ? 'TEST DATA (1111)' : 'PRODUCTION DATA'}
-              </span>
-            </div>
-            <div className={`w-10 h-6 rounded-full transition-all relative ${isAdminMode ? 'bg-pink-400' : 'bg-gray-200'}`}>
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isAdminMode ? 'right-1' : 'left-1'}`} />
-            </div>
-          </button>
-        </div>
-      )}
-
-      {isOwnProfile && showBadgeInfo && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowBadgeInfo(false)} />
-          <div className="bg-white w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[85vh] hide-scrollbar border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-pink-50 text-pink-500 rounded-2xl shadow-sm"><Star size={20} fill="currentColor"/></div>
-                <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter leading-none">{t.badgeCriteria}</h2>
-              </div>
-              <button onClick={() => setShowBadgeInfo(false)} className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"><X size={24}/></button>
-            </div>
-
-            <p className="text-[10px] font-black text-pink-400 uppercase tracking-widest mb-6 leading-relaxed bg-pink-50/50 p-4 rounded-2xl border border-pink-100/50">
-              {t.criteriaAny}
-            </p>
-
-            <div className="space-y-4">
-              {BADGE_CRITERIA.map((crit, idx) => (
-                <div key={crit.level} className={`p-5 rounded-[32px] border transition-all ${badgeLevel === crit.level ? 'bg-pink-50 border-pink-200 ring-4 ring-pink-100/50 scale-[1.02] shadow-md' : 'bg-gray-50/50 border-gray-100'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-xl ${crit.color} flex items-center justify-center shadow-sm`}><Star size={14} fill="currentColor"/></div>
-                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-800">{getBadgeLabel(crit.level)}</span>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {[latestNovel, latestColumn].filter(Boolean).map((item) => (
+                  <button 
+                    key={item!.id}
+                    onClick={() => setSelectedItem(item!)}
+                    className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-all text-left flex flex-col gap-4 group active:scale-[0.98]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${item!.type === 'NOVEL' ? 'bg-indigo-50 text-indigo-500' : 'bg-teal-50 text-teal-500'}`}>
+                        {item!.type === 'NOVEL' ? t.dailyNovel : t.penangColumn}
+                      </span>
+                      <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-transform group-hover:translate-x-1" />
                     </div>
-                    {badgeLevel === crit.level && (
-                      <div className="px-2 py-0.5 bg-pink-400 text-white rounded text-[8px] font-black uppercase tracking-widest animate-pulse">Your Rank</div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-teal-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.listingsCount}: <b className="text-gray-800">{crit.listings}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.salesCount}: <b className="text-gray-800">{crit.sales}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.purchasesCount}: <b className="text-gray-800">{crit.purchases}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.likesReceived}: <b className="text-gray-800">{crit.likesRec}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2 col-span-2 mt-1 pt-3 border-t border-gray-100/50">
-                       <div className="w-5 h-5 flex items-center justify-center bg-pink-100 rounded-lg"><Heart size={10} className="text-pink-500" fill="currentColor"/></div>
-                       <span className="text-[9px] font-black uppercase tracking-widest text-pink-500">{t.likesGiven}: <b className="text-pink-600 text-[11px]">{crit.likesGiven}</b></span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <button onClick={() => setShowBadgeInfo(false)} className="w-full mt-8 py-5 bg-gray-800 text-white rounded-[28px] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.ok}</button>
-          </div>
-        </div>
-      )}
-
-      {isOwnProfile && showSettings && (
-        <div className="fixed inset-0 z-[600] flex items-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
-            <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-2 z-10">
-              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.settings}</h2>
-              <button onClick={() => setShowSettings(false)} className="p-2 text-gray-400"><X size={24}/></button>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-black text-pink-400 uppercase tracking-widest ml-1">{t.privacy}</h3>
-              <div className="space-y-2">
-                {[
-                  { key: 'showChildren', label: t.players, icon: <User size={16}/> },
-                  { key: 'showListings', label: t.all, icon: <ShoppingBag size={16}/> },
-                  { key: 'showWanted', label: t.wishlist, icon: <Heart size={16}/> },
-                  { key: 'showSkills', label: t.skills, icon: <BookOpen size={16}/> }
-                ].map(opt => (
-                  <button key={opt.key} onClick={() => togglePrivacy(opt.key as any)} className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-2xl transition-all active:scale-[0.98]">
-                    <div className="flex items-center gap-3">
-                      <div className="text-gray-400">{opt.icon}</div>
-                      <span className="text-[12px] font-bold text-gray-700">{opt.label}</span>
-                    </div>
-                    <div className={`w-10 h-6 rounded-full transition-all relative ${privacy[opt.key as keyof PrivacySettings] ? 'bg-pink-400' : 'bg-gray-200'}`}>
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${privacy[opt.key as keyof PrivacySettings] ? 'right-1' : 'left-1'}`} />
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-black text-gray-800 leading-tight group-hover:text-indigo-600 transition-colors">{item!.title}</h4>
+                      <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 font-medium">
+                        {item!.snippet}...
+                      </p>
                     </div>
                   </button>
                 ))}
               </div>
             </div>
+          ) : null}
 
-            <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-gray-800 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest">{t.confirm}</button>
-          </div>
-        </div>
-      )}
-
-      {isEditingProfile && (
-        <div className="fixed inset-0 z-[600] flex items-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditingProfile(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
-             <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-4 z-10">
-              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.edit}</h2>
-              <button onClick={() => setIsEditingProfile(false)} className="p-2 text-gray-400"><X size={24}/></button>
-            </div>
-            
-            <div className="space-y-6">
-               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.nickname}</label>
-                <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl mt-1 font-bold outline-none border-2 border-transparent focus:border-pink-100" />
-               </div>
-
-                <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
-                <div className="relative mt-1">
-                  <select 
-                    value={editCondoId} 
-                    onChange={e => setEditCondoId(e.target.value)}
-                    className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none appearance-none border-2 border-transparent focus:border-pink-100"
+          {/* Archive */}
+          {archiveItems.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <History size={14} />
+                {t.archive}
+              </h3>
+              <div className="space-y-3">
+                {archiveItems.map((item) => (
+                  <button 
+                    key={item.id}
+                    onClick={() => setSelectedItem(item)}
+                    className="w-full flex items-center gap-4 p-4 bg-white rounded-2xl border border-gray-50 hover:border-indigo-100 transition-all group active:scale-[0.99]"
                   >
-                    <option value="" disabled>{t.selectCondo}</option>
-                    {CONDO_OPTIONS.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <ChevronDown size={18} />
-                  </div>
-                </div>
-                {editCondoId === 'Other-Penang' && (
-                  <div className="mt-2 animate-fade-in">
-                    <input 
-                      type="text" 
-                      value={editCustomCondoName} 
-                      onChange={e => setEditCustomCondoName(e.target.value)} 
-                      placeholder="Enter your condominium name" 
-                      className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none border-2 border-pink-100" 
-                    />
-                  </div>
-                )}
-               </div>
-               
-               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.avatar}</label>
-                <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
-                  {AVATAR_ICONS.PARENTS.map(ico => (
-                    <button key={ico} onClick={() => setEditAvatar(ico)} className={`w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center text-2xl border-2 transition-all ${editAvatar === ico ? 'border-pink-400 bg-pink-50' : 'border-gray-100'}`}>{ico}</button>
-                  ))}
-                </div>
-               </div>
-
-               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">{t.players}</h3>
-                  <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest flex items-center gap-1"><PlusCircle size={14}/> {t.add}</button>
-                </div>
-                {editChildren.map((child, index) => (
-                  <div key={child.id} className="p-4 bg-gray-50 border border-gray-100 rounded-[28px] relative space-y-4">
-                    <button onClick={() => setEditChildren(editChildren.filter(c => c.id !== child.id))} className="absolute top-2 right-2 p-2 text-red-300 hover:text-red-500"><Trash2 size={16} /></button>
-                    
-                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                      {AVATAR_ICONS.CHILDREN.map(icon => (
-                        <button key={icon} onClick={() => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, avatarIcon: icon} : c))} className={`shrink-0 w-9 h-9 text-lg rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-pink-400 bg-pink-50' : 'border-white bg-white shadow-sm'}`}>{icon}</button>
-                      ))}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'NOVEL' ? 'bg-indigo-50 text-indigo-400' : 'bg-teal-50 text-teal-400'}`}>
+                      {item.type === 'NOVEL' ? <Book size={18} /> : <Lightbulb size={18} />}
                     </div>
-
-                    <div className="flex gap-2">
-                      <input type="text" value={child.nickname} onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder="..." className="flex-grow p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none" />
-                      <div className="relative">
-                        <select 
-                          value={child.age} 
-                          onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, age: e.target.value} : c))}
-                          className="w-20 p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none appearance-none pr-6"
-                        >
-                          {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">{t.yrs}</div>
-                      </div>
+                    <div className="flex-grow min-w-0 text-left">
+                      <h4 className="text-xs font-black text-gray-700 truncate uppercase tracking-tight">{item.title}</h4>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                        {format(new Date(item.createdAt), 'MMM dd')} • {item.type === 'NOVEL' ? `Chapter ${item.chapterNumber}` : `Column ${item.columnNumber || ''}`}
+                      </p>
                     </div>
-
-                    <div className="flex gap-2">
-                      {['boy', 'girl', 'other'].map(g => (
-                        <button
-                          key={g}
-                          type="button"
-                          onClick={() => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, gender: g as any} : c))}
-                          className={`flex-1 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
-                            child.gender === g 
-                              ? 'bg-pink-400 border-pink-400 text-white' 
-                              : 'bg-white border-white text-gray-400 shadow-sm'
-                          }`}
-                        >
-                          {t[g as keyof typeof t] || g}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                    <ChevronRight size={14} className="text-gray-200 group-hover:text-indigo-300" />
+                  </button>
                 ))}
-               </div>
-            </div>
-
-            <div className="flex gap-3 pt-6 pb-32">
-              <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px]">{t.back}</button>
-              <button onClick={handleSaveProfile} className="flex-1 py-4 bg-pink-400 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg">{t.save}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {(isOwnProfile || privacy.showChildren) && profile.children.length > 0 && (
-        <section className="space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-pink-100 text-pink-500 p-2 rounded-xl"><User size={16} /></div>
-            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{t.players}</h3>
-          </div>
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
-            {profile.children.map(child => (
-              <div key={child.id} className="bg-white p-4 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3 shrink-0">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl">{child.avatarIcon}</div>
-                <div>
-                  <div className="text-[11px] font-black text-gray-800 uppercase">{child.nickname}</div>
-                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} {t.yrs} • {t[child.gender as keyof typeof t] || child.gender}</div>
-                </div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {isOwnProfile && notifications.length > 0 && (
-        <div className="bg-white rounded-[32px] border border-pink-100 overflow-hidden shadow-sm">
-          <CollapsibleHeader title={t.chat} icon={<Bell size={18}/>} count={activeUnreadCount} isOpen={openSections.notifications} onToggle={() => toggleSection('notifications')} hasBadge={notifications.some(n => !n.isDismissed && n.isActionRequired)} badgeLabel={t.urgent} />
-          {openSections.notifications && (
-            <div className="px-4 pb-4 space-y-2 animate-fade-in">
-               {(showAllNotifications ? notifications : notifications.slice(0, 5)).map(n => (
-                 <button key={n.id} onClick={() => handleNotificationJump(n)} className={`w-full p-4 rounded-2xl border text-left transition-all active:scale-[0.98] flex gap-4 items-start ${n.isDismissed ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-pink-100 shadow-sm'}`}>
-                   <div className={`p-2 rounded-xl shrink-0 ${n.isDismissed ? 'bg-gray-200 text-gray-400' : 'bg-pink-100 text-pink-500'}`}>
-                     {n.type === 'MARKET' ? <ShoppingBag size={16}/> : n.type === 'SKILL' ? <BookOpen size={16}/> : <Heart size={16}/>}
-                   </div>
-                   <div className="min-w-0 flex-grow">
-                     <div className="flex items-center gap-2 mb-1">
-                       <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${n.isDismissed ? 'bg-gray-200 text-gray-500' : 'bg-pink-500 text-white'}`}>
-                         {n.reason}
-                       </span>
-                       <span className="text-[7px] font-black text-gray-300 uppercase tracking-widest">
-                         {n.type}
-                       </span>
-                     </div>
-                     <h4 className="text-[11px] font-black uppercase truncate text-gray-800">{n.title}</h4>
-                     <p className="text-[10px] leading-relaxed font-bold text-gray-500 line-clamp-1">{n.message}</p>
-                   </div>
-                 </button>
-               ))}
             </div>
           )}
         </div>
-      )}
-
-      <div className="space-y-4">
-        {(isOwnProfile || privacy.showListings) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.sell} icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} />
-            {openSections.activeSales && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myActiveSales.map(item => (
-                  <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-gray-100 flex items-center justify-between bg-white text-left shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl border bg-teal-50 border-teal-100">{GENRE_ICONS[item.genre] || '📦'}</div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {(isOwnProfile || privacy.showBuying) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.all} icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} />
-            {openSections.buying && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myPurchases.map(item => (
-                  <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-orange-50 flex items-center justify-between bg-white text-left shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">{item.parentAvatarIcon}</div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* WANTED SECTION */}
-        {(isOwnProfile || privacy.showWanted) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.wishlist} icon={<Heart size={18}/>} count={myWanted.length} isOpen={openSections.wanted} onToggle={() => toggleSection('wanted')} />
-            {openSections.wanted && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myWanted.map(wanted => (
-                  <div key={wanted.id} className="w-full p-4 rounded-[28px] border border-amber-50 flex items-center justify-between bg-white">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl border bg-amber-50 border-amber-100">
-                         {GENRE_ICONS[wanted.genre] || <Heart size={16} fill="currentColor"/>}
-                       </div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{wanted.title}</div>
-                    </div>
-                    <div className="text-[9px] font-black text-amber-500 uppercase">RM{wanted.hopePrice}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {(isOwnProfile || privacy.showSkills) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.skills} icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} />
-            {openSections.skills && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {mySkills.map(skill => (
-                  <button key={skill.id} onClick={() => onGoToSkill(skill.id)} className="w-full p-4 rounded-[28px] border border-indigo-50 flex items-center justify-between bg-white text-left shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden">
-                         {skill.images && skill.images.length > 0 ? (
-                           <img src={skill.images[0]} className="w-full h-full object-cover" alt={skill.title} referrerPolicy="no-referrer" />
-                         ) : (
-                           SKILL_ICONS[skill.category] || '🌟'
-                         )}
-                       </div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{skill.title}</div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isOwnProfile && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.likedPosts} icon={<Heart size={18} fill="currentColor" className="text-rose-500" />} count={myLikes.length} isOpen={openSections.likes} onToggle={() => toggleSection('likes')} />
-            {openSections.likes && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myLikes.map(item => (
-                  <button 
-                    key={item.id} 
-                    onClick={() => {
-                      if (item.itemType === 'MARKET') onGoToTransaction(item.id);
-                      else if (item.itemType === 'SKILL') onGoToSkill(item.id);
-                      else if (item.itemType === 'WANTED') onGoToWanted(item.id);
-                    }} 
-                    className="w-full p-4 rounded-[28px] border border-rose-50 flex items-center justify-between bg-white text-left shadow-sm"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border overflow-hidden ${item.itemType === 'MARKET' ? 'bg-teal-50 border-teal-100' : item.itemType === 'SKILL' ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
-                         {item.itemType === 'MARKET' ? (
-                           (item as MarketItem).images && (item as MarketItem).images.length > 0 ? (
-                             <img src={(item as MarketItem).images[0]} className="w-full h-full object-cover" alt={item.title} referrerPolicy="no-referrer" />
-                           ) : (GENRE_ICONS[(item as MarketItem).genre] || '📦')
-                         ) : item.itemType === 'SKILL' ? (
-                           (item as Skill).images && (item as Skill).images.length > 0 ? (
-                             <img src={(item as Skill).images[0]} className="w-full h-full object-cover" alt={item.title} referrerPolicy="no-referrer" />
-                           ) : (SKILL_ICONS[(item as Skill).category] || '🌟')
-                         ) : (GENRE_ICONS[(item as WantedItem).genre] || '🔍')}
-                       </div>
-                       <div className="flex flex-col min-w-0">
-                         <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                         <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{item.itemType}</div>
-                       </div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-                {myLikes.length === 0 && (
-                  <div className="py-8 text-center space-y-2">
-                    <Heart size={32} className="mx-auto text-gray-100" />
-                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No liked posts yet</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Mail size={18} className="text-pink-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Support & Inquiries</p>
-              <p className="text-[11px] font-bold text-gray-600 leading-relaxed mt-1">
-                For inquiries or questions, please email <a href="mailto:nearbyexchange@gmail.com" className="text-pink-500 underline">nearbyexchange@gmail.com</a>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {isOwnProfile && (
-          <button onClick={onLogout} className="w-full py-5 bg-white border-2 border-red-50 text-red-400 rounded-[32px] font-black uppercase text-[11px] tracking-[0.2em] shadow-sm active:bg-red-50 transition-all mt-4">
-            {t.logout}
-          </button>
-        )}
       </div>
     </div>
   );

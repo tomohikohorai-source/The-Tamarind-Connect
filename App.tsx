@@ -1,28 +1,24 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-import { GoogleGenAI } from "@google/genai";
-import { Language } from "../translations";
+node_modules
+dist
+dist-ssr
+*.local
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-
-export async function translateText(text: string, targetLang: Language): Promise<string> {
-  if (!text.trim()) return text;
-  
-  const langNames = {
-    en: "English",
-    zh: "Chinese",
-    ko: "Korean",
-    ja: "Japanese"
-  };
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Translate the following text into ${langNames[targetLang]}. Provide only the translated text without any explanations or extra characters: "${text}"`,
-    });
-
-    return response.text || text;
-  } catch (error) {
-    console.error("Translation error:", error);
-    return text;
-  }
-}
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
