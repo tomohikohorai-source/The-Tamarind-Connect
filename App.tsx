@@ -1,28 +1,25 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment, ReadContent } from '@/types';
-import { Language, translations } from '@/translations';
-import { AuthScreen } from '@/components/AuthScreen';
-import { ProfileSetup } from '@/components/ProfileSetup';
-import { ProfilePage } from '@/components/ProfilePage';
-import { PasscodeGate } from '@/components/PasscodeGate';
-import { MarketPlace } from '@/components/MarketPlace';
-import { MarketItemForm } from '@/components/MarketItemForm';
-import { SkillExchange } from '@/components/SkillExchange';
-import { SkillForm } from '@/components/SkillForm';
-import { WantedList } from '@/components/WantedList';
-import { WantedItemForm } from '@/components/WantedItemForm';
-import { ReadTab } from '@/components/ReadTab';
-import { About } from '@/components/About';
-import { PrivacyPolicy } from '@/components/PrivacyPolicy';
-import { TermsOfService } from '@/components/TermsOfService';
-import { SafetyGuide } from '@/components/SafetyGuide';
-import { CommunityGuide } from '@/components/CommunityGuide';
-import { TrustTips } from '@/components/TrustTips';
-import { LoginRequiredModal } from '@/components/LoginRequiredModal';
-import { store } from '@/services/store';
-import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from '@/constants';
-import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from '@/services/sampleData';
+import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment, ReadContent } from './types';
+import { Language, translations } from './translations';
+import { AuthScreen } from './components/AuthScreen';
+import { ProfileSetup } from './components/ProfileSetup';
+import { ProfilePage } from './components/ProfilePage';
+import { PasscodeGate } from './components/PasscodeGate';
+import { MarketPlace } from './components/MarketPlace';
+import { MarketItemForm } from './components/MarketItemForm';
+import { SkillExchange } from './components/SkillExchange';
+import { SkillForm } from './components/SkillForm';
+import { WantedList } from './components/WantedList';
+import { WantedItemForm } from './components/WantedItemForm';
+import { ReadTab } from './components/ReadTab';
+import { About } from './components/About';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
+import { LoginRequiredModal } from './components/LoginRequiredModal';
+import { store } from './services/store';
+import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
+import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
 import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
@@ -31,7 +28,7 @@ import {
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
   onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where, setDoc,
   handleFirestoreError, OperationType, serverTimestamp
-} from '@/firebase';
+} from './firebase';
 
 export const App: React.FC = () => {
   const [isVerified, setIsVerified] = useState(true); // Skip passcode gate by default
@@ -48,9 +45,6 @@ export const App: React.FC = () => {
   const [showAbout, setShowAbout] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTos, setShowTos] = useState(false);
-  const [showSafety, setShowSafety] = useState(false);
-  const [showCommunity, setShowCommunity] = useState(false);
-  const [showTrust, setShowTrust] = useState(false);
   const [tabResetToggle, setTabResetToggle] = useState(false);
   const [language, setLanguage] = useState<Language>(() => (localStorage.getItem('app_language') as Language) || 'en');
   const t = translations[language];
@@ -243,9 +237,6 @@ export const App: React.FC = () => {
       else if (path === '#about') setShowAbout(true);
       else if (path === '#privacy') setShowPrivacy(true);
       else if (path === '#tos') setShowTos(true);
-      else if (path === '#safety') setShowSafety(true);
-      else if (path === '#community') setShowCommunity(true);
-      else if (path === '#trust') setShowTrust(true);
       else if (path === '#market' || path === '') {
         setActiveTab('MARKET');
         setTargetMarketId(id);
@@ -264,13 +255,10 @@ export const App: React.FC = () => {
       else if (path === '#sell') setShowMarketForm(true);
       else if (path === '#post-skill') setShowSkillForm(true);
       else if (path === '#post-wanted') setShowWantedForm(true);
-      else if (path !== '#about' && path !== '#privacy' && path !== '#tos' && path !== '#safety' && path !== '#community' && path !== '#trust') { 
+      else if (path !== '#about' && path !== '#privacy' && path !== '#tos') { 
         setShowAbout(false);
         setShowPrivacy(false);
         setShowTos(false);
-        setShowSafety(false);
-        setShowCommunity(false);
-        setShowTrust(false);
         setShowCheckIn(false); 
         setEditingActivity(undefined);
         setShowMarketForm(false);
@@ -827,9 +815,6 @@ export const App: React.FC = () => {
     setShowAbout(false);
     setShowPrivacy(false);
     setShowTos(false);
-    setShowSafety(false);
-    setShowCommunity(false);
-    setShowTrust(false);
     window.location.hash = activeTab === 'PLAY' ? 'play' : activeTab.toLowerCase();
   };
 
@@ -1182,7 +1167,7 @@ export const App: React.FC = () => {
   const themeShadow = (isMarket || isProfile) ? 'shadow-teal-100' : isWanted ? 'shadow-amber-100' : isSkills ? 'shadow-indigo-100' : 'shadow-pink-100';
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-auto sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+    <div className="flex flex-col min-h-screen bg-[#fdfbf7] max-w-lg mx-auto border-x border-gray-100 shadow-sm relative overflow-x-hidden touch-none sm:touch-auto" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
       <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-3 sm:p-5 border-b border-gray-100">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center w-full gap-2">
            <div className="flex items-center">
@@ -1255,8 +1240,6 @@ export const App: React.FC = () => {
         {activeTab === 'MARKET' && (
           <MarketPlace 
             items={marketItems} 
-            skills={skills}
-            wantedItems={wantedItems}
             profile={profile} 
             language={language} 
             loading={marketLoading}
@@ -1285,8 +1268,6 @@ export const App: React.FC = () => {
         {activeTab === 'WANTED' && (
           <WantedList 
             items={wantedItems} 
-            marketItems={marketItems}
-            skills={skills}
             profile={profile} 
             language={language} 
             loading={wantedLoading}
@@ -1322,8 +1303,6 @@ export const App: React.FC = () => {
         {activeTab === 'SKILLS' && (
           <SkillExchange 
             skills={skills} 
-            marketItems={marketItems}
-            wantedItems={wantedItems}
             profile={profile} 
             language={language} 
             loading={skillsLoading}
@@ -1388,13 +1367,10 @@ export const App: React.FC = () => {
 
         {/* Footer Area for AdSense Compliance & Professionalism */}
         <footer className="py-12 px-6 border-t border-gray-100 mt-8 mb-32 text-center space-y-6">
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-4">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
             <button onClick={() => setShowAbout(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">About Us</button>
             <button onClick={() => setShowPrivacy(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Privacy Policy</button>
             <button onClick={() => setShowTos(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Terms of Service</button>
-            <button onClick={() => setShowSafety(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Safety Guide</button>
-            <button onClick={() => setShowCommunity(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Community Guide</button>
-            <button onClick={() => setShowTrust(true)} className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-pink-500 transition-colors">Building Trust</button>
           </div>
           <div className="space-y-2">
             <p className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter italic">
@@ -1508,24 +1484,6 @@ export const App: React.FC = () => {
       {showTos && (
         <div className="fixed inset-0 z-[600]">
           <TermsOfService onBack={closeModals} language={language} />
-        </div>
-      )}
-
-      {showSafety && (
-        <div className="fixed inset-0 z-[600]">
-          <SafetyGuide onBack={closeModals} language={language} />
-        </div>
-      )}
-
-      {showCommunity && (
-        <div className="fixed inset-0 z-[600]">
-          <CommunityGuide onBack={closeModals} language={language} />
-        </div>
-      )}
-
-      {showTrust && (
-        <div className="fixed inset-0 z-[600]">
-          <TrustTips onBack={closeModals} language={language} />
         </div>
       )}
 

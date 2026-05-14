@@ -1,269 +1,233 @@
 
-import React, { useState, useEffect } from 'react';
-import { UserProfile, LocationType, Activity, Child } from '@/types';
-import { LOCATION_METADATA } from '@/constants';
-import { store } from '@/services/store';
-import { addDays, format, isAfter } from 'date-fns';
-import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { UserProfile } from '../types';
+import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock, TrendingUp } from 'lucide-react';
 
-import { Language, translations } from '@/translations';
+import { Language, translations } from '../translations';
 
 interface Props {
   profile: UserProfile;
   language?: Language;
-  initialActivity?: Activity;
-  onSubmit: (activity: Activity) => void;
-  onCancel: () => void;
 }
 
-export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initialActivity, onSubmit, onCancel }) => {
+interface PetStage {
+  icon: string;
+  name: string;
+  level: string;
+  threshold: number;
+}
+
+interface EvolutionInfo {
+  current: PetStage;
+  next: PetStage | null;
+  pathLabel: string;
+  pathId: string;
+  gradient: string;
+  textColor: string;
+  accentColor: string;
+}
+
+export const PetGarden: React.FC<Props> = ({ profile, language = 'en' }) => {
   const t = translations[language];
-  const [location, setLocation] = useState<LocationType>(initialActivity?.location || LocationType.POOL);
-  const [type, setType] = useState<'NOW' | 'FUTURE'>(initialActivity ? 'FUTURE' : 'NOW');
-  const [selectedChildren, setSelectedChildren] = useState<string[]>(initialActivity?.childNicknames || profile.children.map(c => c.nickname));
-  const [date, setDate] = useState(initialActivity ? new Date(initialActivity.startTime) : new Date());
-  
-  const now = new Date();
-  const [startTime, setStartTime] = useState(initialActivity ? format(new Date(initialActivity.startTime), 'HH:mm') : format(now, 'HH:mm'));
-  const [endTime, setEndTime] = useState(initialActivity ? format(new Date(initialActivity.endTime), 'HH:mm') : format(new Date(now.getTime() + 60 * 60000), 'HH:mm'));
-  
-  const [message, setMessage] = useState(initialActivity?.message || '');
-  const [isInvitation, setIsInvitation] = useState(initialActivity?.isInvitation || false);
-  const [error, setError] = useState('');
+  const days = profile.totalLoginDays || 1;
 
-  useEffect(() => {
-    if (endTime > "20:00") setEndTime("20:00");
-    if (startTime > "20:00") setStartTime("20:00");
-  }, [endTime, startTime]);
+  // Stable hash based on UID
+  const getHash = (seed: string) => seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const mainBranchIndex = getHash(profile.uid) % 3; // 0: Forest, 1: Ocean, 2: Cosmic
+  const subBranchIndex = getHash(profile.uid + 'v2') % 2; // 0: Alpha, 1: Beta
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const evolution = useMemo((): EvolutionInfo => {
+    // 1. Common Stages (1-14 days)
+    const COMMON: PetStage[] = [
+      { icon: '🥚', name: 'Mysterious Egg', level: 'Seed', threshold: 1 },
+      { icon: '🐣', name: 'Shell-capped Peep', level: 'Hatchling', threshold: 3 },
+      { icon: '🐥', name: 'Aspirant Chick', level: 'Junior', threshold: 7 },
+    ];
 
-    const [sh, sm] = startTime.split(':').map(Number);
-    const start = new Date(date);
-    start.setHours(sh, sm, 0, 0);
-    
-    const [eh, em] = endTime.split(':').map(Number);
-    const end = new Date(date);
-    end.setHours(eh, em, 0, 0);
+    // 2. Main Branches (15-99 days)
+    const BRANCHES = [
+      { // Forest Path
+        id: 'forest', label: 'Forest Soul', gradient: 'from-green-50 to-emerald-50/40', text: 'text-emerald-600', accent: 'bg-emerald-100',
+        stages: [
+          { icon: ' foxes', name: 'Forest Fox', level: 'Ranger', threshold: 15 },
+          { icon: '🦌', name: 'Glade Deer', level: 'Scout', threshold: 30 },
+          { icon: '🐅', name: 'Jade Tiger', level: 'Warrior', threshold: 60 },
+        ],
+        sub: [
+          [ // Forest A: Ancient Protector
+            { icon: '🐘', name: 'Elder Elephant', level: 'Guardian', threshold: 100 },
+            { icon: '🦍', name: 'Jungle King', level: 'Chieftain', threshold: 150 },
+            { icon: '🦕', name: 'Ancient Titan', level: 'God', threshold: 250 },
+          ],
+          [ // Forest B: Wild Hunter
+            { icon: '🐺', name: 'Silver Wolf', level: 'Hunter', threshold: 100 },
+            { icon: '🦁', name: 'Sun Lion', level: 'Sovereign', threshold: 150 },
+            { icon: '🐉', name: 'Wood Dragon', level: 'Overlord', threshold: 250 },
+          ]
+        ]
+      },
+      { // Ocean Path
+        id: 'ocean', label: 'Ocean Soul', gradient: 'from-blue-50 to-cyan-50/40', text: 'text-blue-600', accent: 'bg-blue-100',
+        stages: [
+          { icon: '🐠', name: 'Coral Fish', level: 'Social', threshold: 15 },
+          { icon: '🐢', name: 'Sea Turtle', level: 'Steady', threshold: 30 },
+          { icon: '🐬', name: 'Sky Dolphin', level: 'Ace', threshold: 60 },
+        ],
+        sub: [
+          [ // Ocean A: Mythic Depth
+            { icon: '🐙', name: 'Deep Kraken', level: 'Genius', threshold: 100 },
+            { icon: '🐳', name: 'Island Whale', level: 'Leviathan', threshold: 150 },
+            { icon: '🧜‍♂️', name: 'Sea God', level: 'Eternal', threshold: 250 },
+          ],
+          [ // Ocean B: Coastal King
+            { icon: '🦈', name: 'Great Shark', level: 'Striker', threshold: 100 },
+            { icon: '🐊', name: 'Deep Gator', level: 'Fearless', threshold: 150 },
+            { icon: '🐋', name: 'Glacier Whale', level: 'Ancient', threshold: 250 },
+          ]
+        ]
+      },
+      { // Cosmic Path
+        id: 'cosmic', label: 'Cosmic Soul', gradient: 'from-purple-50 to-pink-50/40', text: 'text-purple-600', accent: 'bg-purple-100',
+        stages: [
+          { icon: '🦄', name: 'Star Pony', level: 'Mystic', threshold: 15 },
+          { icon: '🧚', name: 'Pixie Star', level: 'Fairy', threshold: 30 },
+          { icon: '🤖', name: 'Neon Bot', level: 'Cyber', threshold: 60 },
+        ],
+        sub: [
+          [ // Cosmic A: Celestial Being
+            { icon: '🐲', name: 'Galaxy Dragon', level: 'Astral', threshold: 100 },
+            { icon: '🛰️', name: 'Orbital Eye', level: 'Oracle', threshold: 150 },
+            { icon: '👑', name: 'Cosmic King', level: 'Divinity', threshold: 250 },
+          ],
+          [ // Cosmic B: Dimension Walker
+            { icon: '🛸', name: 'Space Pilot', level: 'Visitor', threshold: 100 },
+            { icon: '👾', name: 'Void Entity', level: 'Stranger', threshold: 150 },
+            { icon: '🧿', name: 'Eye of Time', level: 'Abyss', threshold: 250 },
+          ]
+        ]
+      }
+    ];
 
-    if (isAfter(start, end)) {
-      setError('End time must be after start time');
-      return;
+    let currentBranch = BRANCHES[mainBranchIndex];
+    let allStages: PetStage[] = [...COMMON];
+
+    if (days >= 15 && days < 100) {
+      allStages = [...COMMON, ...currentBranch.stages];
+    } else if (days >= 100) {
+      allStages = [...COMMON, ...currentBranch.stages, ...currentBranch.sub[subBranchIndex]];
     }
 
-    const selectedAvatars = profile.children
-      .filter(c => selectedChildren.includes(c.nickname))
-      .map(c => c.avatarIcon);
+    // Find current stage
+    let currentIdx = 0;
+    for (let i = 0; i < allStages.length; i++) {
+      if (days >= allStages[i].threshold) {
+        currentIdx = i;
+      }
+    }
 
-    const activity: Activity = {
-      id: initialActivity?.id || crypto.randomUUID(),
-      userId: profile.uid, 
-      condoCode: profile.condoCode || store.getPasscode() || '',
-      condoId: profile.condoId || '',
-      parentNickname: profile.parentNickname,
-      roomNumber: profile.roomNumber,
-      location,
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
-      message,
-      childNicknames: selectedChildren,
-      childAvatars: selectedAvatars,
-      isInvitation,
-      parentAvatarIcon: profile.avatarIcon,
-      lastUpdated: new Date().toISOString() // Tracking for notifications
+    const current = allStages[currentIdx];
+    const next = allStages[currentIdx + 1] || null;
+
+    // Visual styles adapt based on phase
+    const isCommon = days < 15;
+    return {
+      current,
+      next,
+      pathLabel: isCommon ? 'Common Soul' : (days >= 100 ? `${currentBranch.label} (Final)` : currentBranch.label),
+      pathId: isCommon ? 'common' : currentBranch.id,
+      gradient: isCommon ? 'from-orange-50 to-pink-50/40' : currentBranch.gradient,
+      textColor: isCommon ? 'text-pink-600' : currentBranch.text,
+      accentColor: isCommon ? 'bg-pink-100' : currentBranch.accent,
     };
+  }, [days, mainBranchIndex, subBranchIndex]);
 
-    onSubmit(activity);
-  };
-
-  const toggleChild = (nickname: string) => {
-    if (selectedChildren.includes(nickname)) {
-      setSelectedChildren(selectedChildren.filter(n => n !== nickname));
-    } else {
-      setSelectedChildren([...selectedChildren, nickname]);
-    }
-  };
+  const prevThreshold = evolution.current.threshold;
+  const nextThreshold = evolution.next ? evolution.next.threshold : prevThreshold + 100;
+  const progress = Math.min(100, ((days - prevThreshold) / (nextThreshold - prevThreshold)) * 100);
+  const remainingDays = evolution.next ? (evolution.next.threshold - days) : 0;
 
   return (
-    <div className="bg-white p-8 rounded-t-[40px] shadow-2xl overflow-y-auto max-h-[95vh] border-t border-pink-50 hide-scrollbar relative">
-      <div className="flex justify-between items-center mb-10">
-        <button 
-          type="button"
-          onClick={onCancel}
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-black text-xs bg-gray-50 px-4 py-2.5 rounded-2xl transition-all active:scale-95 border border-gray-100 uppercase tracking-widest shadow-sm"
-        >
-          <ChevronLeft size={18} /> {t.back}
-        </button>
-        <h2 className="text-xl font-black text-gray-800 tracking-tighter uppercase pr-2">
-          {initialActivity ? t.edit : t.checkIn}
-        </h2>
-        <button onClick={onCancel} className="text-gray-300 hover:text-gray-500">
-           <X size={24} />
-        </button>
+    <div className="mx-4 mt-1 mb-4">
+      <div className={`bg-gradient-to-br ${evolution.gradient} rounded-[32px] border-2 border-white shadow-lg p-4 relative overflow-hidden group`}>
+        
+        {/* Branch-specific background icons */}
+        <div className={`absolute -right-4 -top-4 ${evolution.textColor} opacity-10 rotate-12 pointer-events-none`}>
+          {evolution.pathId === 'forest' ? <Trees size={100} fill="currentColor" /> : 
+           evolution.pathId === 'ocean' ? <Waves size={100} fill="currentColor" /> : 
+           evolution.pathId === 'cosmic' ? <Stars size={100} fill="currentColor" /> : 
+           <Zap size={100} fill="currentColor" />}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 bg-white rounded-[24px] shadow-inner border border-white flex items-center justify-center text-4xl animate-float-mini">
+                {evolution.current.icon}
+              </div>
+              <div className={`absolute -bottom-1 -right-1 ${evolution.textColor.replace('text', 'bg')} text-[8px] font-black text-white px-2 py-0.5 rounded-full border border-white shadow-sm`}>
+                Lv.{days}
+              </div>
+            </div>
+
+            <div className="flex-grow min-w-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`${evolution.accentColor} ${evolution.textColor} text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest whitespace-nowrap flex items-center gap-1`}>
+                  {days < 15 ? <HelpCircle size={10}/> : (days >= 100 ? (subBranchIndex === 0 ? <Shield size={10}/> : <Sword size={10}/>) : <Zap size={10}/>)}
+                  {evolution.current.level}
+                </span>
+                <span className="text-[15px] font-black text-gray-800 tracking-tight flex items-center gap-1 truncate">
+                  {evolution.current.name} <Sparkles size={12} className="text-yellow-400 shrink-0" />
+                </span>
+              </div>
+              
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${evolution.textColor} opacity-60`}>{t.growthProgress}</span>
+                  <span className={`text-[9px] font-black ${evolution.textColor}`}>{Math.round(progress)}%</span>
+                </div>
+                <div className="flex-grow h-3 bg-white/60 rounded-full overflow-hidden border border-white p-0.5 shadow-inner">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${evolution.textColor.replace('text', 'from').replace('-600', '-300')} ${evolution.textColor.replace('text', 'to').replace('-600', '-500')} rounded-full transition-all duration-1000 shadow-sm relative overflow-hidden`}
+                    style={{ width: `${progress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-white/50 pt-3 px-1">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={12} className={`${evolution.textColor} opacity-60`} />
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                {evolution.next ? (
+                  <><span className={evolution.textColor}>{remainingDays} {language === 'ja' ? '日' : 'days'}</span> {t.nextEvolution}</>
+                ) : (
+                  <>{t.ultimateForm}</>
+                )}
+              </span>
+            </div>
+            
+            {evolution.next && (
+              <div className="flex items-center gap-2 bg-white/40 px-2 py-1 rounded-xl border border-white/20">
+                <Lock size={10} className={`${evolution.textColor} opacity-40`} />
+                <span className={`text-[10px] grayscale opacity-30`}>{evolution.next.icon}</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8 pb-12">
-        {error && (
-          <div className="flex items-center gap-2 text-red-500 text-[10px] font-black bg-red-50 p-3 rounded-xl border border-red-100">
-            <AlertCircle size={14} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.location}</label>
-          <div className="grid grid-cols-3 gap-3">
-            {(Object.keys(LocationType) as LocationType[]).map(loc => (
-              <button
-                key={loc}
-                type="button"
-                onClick={() => setLocation(loc)}
-                className={`p-4 rounded-3xl border-2 flex flex-col items-center transition-all ${
-                  location === loc ? `${LOCATION_METADATA[loc].borderColor} bg-white ring-4 ring-pink-50/50` : 'border-transparent bg-gray-50 opacity-60'
-                }`}
-              >
-                <span className="text-3xl mb-1">{LOCATION_METADATA[loc].icon}</span>
-                <span className={`text-[9px] font-black uppercase tracking-tighter ${location === loc ? LOCATION_METADATA[loc].textColor : 'text-gray-400'}`}>
-                  {LOCATION_METADATA[loc].label.split(' ')[0]}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {!initialActivity && (
-          <div>
-            <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.today}</label>
-            <div className="flex gap-3">
-              {[
-                { id: 'NOW', label: t.live },
-                { id: 'FUTURE', label: t.specificTime }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setType(t.id as any)}
-                  className={`flex-1 py-4 rounded-2xl font-black transition-all text-[11px] uppercase tracking-widest ${
-                    type === t.id ? 'bg-pink-400 text-white shadow-xl scale-[1.02]' : 'bg-gray-50 text-gray-400'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          {(type === 'FUTURE' || initialActivity) && (
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Calendar size={14}/> {t.targetDate}</label>
-              <input
-                type="date"
-                min={format(new Date(), 'yyyy-MM-dd')}
-                max={format(addDays(new Date(), 7), 'yyyy-MM-dd')}
-                value={format(date, 'yyyy-MM-dd')}
-                onChange={e => setDate(new Date(e.target.value))}
-                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-base font-bold text-gray-700"
-              />
-            </div>
-          )}
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> {t.startDate}</label>
-              <input
-                type="time"
-                value={startTime}
-                max="20:00"
-                onChange={e => setStartTime(e.target.value)}
-                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> {t.endDate}</label>
-              <input
-                type="time"
-                max="20:00"
-                value={endTime}
-                onChange={e => setEndTime(e.target.value)}
-                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.players}</label>
-          <div className="flex flex-wrap gap-3">
-            {profile.children.map(child => (
-              <button
-                key={child.id}
-                type="button"
-                onClick={() => toggleChild(child.nickname)}
-                className={`flex items-center gap-3 pr-5 pl-1.5 py-1.5 rounded-[20px] border-2 transition-all ${
-                  selectedChildren.includes(child.nickname)
-                    ? 'bg-pink-400 border-pink-400 text-white font-black shadow-lg scale-[1.05]'
-                    : 'bg-white border-gray-100 text-gray-400'
-                }`}
-              >
-                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-xl shadow-inner ${selectedChildren.includes(child.nickname) ? 'bg-white/20' : 'bg-gray-50'}`}>
-                  {child.avatarIcon}
-                </div>
-                <span className="text-xs font-black uppercase tracking-tight">{child.nickname}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.memo}</label>
-          <p className="text-[9px] text-gray-400 font-bold italic mb-2">{t.translationNotice}</p>
-          <div className="relative">
-            <MessageSquare className="absolute left-4 top-4 text-gray-300" size={18} />
-            <textarea
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder="..."
-              rows={3}
-              className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-3xl border-none outline-none font-medium text-sm text-gray-700 resize-none focus:ring-2 ring-pink-100"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between p-6 bg-orange-400 rounded-[32px] text-white shadow-xl shadow-orange-100">
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-2xl">
-              <Megaphone size={24} className="animate-pulse" />
-            </div>
-            <div>
-              <div className="font-black text-[13px] uppercase tracking-widest">{t.inviteNeighbors}</div>
-              <div className="text-[10px] font-bold opacity-80">{t.invite}</div>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isInvitation}
-              onChange={e => setIsInvitation(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-12 h-7 bg-white/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/40"></div>
-          </label>
-        </div>
-
-        <button
-          type="submit"
-          disabled={selectedChildren.length === 0}
-          className={`w-full py-5 rounded-[28px] font-black shadow-2xl transition-all active:scale-95 uppercase tracking-[0.2em] text-[13px] ${
-            selectedChildren.length > 0 ? 'bg-pink-400 text-white shadow-pink-200' : 'bg-gray-200 text-gray-400'
-          }`}
-        >
-          {initialActivity ? t.save : t.confirm}
-        </button>
-      </form>
+      <style>{`
+        @keyframes float-mini {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .animate-float-mini {
+          animation: float-mini 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

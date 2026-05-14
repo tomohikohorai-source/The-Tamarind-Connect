@@ -1,31 +1,290 @@
+import { MarketItem, Skill, WantedItem } from '../types';
 
-// Cache name updated to current app branding
-const CACHE_NAME = 'nearby-exchange-cache-v1';
+export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
+  {
+    id: 'sample-m1',
+    userId: 'demo-u1',
+    condoCode: '1111',
+    parentNickname: 'Sarah',
+    roomNumber: 'A-12-03',
+    parentAvatarIcon: '👩',
+    title: 'BABY FLOAT RING(GOOD CONDITION)',
+    genre: 'Baby & Kids',
+    description: 'Used only once. Perfect for babies to enjoy the pool safely.',
+    price: 150,
+    type: 'SALE',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    paymentMethod: 'CASH',
+    pickupLocation: 'Central Red Bench, G Floor Lobby',
+    pickupDateTime: 'Weekend afternoons',
+    condition: 'A',
+    comments: [
+      {
+        id: 'c1',
+        userId: 'demo-u2',
+        userNickname: 'David',
+        userAvatar: '👨',
+        text: 'Is this still available? My son would love this!',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        id: 'c2',
+        userId: 'demo-u1',
+        userNickname: 'Sarah',
+        userAvatar: '👩',
+        text: 'Yes, it is! It\'s in great condition. Let me know if you want to see more photos.',
+        createdAt: new Date(Date.now() - 43200000).toISOString()
+      }
+    ],
+    images: ['https://lh3.googleusercontent.com/d/1xGjgNxcOu-Z5l9cNq6LWiR_p3fpArWNN'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    likes: ['demo-u2']
+  },
+  {
+    id: 'sample-m2',
+    userId: 'demo-u2',
+    condoCode: '1111',
+    parentNickname: 'David',
+    roomNumber: 'B-05-10',
+    parentAvatarIcon: '👨',
+    title: 'IKEA COFFEE TABEL',
+    genre: 'Furniture',
+    description: 'Moving out sale. Minor scratches on the surface.',
+    price: 30,
+    type: 'SALE',
+    status: 'RESERVED',
+    requestStatus: 'NONE',
+    paymentMethod: 'TNG',
+    pickupLocation: 'Lobby 3A Lounge Entrance',
+    pickupDateTime: 'Anytime after 7pm',
+    condition: 'B',
+    comments: [],
+    images: ['https://lh3.googleusercontent.com/d/1l_GN4wB1m_FhJIKwuWtpCBlBaDKZQH4G'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    buyerId: 'demo-u1',
+    buyerNickname: 'Sarah',
+    buyerAvatarIcon: '👩'
+  },
+  {
+    id: 'sample-m3',
+    userId: 'demo-u3',
+    condoCode: '1111',
+    parentNickname: 'Linda',
+    roomNumber: 'C-22-01',
+    parentAvatarIcon: '👩🏻',
+    title: 'Free House Plants',
+    genre: 'Plants & Flowers',
+    description: 'Giving away some succulents as I have too many now!',
+    price: 0,
+    type: 'FREE',
+    status: 'SOLD',
+    requestStatus: 'NONE',
+    paymentMethod: 'FREE',
+    pickupLocation: '5F Gym Entrance',
+    pickupDateTime: 'Friday morning',
+    condition: 'S',
+    comments: [],
+    images: ['https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=400'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    buyerId: 'demo-u2',
+    buyerNickname: 'David',
+    buyerAvatarIcon: '👨'
+  },
+  {
+    id: 'sample-m4',
+    userId: 'demo-u4',
+    condoCode: '1111',
+    parentNickname: 'Ken',
+    roomNumber: 'A-08-05',
+    parentAvatarIcon: '🧔',
+    title: 'ELECTRIC KETTELE(ALMOST NEW)',
+    genre: 'Home Appliances',
+    description: 'Used only a few times. Selling because I got a new one.',
+    price: 45,
+    type: 'SALE',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    paymentMethod: 'TNG',
+    pickupLocation: 'Demo Tower A Lobby',
+    pickupDateTime: 'Weekdays after 6pm',
+    condition: 'S',
+    comments: [
+      {
+        id: 'c3',
+        userId: 'demo-u3',
+        userNickname: 'Linda',
+        userAvatar: '👩🏻',
+        text: 'I\'m interested! Can I pick it up tomorrow evening around 7pm?',
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    ],
+    images: ['https://lh3.googleusercontent.com/d/1nH8y39KCyNxxlM7mFZuiDZdqTOlN8fF5'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-m5',
+    userId: 'demo-u3',
+    condoCode: '1111',
+    parentNickname: 'Linda',
+    roomNumber: 'C-22-01',
+    parentAvatarIcon: '👩🏻',
+    title: 'KIDS BICYKLE(16 INCH)',
+    genre: 'Sports',
+    description: 'Outgrown by my son. Still works perfectly fine.',
+    price: 80,
+    type: 'SALE',
+    status: 'RESERVED',
+    requestStatus: 'NONE',
+    paymentMethod: 'CASH',
+    pickupLocation: 'Sky Garden Level 25',
+    pickupDateTime: 'Saturday morning',
+    condition: 'B',
+    comments: [],
+    images: ['https://lh3.googleusercontent.com/d/1PSg6X1mu-TUM4GSHyhfW2kLL2GjAnzfZ'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    buyerId: 'demo-u4',
+    buyerNickname: 'Ken',
+    buyerAvatarIcon: '🧔'
+  }
+];
 
-// Execute on install
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        '/',
-        '/index.html',
-        '/manifest.json'
-      ]);
-    })
-  );
-  self.skipWaiting();
-});
+export const SAMPLE_SKILLS: Skill[] = [
+  {
+    id: 'sample-s1',
+    userId: 'demo-u4',
+    condoCode: '1111',
+    parentNickname: 'Ken',
+    parentAvatarIcon: '🧔',
+    roomNumber: 'A-08-05',
+    title: 'Math Tutoring for Primary Kids',
+    category: 'Academic & Tutoring',
+    description: 'I am a retired teacher. Happy to help kids with their math homework.',
+    type: 'OFFER',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    price: 'RM 40/hr',
+    comments: [
+      {
+        id: 'sc1',
+        userId: 'demo-u1',
+        userNickname: 'Sarah',
+        userAvatar: '👩',
+        text: 'Hi Ken! My daughter needs some help with her algebra. Are you free this Saturday?',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
+      },
+      {
+        id: 'sc2',
+        userId: 'demo-u4',
+        userNickname: 'Ken',
+        userAvatar: '🧔',
+        text: 'Hi Sarah! Yes, I am free in the morning. Does 10am work for you?',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      }
+    ],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-s2',
+    userId: 'demo-u1',
+    condoCode: '1111',
+    parentNickname: 'Sarah',
+    parentAvatarIcon: '👩',
+    roomNumber: 'A-12-03',
+    title: 'Baking Workshop (Cookies)',
+    category: 'Cooking & Baking',
+    description: 'Learn how to make chocolate chip cookies! Max 3 people.',
+    type: 'OFFER',
+    status: 'RESERVED',
+    requestStatus: 'NONE',
+    requesterId: 'demo-u3',
+    requesterNickname: 'Linda',
+    requesterAvatarIcon: '👩🏻',
+    price: 'Exchange for coffee beans',
+    comments: [],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-s3',
+    userId: 'demo-u2',
+    condoCode: '1111',
+    parentNickname: 'David',
+    parentAvatarIcon: '👨',
+    roomNumber: 'B-05-10',
+    title: 'Need help with PC Setup',
+    category: 'Tech & Digital',
+    description: 'Just bought a new gaming PC and need help with cable management and setup.',
+    type: 'REQUEST',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    price: 'RM 50',
+    comments: [],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  }
+];
 
-// Execute on activate
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-// Execute on fetch
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
-});
+export const SAMPLE_WANTED_ITEMS: WantedItem[] = [
+  {
+    id: 'sample-w1',
+    userId: 'demo-u2',
+    condoCode: '1111',
+    parentNickname: 'David',
+    roomNumber: 'B-05-10',
+    parentAvatarIcon: '👨',
+    title: 'LOOKING FOR A TENNIS RACKET',
+    genre: 'Sports',
+    description: 'Need a spare racket for a friend visiting next week.',
+    hopePrice: 50,
+    pickupLocation: 'Anywhere in the condo',
+    preferredTiming: 'Before next Wednesday',
+    images: ['https://lh3.googleusercontent.com/d/1FOnDddzSFSYpvXDtZb_0hMDL_iJS-j77'],
+    comments: [
+      {
+        id: 'wc1',
+        userId: 'demo-u4',
+        userNickname: 'Ken',
+        userAvatar: '🧔',
+        text: 'I have an old Wilson racket you can borrow. It\'s a bit heavy though.',
+        createdAt: new Date(Date.now() - 259200000).toISOString()
+      },
+      {
+        id: 'wc2',
+        userId: 'demo-u2',
+        userNickname: 'David',
+        userAvatar: '👨',
+        text: 'That would be great, Ken! Heavy is fine for my friend. I\'ll DM you.',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
+      }
+    ],
+    status: 'OPEN',
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-w2',
+    userId: 'demo-u3',
+    condoCode: '1111',
+    parentNickname: 'Linda',
+    roomNumber: 'C-22-01',
+    parentAvatarIcon: '👩🏻',
+    title: 'WANTED: EMPTY CARDBOAR BOXES',
+    genre: 'Others',
+    description: 'Need about 10 large boxes for moving next month.',
+    hopePrice: 0,
+    pickupLocation: 'Will pick up from your unit',
+    preferredTiming: 'Anytime this week',
+    images: ['https://lh3.googleusercontent.com/d/1aiZZa-OlMKd3kuWOSNYc0S1ZjxCev4ax'],
+    comments: [],
+    status: 'OPEN',
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  }
+];

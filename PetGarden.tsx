@@ -1,76 +1,269 @@
 
-import React, { useState } from 'react';
-import { RESIDENT_PASSCODE, DEMO_PASSCODE } from '@/constants';
-import { Language, translations } from '@/translations';
+import React, { useState, useEffect } from 'react';
+import { UserProfile, LocationType, Activity, Child } from '../types';
+import { LOCATION_METADATA } from '../constants';
+import { store } from '../services/store';
+import { addDays, format, isAfter } from 'date-fns';
+import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
+
+import { Language, translations } from '../translations';
 
 interface Props {
-  onSuccess: (code: string) => void;
-  language: Language;
-  onLanguageChange: (lang: Language) => void;
+  profile: UserProfile;
+  language?: Language;
+  initialActivity?: Activity;
+  onSubmit: (activity: Activity) => void;
+  onCancel: () => void;
 }
 
-export const PasscodeGate: React.FC<Props> = ({ onSuccess, language, onLanguageChange }) => {
+export const CheckInForm: React.FC<Props> = ({ profile, language = 'en', initialActivity, onSubmit, onCancel }) => {
   const t = translations[language];
-  const [code, setCode] = useState('');
-  const [error, setError] = useState(false);
+  const [location, setLocation] = useState<LocationType>(initialActivity?.location || LocationType.POOL);
+  const [type, setType] = useState<'NOW' | 'FUTURE'>(initialActivity ? 'FUTURE' : 'NOW');
+  const [selectedChildren, setSelectedChildren] = useState<string[]>(initialActivity?.childNicknames || profile.children.map(c => c.nickname));
+  const [date, setDate] = useState(initialActivity ? new Date(initialActivity.startTime) : new Date());
+  
+  const now = new Date();
+  const [startTime, setStartTime] = useState(initialActivity ? format(new Date(initialActivity.startTime), 'HH:mm') : format(now, 'HH:mm'));
+  const [endTime, setEndTime] = useState(initialActivity ? format(new Date(initialActivity.endTime), 'HH:mm') : format(new Date(now.getTime() + 60 * 60000), 'HH:mm'));
+  
+  const [message, setMessage] = useState(initialActivity?.message || '');
+  const [isInvitation, setIsInvitation] = useState(initialActivity?.isInvitation || false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (endTime > "20:00") setEndTime("20:00");
+    if (startTime > "20:00") setStartTime("20:00");
+  }, [endTime, startTime]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (code === RESIDENT_PASSCODE || code === DEMO_PASSCODE) {
-      onSuccess(code);
+    setError('');
+
+    const [sh, sm] = startTime.split(':').map(Number);
+    const start = new Date(date);
+    start.setHours(sh, sm, 0, 0);
+    
+    const [eh, em] = endTime.split(':').map(Number);
+    const end = new Date(date);
+    end.setHours(eh, em, 0, 0);
+
+    if (isAfter(start, end)) {
+      setError('End time must be after start time');
+      return;
+    }
+
+    const selectedAvatars = profile.children
+      .filter(c => selectedChildren.includes(c.nickname))
+      .map(c => c.avatarIcon);
+
+    const activity: Activity = {
+      id: initialActivity?.id || crypto.randomUUID(),
+      userId: profile.uid, 
+      condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: profile.condoId || '',
+      parentNickname: profile.parentNickname,
+      roomNumber: profile.roomNumber,
+      location,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
+      message,
+      childNicknames: selectedChildren,
+      childAvatars: selectedAvatars,
+      isInvitation,
+      parentAvatarIcon: profile.avatarIcon,
+      lastUpdated: new Date().toISOString() // Tracking for notifications
+    };
+
+    onSubmit(activity);
+  };
+
+  const toggleChild = (nickname: string) => {
+    if (selectedChildren.includes(nickname)) {
+      setSelectedChildren(selectedChildren.filter(n => n !== nickname));
     } else {
-      setError(true);
-      setCode('');
-      setTimeout(() => setError(false), 2000);
+      setSelectedChildren([...selectedChildren, nickname]);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-pink-50 relative">
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 text-center border border-pink-100">
-        <div className="text-5xl mb-4">🏢</div>
-        <h1 className="text-2xl font-black text-pink-500 mb-2">{t.appName}</h1>
-        <p className="text-gray-500 mb-8 font-medium text-sm">{t.passcodePrompt}</p>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <input
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="****"
-            className={`w-full text-center text-4xl tracking-widest py-4 border-b-2 outline-none transition-colors ${
-              error ? 'border-red-400 bg-red-50' : 'border-pink-200 focus:border-pink-400'
-            }`}
-            autoFocus
-          />
-          {error && <p className="text-red-500 text-sm animate-bounce">{t.invalidPasscode}</p>}
-          <button
-            type="submit"
-            className="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95"
-          >
-            {t.enterApp}
-          </button>
-        </form>
+    <div className="bg-white p-8 rounded-t-[40px] shadow-2xl overflow-y-auto max-h-[95vh] border-t border-pink-50 hide-scrollbar relative">
+      <div className="flex justify-between items-center mb-10">
+        <button 
+          type="button"
+          onClick={onCancel}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-black text-xs bg-gray-50 px-4 py-2.5 rounded-2xl transition-all active:scale-95 border border-gray-100 uppercase tracking-widest shadow-sm"
+        >
+          <ChevronLeft size={18} /> {t.back}
+        </button>
+        <h2 className="text-xl font-black text-gray-800 tracking-tighter uppercase pr-2">
+          {initialActivity ? t.edit : t.checkIn}
+        </h2>
+        <button onClick={onCancel} className="text-gray-300 hover:text-gray-500">
+           <X size={24} />
+        </button>
+      </div>
 
-        <div className="mt-12 pt-8 border-t border-pink-50">
-          <div className="flex items-start gap-3 text-left">
-            <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center text-pink-400 shrink-0">
-              <span className="text-xs">✉️</span>
+      <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 text-[10px] font-black bg-red-50 p-3 rounded-xl border border-red-100">
+            <AlertCircle size={14} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.location}</label>
+          <div className="grid grid-cols-3 gap-3">
+            {(Object.keys(LocationType) as LocationType[]).map(loc => (
+              <button
+                key={loc}
+                type="button"
+                onClick={() => setLocation(loc)}
+                className={`p-4 rounded-3xl border-2 flex flex-col items-center transition-all ${
+                  location === loc ? `${LOCATION_METADATA[loc].borderColor} bg-white ring-4 ring-pink-50/50` : 'border-transparent bg-gray-50 opacity-60'
+                }`}
+              >
+                <span className="text-3xl mb-1">{LOCATION_METADATA[loc].icon}</span>
+                <span className={`text-[9px] font-black uppercase tracking-tighter ${location === loc ? LOCATION_METADATA[loc].textColor : 'text-gray-400'}`}>
+                  {LOCATION_METADATA[loc].label.split(' ')[0]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {!initialActivity && (
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.today}</label>
+            <div className="flex gap-3">
+              {[
+                { id: 'NOW', label: t.live },
+                { id: 'FUTURE', label: t.specificTime }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setType(t.id as any)}
+                  className={`flex-1 py-4 rounded-2xl font-black transition-all text-[11px] uppercase tracking-widest ${
+                    type === t.id ? 'bg-pink-400 text-white shadow-xl scale-[1.02]' : 'bg-gray-50 text-gray-400'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {(type === 'FUTURE' || initialActivity) && (
+            <div>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Calendar size={14}/> {t.targetDate}</label>
+              <input
+                type="date"
+                min={format(new Date(), 'yyyy-MM-dd')}
+                max={format(addDays(new Date(), 7), 'yyyy-MM-dd')}
+                value={format(date, 'yyyy-MM-dd')}
+                onChange={e => setDate(new Date(e.target.value))}
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-base font-bold text-gray-700"
+              />
+            </div>
+          )}
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> {t.startDate}</label>
+              <input
+                type="time"
+                value={startTime}
+                max="20:00"
+                onChange={e => setStartTime(e.target.value)}
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
+              />
             </div>
             <div>
-              <p className="text-[9px] font-black text-pink-300 uppercase tracking-widest">Support & Inquiries</p>
-              <p className="text-[10px] font-bold text-gray-500 leading-relaxed mt-1">
-                For inquiries or questions, please email <a href="mailto:nearbyexchange@gmail.com" className="text-pink-500 underline">nearbyexchange@gmail.com</a>
-              </p>
-              <p className="text-[9px] font-bold text-gray-400 leading-relaxed mt-3 border-t border-pink-50 pt-2 italic">
-                This application participates in affiliate programs, and the revenue generated is used to maintain community operations.
-              </p>
+              <label className="text-[10px] font-bold text-gray-400 mb-2 block uppercase flex items-center gap-2"><Clock size={14}/> {t.endDate}</label>
+              <input
+                type="time"
+                max="20:00"
+                value={endTime}
+                onChange={e => setEndTime(e.target.value)}
+                className="w-full p-4 bg-gray-50 rounded-2xl border border-gray-100 outline-none text-lg font-black text-gray-800"
+              />
             </div>
           </div>
         </div>
-      </div>
+
+        <div>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.players}</label>
+          <div className="flex flex-wrap gap-3">
+            {profile.children.map(child => (
+              <button
+                key={child.id}
+                type="button"
+                onClick={() => toggleChild(child.nickname)}
+                className={`flex items-center gap-3 pr-5 pl-1.5 py-1.5 rounded-[20px] border-2 transition-all ${
+                  selectedChildren.includes(child.nickname)
+                    ? 'bg-pink-400 border-pink-400 text-white font-black shadow-lg scale-[1.05]'
+                    : 'bg-white border-gray-100 text-gray-400'
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-xl shadow-inner ${selectedChildren.includes(child.nickname) ? 'bg-white/20' : 'bg-gray-50'}`}>
+                  {child.avatarIcon}
+                </div>
+                <span className="text-xs font-black uppercase tracking-tight">{child.nickname}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-[0.2em]">{t.memo}</label>
+          <p className="text-[9px] text-gray-400 font-bold italic mb-2">{t.translationNotice}</p>
+          <div className="relative">
+            <MessageSquare className="absolute left-4 top-4 text-gray-300" size={18} />
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder="..."
+              rows={3}
+              className="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-3xl border-none outline-none font-medium text-sm text-gray-700 resize-none focus:ring-2 ring-pink-100"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between p-6 bg-orange-400 rounded-[32px] text-white shadow-xl shadow-orange-100">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-3 rounded-2xl">
+              <Megaphone size={24} className="animate-pulse" />
+            </div>
+            <div>
+              <div className="font-black text-[13px] uppercase tracking-widest">{t.inviteNeighbors}</div>
+              <div className="text-[10px] font-bold opacity-80">{t.invite}</div>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isInvitation}
+              onChange={e => setIsInvitation(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-12 h-7 bg-white/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white/40"></div>
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={selectedChildren.length === 0}
+          className={`w-full py-5 rounded-[28px] font-black shadow-2xl transition-all active:scale-95 uppercase tracking-[0.2em] text-[13px] ${
+            selectedChildren.length > 0 ? 'bg-pink-400 text-white shadow-pink-200' : 'bg-gray-200 text-gray-400'
+          }`}
+        >
+          {initialActivity ? t.save : t.confirm}
+        </button>
+      </form>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import { createServer as createViteServer } from "vite";
 
 async function startServer() {
   const app = express();
@@ -38,7 +39,6 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -52,20 +52,10 @@ async function startServer() {
     });
   }
 
-  // Bind to 0.0.0.0 to be accessible on all network interfaces
-  const host = "0.0.0.0";
-
-  // Only start the server if this file is run directly (not as a module)
-  // In a bundled environment (like Vercel or Cloud Run), we might just need the app object
-  // On Vercel, we don't want to call listen() as it's a serverless environment
-  if (!process.env.VERCEL && (process.env.NODE_ENV === "production" || !process.env.VITE_DEV_SERVER_ONLY)) {
-    app.listen(PORT, host, () => {
-      console.log(`Server running on http://${host}:${PORT}`);
-      console.log(`CORS allowed origins: ${allowedOrigins.join(", ")}`);
-    });
-  }
-
-  return app;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`CORS allowed origins: ${allowedOrigins.join(", ")}`);
+  });
 }
 
-export const appPromise = startServer();
+startServer();

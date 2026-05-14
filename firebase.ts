@@ -9,7 +9,7 @@ import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
   onAuthStateChanged, signOut, updateProfile 
 } from 'firebase/auth';
-import firebaseConfig from '@/firebase-applet-config.json';
+import firebaseConfig from './firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 // Using firestoreDatabaseId from config as per instructions
