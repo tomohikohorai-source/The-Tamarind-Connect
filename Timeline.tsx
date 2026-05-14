@@ -1,178 +1,258 @@
 
-import React, { useState } from 'react';
-import { UserProfile, Child } from '@/types';
-import { Language, translations } from '@/translations';
-import { AVATAR_ICONS, AGE_OPTIONS, CONDO_OPTIONS } from '@/constants';
-import { auth, db, doc, setDoc, handleFirestoreError, OperationType } from '@/firebase';
+import React, { useState, useRef } from 'react';
+import { UserProfile, WantedItem } from '@/types';
+import { MARKET_GENRES, CONDO_OPTIONS } from '@/constants';
 import { store } from '@/services/store';
-import { Trash2, PlusCircle } from 'lucide-react';
+import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar, Building2 } from 'lucide-react';
+import { format } from 'date-fns';
+
+import { Language, translations } from '@/translations';
 
 interface Props {
-  onComplete: (profile: UserProfile) => void;
+  profile: UserProfile;
   language?: Language;
+  initialItem?: WantedItem;
+  onSubmit: (item: WantedItem) => void;
+  onCancel: () => void;
 }
 
-export const ProfileSetup: React.FC<Props> = ({ onComplete, language = 'en' }) => {
-  const t = translations[language];
-  const [parentNickname, setParentNickname] = useState('');
-  const [parentAvatar, setParentAvatar] = useState(AVATAR_ICONS.PARENTS[0]);
-  const [selectedCondoId, setSelectedCondoId] = useState<string>('');
-  const [otherCondoName, setOtherCondoName] = useState('');
-  const [children, setChildren] = useState<Child[]>([]);
+const compressImage = (base64Str: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800; // Increased from 400 for better resolution
+      const MAX_HEIGHT = 800; // Increased from 400 for better resolution
+      let width = img.width;
+      let height = img.height;
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width *= MAX_HEIGHT / height;
+          height = MAX_HEIGHT;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.75)); // Increased quality from 0.6 to 0.75
+    };
+  });
+};
 
-  // Add child helper function
-  const addChild = () => {
-    setChildren([...children, {
-      id: crypto.randomUUID(),
-      nickname: '',
-      age: '3',
-      gender: 'boy',
-      intro: '',
-      avatarIcon: AVATAR_ICONS.CHILDREN[0]
-    }]);
+export const WantedItemForm: React.FC<Props> = ({ profile, language = 'en', initialItem, onSubmit, onCancel }) => {
+  const t = translations[language];
+  const [title, setTitle] = useState(initialItem?.title || '');
+  const [genre, setGenre] = useState(initialItem?.genre || MARKET_GENRES[0]);
+  const [description, setDescription] = useState(initialItem?.description || '');
+  const [hopePrice, setHopePrice] = useState(initialItem?.hopePrice?.toString() || '10');
+  const [images, setImages] = useState<string[]>(initialItem?.images || []);
+  const [preferredTiming, setPreferredTiming] = useState(initialItem?.preferredTiming || format(new Date(), 'yyyy-MM-dd'));
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [condoId, setCondoId] = useState(initialItem?.condoId || profile.condoId || 'tamarind-penang');
+  const [customCondoName, setCustomCondoName] = useState(initialItem?.customCondoName || (initialItem?.condoId === 'Other-Penang' ? '' : (profile.condoId === 'Other-Penang' ? profile.customCondoName : '')));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const remainingSlots = 3 - images.length;
+    const selectedFiles = (Array.from(files) as File[]).slice(0, remainingSlots);
+    setIsCompressing(true);
+    const newImages: string[] = [];
+    for (const file of selectedFiles) {
+      const reader = new FileReader();
+      const base64: string = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file as Blob);
+      });
+      const compressed = await compressImage(base64);
+      newImages.push(compressed);
+    }
+    setImages(prev => [...prev, ...newImages]);
+    setIsCompressing(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Children is now optional: length > 0 check removed
-  const isFormValid = parentNickname.trim().length > 0 && selectedCondoId !== '' && 
-                    (selectedCondoId !== 'Other-Penang' || otherCondoName.trim().length > 0) &&
-                    children.every(c => c.nickname.trim().length > 0);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
 
-  const handleSubmit = async () => {
-    if (isFormValid && auth.currentUser) {
-      const profile: UserProfile = {
-        uid: auth.currentUser.uid,
-        customUserId: auth.currentUser.displayName || 'unknown_user',
-        parentNickname,
-        roomNumber: '', // Block removed
-        condoCode: store.getPasscode() || '',
-        children,
-        avatarIcon: parentAvatar,
-        totalLoginDays: 1,
-        lastLoginDate: new Date().toISOString(),
-        condoId: selectedCondoId,
-        customCondoName: selectedCondoId === 'Other-Penang' ? otherCondoName : '',
-        // Fix: Added missing properties showPastSales and showBuying to satisfy PrivacySettings interface
-        privacySettings: {
-          showChildren: true,
-          showListings: true,
-          showPastSales: true,
-          showBuying: true
-        }
-      };
-      try {
-        await setDoc(doc(db, "users", auth.currentUser.uid), profile);
-        onComplete(profile);
-      } catch (error) {
-        handleFirestoreError(error, OperationType.WRITE, `users/${auth.currentUser.uid}`);
-      }
+    const currentHopePrice = Math.max(0, Number(hopePrice));
+    const isPriceChanged = initialItem && currentHopePrice !== initialItem.hopePrice;
+    
+    const itemData: any = {
+      id: initialItem?.id || crypto.randomUUID(),
+      userId: profile.uid,
+      condoCode: profile.condoCode || store.getPasscode() || '',
+      condoId: condoId,
+      customCondoName: condoId === 'Other-Penang' ? customCondoName : '',
+      parentNickname: profile.parentNickname,
+      roomNumber: profile.roomNumber,
+      parentAvatarIcon: profile.avatarIcon,
+      title,
+      genre,
+      description,
+      hopePrice: currentHopePrice,
+      pickupLocation: '', // Removed preference field
+      preferredTiming,
+      images,
+      comments: initialItem?.comments || [],
+      status: initialItem?.status || 'OPEN',
+      createdAt: initialItem?.createdAt || new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+
+    if (isPriceChanged && initialItem) {
+        itemData.previousHopePrice = initialItem.hopePrice;
+        itemData.hopePriceUpdatedAt = new Date().toISOString();
+    } else if (initialItem?.previousHopePrice !== undefined) {
+        itemData.previousHopePrice = initialItem.previousHopePrice;
+        itemData.hopePriceUpdatedAt = initialItem.hopePriceUpdatedAt;
     }
+
+    onSubmit(itemData as WantedItem);
   };
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] p-6 pb-24 animate-fade-in">
-      <div className="max-w-md mx-auto">
-        <h2 className="text-xl font-black text-pink-500 mb-2 text-center tracking-tighter uppercase">{t.profileSetup}</h2>
-        <p className="text-gray-400 text-[10px] text-center mb-8 uppercase font-bold tracking-widest">{t.connectNeighbors}</p>
-        
-        <div className="space-y-6">
-          <p className="text-[9px] text-gray-400 font-bold text-center italic mb-2">{t.translationNotice}</p>
-          <section className="bg-white p-6 rounded-[32px] shadow-sm border border-pink-50">
-            <h3 className="font-black text-pink-400 mb-4 text-[10px] uppercase tracking-widest">{t.residentInfo}</h3>
-            <div className="mb-6 overflow-x-auto pb-4 pt-2 -mx-2 px-2 flex gap-3 snap-x hide-scrollbar">
-              {AVATAR_ICONS.PARENTS.map(icon => (
-                <button key={icon} onClick={() => setParentAvatar(icon)} className={`shrink-0 w-14 h-14 text-3xl rounded-2xl flex items-center justify-center border-2 transition-all ${parentAvatar === icon ? 'border-pink-400 bg-pink-50 scale-105' : 'border-gray-100'}`}>{icon}</button>
-              ))}
-            </div>
-            <div className="space-y-4">
-              <input type="text" value={parentNickname} onChange={e => setParentNickname(e.target.value)} placeholder={t.parentNickname} className="w-full p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm" />
-              <div className="flex flex-col gap-2">
-                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
-                <div className="relative">
-                  <select 
-                    value={selectedCondoId} 
-                    onChange={e => setSelectedCondoId(e.target.value)}
-                    className="w-full p-3.5 rounded-2xl bg-gray-50 border-none outline-none font-bold text-sm appearance-none"
-                  >
-                    <option value="" disabled>{t.selectCondo}</option>
-                    {CONDO_OPTIONS.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    ▼
-                  </div>
-                </div>
-                {selectedCondoId === 'Other-Penang' && (
-                  <div className="animate-fade-in mt-2">
-                    <input 
-                      type="text" 
-                      value={otherCondoName} 
-                      onChange={e => setOtherCondoName(e.target.value)} 
-                      placeholder="Enter your condominium name" 
-                      className="w-full p-3.5 rounded-2xl bg-gray-50 border-2 border-pink-100 outline-none font-bold text-sm" 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+    <div className="bg-white p-8 rounded-t-[40px] shadow-2xl overflow-y-auto max-h-[95vh] border-t border-amber-50 hide-scrollbar relative">
+      <div className="flex justify-between items-center mb-10">
+        <button type="button" onClick={onCancel} className="flex items-center gap-2 text-gray-500 font-black text-xs bg-gray-50 px-4 py-2.5 rounded-2xl border border-gray-100 uppercase tracking-widest shadow-sm active:scale-95 transition-all"><ChevronLeft size={18} /> {t.back}</button>
+        <h2 className="text-xl font-black text-gray-800 tracking-tighter uppercase">{initialItem ? t.editWanted : t.postWanted}</h2>
+        <button onClick={onCancel} className="text-gray-300"><X size={24} /></button>
+      </div>
 
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">{t.childrenOptional}</h3>
-              <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest"><PlusCircle size={14} className="inline mr-1"/> {t.add}</button>
-            </div>
-            {children.map((child) => (
-              <div key={child.id} className="p-5 bg-white border-2 border-pink-50 rounded-[32px] relative space-y-4 shadow-sm">
-                <button onClick={() => setChildren(children.filter(c => c.id !== child.id))} className="absolute top-3 right-3 text-red-300 hover:text-red-500"><Trash2 size={16} /></button>
-                
-                <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                  {AVATAR_ICONS.CHILDREN.map(icon => (
-                    <button key={icon} onClick={() => setChildren(children.map(c => c.id === child.id ? {...c, avatarIcon: icon} : c))} className={`shrink-0 w-10 h-10 text-xl rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-pink-400 bg-pink-50' : 'border-gray-50'}`}>{icon}</button>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <input type="text" value={child.nickname} onChange={e => setChildren(children.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder={t.name} className="flex-grow p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none" />
-                  <div className="relative">
-                    <select 
-                      value={child.age} 
-                      onChange={e => setChildren(children.map(c => c.id === child.id ? {...c, age: e.target.value} : c))}
-                      className="w-20 p-3 rounded-xl bg-gray-50 text-xs font-bold outline-none appearance-none"
-                    >
-                      {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                    <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">{t.yrs}</div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  {[
-                    { id: 'boy', label: t.boy, color: 'blue' },
-                    { id: 'girl', label: t.girl, color: 'pink' },
-                    { id: 'other', label: t.other, color: 'purple' }
-                  ].map(g => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setChildren(children.map(c => c.id === child.id ? {...c, gender: g.id as any} : c))}
-                      className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border-2 transition-all ${
-                        child.gender === g.id 
-                          ? `bg-${g.color}-50 border-${g.color}-400 text-${g.color}-500` 
-                          : 'bg-white border-gray-50 text-gray-300'
-                      }`}
-                    >
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
+      <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+        <div>
+          <label className="text-[11px] font-black text-gray-400 mb-4 block uppercase tracking-widest ml-1">{t.add} (Optional)</label>
+          <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+            {images.map((img, idx) => (
+              <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-amber-100 shadow-sm shrink-0">
+                <img src={img} className="w-full h-full object-cover" alt="Preview" referrerPolicy="no-referrer" />
+                <button type="button" onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))} className="absolute top-1 right-1 p-1.5 bg-red-500/80 text-white rounded-full backdrop-blur-sm"><X size={12} /></button>
               </div>
             ))}
-          </section>
-
-          <button onClick={handleSubmit} disabled={!isFormValid} className={`w-full py-5 rounded-3xl font-black shadow-lg transition-all active:scale-95 uppercase tracking-widest text-xs ${isFormValid ? 'bg-pink-400 text-white shadow-pink-200' : 'bg-gray-200 text-gray-400'}`}>{t.completeSetup}</button>
+            {images.length < 3 && (
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isCompressing} className="w-24 h-24 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-300 hover:border-amber-400 hover:text-amber-400 transition-all shrink-0 active:scale-95">
+                {isCompressing ? <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div> : <Camera size={24} />}
+                <span className="text-[8px] font-black uppercase">{t.add}</span>
+              </button>
+            )}
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+          </div>
         </div>
-      </div>
+
+        <div className="space-y-5">
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.condoLocation}</label>
+            <div className="relative">
+              <Building2 className="absolute left-4 top-3.5 text-amber-200" size={18} />
+              <select 
+                value={condoId} 
+                onChange={e => setCondoId(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none focus:ring-2 ring-amber-50"
+              >
+                {CONDO_OPTIONS.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
+              </select>
+            </div>
+            {condoId === 'Other-Penang' && (
+              <div className="animate-fade-in mt-2">
+                <input 
+                  type="text" 
+                  value={customCondoName} 
+                  onChange={e => setCustomCondoName(e.target.value)} 
+                  placeholder="Enter condominium name" 
+                  className="w-full p-3.5 rounded-2xl bg-gray-50 border-2 border-amber-100 outline-none font-bold text-sm" 
+                />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.lookingFor}</label>
+            <div className="relative">
+              <Package className="absolute left-4 top-3.5 text-amber-200" size={18} />
+              <input 
+                type="text" 
+                value={title} 
+                onChange={e => setTitle(e.target.value)} 
+                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity('Please fill in this field')}
+                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                placeholder="..." 
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm focus:ring-2 ring-amber-50" 
+                required 
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.genre}</label>
+            <div className="relative">
+              <Layers className="absolute left-4 top-3.5 text-amber-200" size={18} />
+              <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm appearance-none focus:ring-2 ring-amber-50">
+                {MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.hopePrice} (RM)</label>
+            <div className="relative">
+              <Coins className="absolute left-4 top-3.5 text-amber-200" size={18} />
+              <input 
+                type="number" 
+                min="0" 
+                value={hopePrice} 
+                onChange={e => setHopePrice(e.target.value)} 
+                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity('Please fill in this field')}
+                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                placeholder="10" 
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-black text-lg text-amber-600 focus:ring-2 ring-amber-50" 
+                required 
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.additionalDetails}</label>
+            <p className="text-[9px] text-gray-400 font-bold italic mb-2 ml-1">{t.translationNotice}</p>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="..." className="w-full p-4 bg-gray-50 border-none rounded-2xl outline-none font-medium text-sm h-24 resize-none focus:ring-2 ring-amber-50" />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-black text-gray-400 mb-2 block uppercase tracking-widest ml-1">{t.wantedByDate}</label>
+            <div className="relative">
+              <Calendar className="absolute left-4 top-3.5 text-amber-200" size={18} />
+              <input 
+                type="date" 
+                min={today}
+                value={preferredTiming} 
+                onChange={e => setPreferredTiming(e.target.value)} 
+                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl outline-none font-bold text-sm focus:ring-2 ring-amber-50" 
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-amber-50 p-6 rounded-[32px] border border-amber-100">
+          <div className="flex items-start gap-3">
+            <ShieldAlert size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-[9px] font-bold text-amber-600 leading-relaxed uppercase tracking-widest text-left">
+              {t.wantedDisclaimer}
+            </p>
+          </div>
+        </div>
+
+        <button type="submit" className="w-full py-5 rounded-[28px] font-black bg-amber-400 text-white shadow-2xl shadow-amber-100 uppercase tracking-[0.2em] text-[13px] active:scale-95 transition-all">{t.submitWishlist}</button>
+      </form>
     </div>
   );
 };

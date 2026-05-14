@@ -1,19 +1,91 @@
-import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { MarketItem, Skill, WantedItem, UserProfile } from '@/types';
 
-export async function translateText(text: string, targetLanguage: string): Promise<string> {
-  if (!text || !targetLanguage) return text;
-  
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Translate the following text to ${targetLanguage}. Return only the translated text.\n\nText: ${text}`,
-    });
-    
-    return response.text || text;
-  } catch (error) {
-    console.error("Translation error:", error);
-    return text;
-  }
+export type BadgeLevel = 'NONE' | 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND' | 'EMERALD' | 'LEGEND';
+
+export interface UserStats {
+  listingCount: number;
+  salesCount: number;
+  purchaseCount: number;
+  likesCount: number;
+  likesGivenCount: number;
 }
+
+export const BADGE_CRITERIA = [
+  { level: 'LEGEND' as BadgeLevel, listings: 100, sales: 50, purchases: 50, likesRec: 200, likesGiven: 500, color: 'bg-indigo-600 text-white' },
+  { level: 'EMERALD' as BadgeLevel, listings: 50, sales: 25, purchases: 25, likesRec: 100, likesGiven: 250, color: 'bg-emerald-500 text-white' },
+  { level: 'DIAMOND' as BadgeLevel, listings: 25, sales: 15, purchases: 15, likesRec: 50, likesGiven: 150, color: 'bg-cyan-400 text-white' },
+  { level: 'PLATINUM' as BadgeLevel, listings: 15, sales: 8, purchases: 8, likesRec: 30, likesGiven: 80, color: 'bg-slate-400 text-white' },
+  { level: 'GOLD' as BadgeLevel, listings: 8, sales: 4, purchases: 4, likesRec: 15, likesGiven: 40, color: 'bg-yellow-400 text-white' },
+  { level: 'SILVER' as BadgeLevel, listings: 4, sales: 2, purchases: 2, likesRec: 8, likesGiven: 20, color: 'bg-slate-300 text-slate-700' },
+  { level: 'BRONZE' as BadgeLevel, listings: 1, sales: 1, purchases: 1, likesRec: 3, likesGiven: 5, color: 'bg-orange-400 text-white' },
+];
+
+export const calculateUserStats = (
+  userId: string,
+  profile: UserProfile | null,
+  marketItems: MarketItem[],
+  skills: Skill[],
+  wantedItems: WantedItem[]
+): UserStats => {
+  const listingCount = 
+    marketItems.filter(i => i.userId === userId).length + 
+    skills.filter(s => s.userId === userId && s.type === 'OFFER').length + 
+    wantedItems.filter(w => w.userId === userId).length;
+
+  const salesCount = 
+    marketItems.filter(i => i.userId === userId && i.status === 'SOLD').length + 
+    skills.filter(s => s.userId === userId && s.status === 'CLOSED' && s.type === 'OFFER').length;
+
+  const purchaseCount = 
+    marketItems.filter(i => i.buyerId === userId && i.status === 'SOLD').length + 
+    skills.filter(s => s.requesterId === userId && s.status === 'CLOSED' && s.type === 'OFFER').length;
+
+  const likesCount = 
+    marketItems.filter(i => i.userId === userId).reduce((acc, item) => acc + (item.likes?.length || 0), 0) +
+    skills.filter(s => s.userId === userId).reduce((acc, s) => acc + (s.likes?.length || 0), 0) +
+    wantedItems.filter(w => w.userId === userId).reduce((acc, w) => acc + (w.likes?.length || 0), 0);
+
+  const likesGivenCount = 
+    marketItems.filter(i => i.likes?.includes(userId)).length +
+    skills.filter(s => s.likes?.includes(userId)).length +
+    wantedItems.filter(w => w.likes?.includes(userId)).length;
+
+  return { listingCount, salesCount, purchaseCount, likesCount, likesGivenCount };
+};
+
+export const getBadgeLevel = (stats: UserStats): BadgeLevel => {
+  const { listingCount, salesCount, purchaseCount, likesCount, likesGivenCount } = stats;
+
+  for (const criteria of BADGE_CRITERIA) {
+    if (
+      listingCount >= criteria.listings || 
+      salesCount >= criteria.sales || 
+      purchaseCount >= criteria.purchases || 
+      likesCount >= criteria.likesRec || 
+      likesGivenCount >= criteria.likesGiven
+    ) {
+      return criteria.level;
+    }
+  }
+
+  return 'NONE';
+};
+
+export const getBadgeLabel = (level: BadgeLevel): string => {
+  switch (level) {
+    case 'LEGEND': return 'Legend Exchange Member';
+    case 'EMERALD': return 'Emerald Exchange Member';
+    case 'DIAMOND': return 'Diamond Exchange Member';
+    case 'PLATINUM': return 'Platinum Exchange Member';
+    case 'GOLD': return 'Gold Exchange Member';
+    case 'SILVER': return 'Silver Exchange Member';
+    case 'BRONZE': return 'Bronze Exchange Member';
+    default: return '';
+  }
+};
+
+export const getBadgeColor = (level: BadgeLevel): string => {
+  const criteria = BADGE_CRITERIA.find(c => c.level === level);
+  return criteria ? criteria.color : '';
+};

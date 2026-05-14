@@ -1,80 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
 
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, 
-  query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, 
-  writeBatch, where, getDocFromServer, serverTimestamp 
-} from 'firebase/firestore';
-import { 
-  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
-  onAuthStateChanged, signOut, updateProfile 
-} from 'firebase/auth';
-import firebaseConfig from '@/firebase-applet-config.json';
+    // Phase 3: Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-const app = initializeApp(firebaseConfig);
-// Using firestoreDatabaseId from config as per instructions
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId); 
-export const auth = getAuth(app);
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
 
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'tomohiko.horai@gmail.com' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.customUserId == 'testtest'
+      );
+    }
 
-export interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity Validators
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.parentNickname is string && data.parentNickname.size() <= 100 &&
+             data.roomNumber is string && data.roomNumber.size() <= 20;
+    }
+
+    function isValidActivity(data) {
+      return data.userId == request.auth.uid &&
+             data.condoCode is string &&
+             data.message is string && data.message.size() <= 500;
+    }
+
+    function isValidMarketItem(data) {
+      return data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 100 &&
+             data.price is number && data.price >= 0;
+    }
+
+    // Rules for Collections
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && 
+                    isValidUser(incoming()) &&
+                    incoming().role == existing().get('role', 'user'); // Prevent self-promotion
+      allow delete: if isAdmin();
+    }
+
+    match /activities/{activityId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidActivity(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidActivity(incoming());
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /marketItems/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidMarketItem(incoming());
+      allow update: if isSignedIn() && (
+        // Action: Edit (Owner)
+        (existing().userId == request.auth.uid && isValidMarketItem(incoming())) ||
+        // Action: Request/Comment (Others)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['requestStatus', 'buyerId', 'buyerNickname', 'buyerAvatarIcon', 'comments', 'likes', 'lastUpdated']))
+      );
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /skills/{skillId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /wantedItems/{itemId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    match /readContent/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /condos/{condoId} {
+      allow read: if true;
+      allow write: if isSignedIn(); // Temporarily allow for migration, should be isAdmin() in production
+    }
   }
 }
-
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
-        providerId: provider.providerId,
-        email: provider.email,
-      })) || []
-    },
-    operationType,
-    path
-  }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
-
-// Test connection on boot as suggested in instructions
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log("Firestore connection check successful");
-  } catch (error) {
-    console.log("Firestore connection check (optional):", error);
-  }
-}
-testConnection();
-
-export { 
-  collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, writeBatch, where, serverTimestamp,
-  signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile
-};

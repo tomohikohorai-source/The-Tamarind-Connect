@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { ChevronLeft, ShieldCheck, Lock, Eye, FileText, Scale } from 'lucide-react';
+import { ChevronLeft, Info, Heart, Shield, Users, Mail } from 'lucide-react';
 import { Language, translations } from '@/translations';
 
-interface PrivacyPolicyProps {
+interface AboutProps {
   onBack: () => void;
   language: Language;
 }
 
-export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, language }) => {
+export const About: React.FC<AboutProps> = ({ onBack, language }) => {
   const t = translations[language];
 
   return (
@@ -17,91 +17,83 @@ export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, language }
         <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
           <ChevronLeft className="text-gray-400" size={24} />
         </button>
-        <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Privacy Policy</h2>
+        <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">About Nearby Exchange</h2>
       </div>
 
       <div className="flex-grow overflow-y-auto p-6 space-y-8 pb-32">
         <div className="space-y-4">
-          <div className="w-16 h-16 bg-teal-50 rounded-[24px] flex items-center justify-center text-teal-600 mb-6 font-black text-2xl shadow-sm">
-            <ShieldCheck size={32} />
+          <div className="w-16 h-16 bg-indigo-50 rounded-[24px] flex items-center justify-center text-indigo-500 mb-6">
+            <Info size={32} />
           </div>
           <h1 className="text-3xl font-black text-gray-900 leading-tight">
-            Your Privacy Matters to Us.
+            Connecting Communities, One Exchange at a Time.
           </h1>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-            Last Updated: April 25, 2026
+          <p className="text-gray-600 leading-relaxed">
+            Nearby Exchange is a community-driven platform designed specifically for residential complexes. 
+            Our mission is to foster meaningful connections between neighbors through the exchange of skills, 
+            goods, and local knowledge.
           </p>
         </div>
 
-        <div className="space-y-10">
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <Lock size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">1. Data Collection</h3>
+        <div className="grid grid-cols-1 gap-6">
+          <div className="p-6 bg-rose-50 rounded-[32px] space-y-3">
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
+              <Heart size={20} />
             </div>
+            <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">Built with Community</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              We collect information that you provide directly to us, including your name, email address, 
-              condo residency details, and any content you post in our marketplace or skill exchange. 
-              We also automatically collect certain technical information, such as your IP address and 
-              device characteristics, when you use our services.
+              We believe that the people living closest to you are your greatest resource. 
+              By making it easy to assist each other, we build stronger, safer, and happier neighborhoods.
             </p>
-          </section>
+          </div>
 
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <Eye size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">2. How We Use Data</h3>
+          <div className="p-6 bg-teal-50 rounded-[32px] space-y-3">
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-teal-500 shadow-sm">
+              <Users size={20} />
             </div>
-            <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
-              <li>To provide and maintain our Service</li>
-              <li>To notify you about changes to our Service</li>
-              <li>To allow residents to connect with each other securely</li>
-              <li>To provide customer care and support</li>
-              <li>To monitor the usage of the Service for security purposes</li>
-              <li>To improve user experience and interface</li>
-            </ul>
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <Scale size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">3. Data Sharing & Third Parties</h3>
-            </div>
+            <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">Skill Sharing</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              We do not sell your personal data. We may use third-party service providers (like Google Analytics and AdSense) 
-              to monitor and analyze the use of our Service or to show advertisements. 
-              These third parties have their own privacy policies regarding how they handle data.
+              Everyone has a talent. Whether it's cooking, language tutoring, or tech support, 
+              your skills are valuable to someone nearby.
             </p>
-          </section>
+          </div>
 
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <ShieldCheck size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">4. Cookies and AdSense</h3>
+          <div className="p-6 bg-indigo-50 rounded-[32px] space-y-3">
+            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-indigo-500 shadow-sm">
+              <Shield size={20} />
             </div>
+            <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">Trusted Environment</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Nearby Exchange uses cookies to enhance your experience. Third party vendors, including Google, 
-              use cookies to serve ads based on a user's prior visits to your website or other websites. 
-              Google's use of advertising cookies enables it and its partners to serve ads to users based 
-              on their visit to your sites and/or other sites on the Internet.
+              By limiting access to verified residents of specific condos, 
+              we ensure a high level of trust and safety within our community marketplace.
             </p>
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <FileText size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">5. Your Rights</h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              You have the right to access, update, or delete the personal information we hold about you. 
-              If you wish to exercise these rights, please contact us at the email address provided below.
-            </p>
-          </section>
+          </div>
         </div>
 
-        <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-          <p className="text-[10px] text-gray-500 leading-relaxed font-bold uppercase tracking-widest text-center">
-            If you have any questions about this Privacy Policy, please contact us at nearbyexchange@gmail.com
+        <div className="space-y-4 pt-4 border-t border-gray-100 italic">
+          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Operator Information</h3>
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-gray-700">Nearby Exchange Secretariat</p>
+            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+              Our Goal: To activate mutual aid within the condominium and make life more convenient.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-gray-100">
+          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Contact Us</h3>
+          <div className="flex items-center gap-3 text-gray-700">
+            <Mail size={18} className="text-indigo-500" />
+            <span className="text-sm font-bold truncate">nearbyexchange@gmail.com</span>
+          </div>
+        </div>
+
+        <div className="text-center pt-8">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            Handcrafted with Care for the People of Penang
+          </p>
+          <p className="text-[10px] text-gray-300 mt-1 font-bold italic uppercase tracking-widest">
+            v1.2.0 • 2026
           </p>
         </div>
       </div>

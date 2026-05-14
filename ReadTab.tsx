@@ -1,747 +1,858 @@
-import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
-import { UserProfile, Child, MarketItem, Skill, WantedItem, PrivacySettings } from '@/types';
-import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS, getCondoName } from '@/constants';
-import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages, Building2, MapPin, Info } from 'lucide-react';
-import { format } from 'date-fns';
-import { db, doc, setDoc, updateDoc } from '@/firebase';
+
+import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
+import { MarketItem, UserProfile, MarketComment } from '@/types';
+import { MARKET_GENRES, GENRE_ICONS, getCondoName } from '@/constants';
+import { ShoppingBag, Tag, MapPin, CreditCard, Clock, Edit2, Trash2, MessageCircle, Send, ChevronDown, ChevronUp, Sparkles, User, Image as ImageIcon, PackageCheck, CheckCircle2, Search, SlidersHorizontal, X, AlertTriangle, CheckCircle, Ban, ArrowUpDown, ChevronRight, Check, UserCircle, Info, ChevronLeft, Lock, Coins, Handshake, ExternalLink, Flame, Heart, Share2, Star } from 'lucide-react';
+import { format, differenceInHours } from 'date-fns';
+import { AffiliateBanner } from './AffiliateBanner';
+import { MarketSkeleton } from './Skeleton';
+
 import { Language, translations } from '@/translations';
-import { translateText } from '@/services/geminiService';
-import { calculateUserStats, getBadgeLevel, getBadgeLabel, getBadgeColor, BADGE_CRITERIA } from '@/services/badgeService';
+import { calculateUserStats, getBadgeLevel, getBadgeColor } from '@/services/badgeService';
+import { Skill, WantedItem } from '@/types';
 
 interface Props {
-  profile: UserProfile; 
-  currentUser: UserProfile; 
-  marketItems: MarketItem[];
+  items: MarketItem[];
   skills: Skill[];
   wantedItems: WantedItem[];
-  onLogout: () => void;
-  onUpdateProfile: (profile: UserProfile) => void;
-  onEditMarket: (item: MarketItem) => void;
-  onDeleteMarket: (id: string) => void;
-  onMarketStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
-  onAddMarket: () => void;
-  onAddSkill: () => void;
-  onEditSkill: (skill: Skill) => void;
-  onDeleteSkill: (id: string) => void;
-  onAddMarketComment: (itemId: string, text: string) => void;
-  onGoToTransaction: (itemId: string) => void;
-  onGoToSkill: (skillId: string) => void;
-  onGoToWanted: (wantedId: string) => void;
-  onClose?: () => void; 
-  acknowledgedMarketMap?: Record<string, string>;
-  acknowledgedSkillMap?: Record<string, string>;
-  acknowledgedWantedMap?: Record<string, string>;
-  language: Language;
+  profile: UserProfile | null;
+  language?: Language;
+  loading?: boolean;
+  initialActiveItemId?: string | null;
+  onEdit: (item: MarketItem) => void;
+  onStatusChange: (id: string, status: MarketItem['status'], buyerId?: string, rejectionReason?: string, extraFlags?: any) => void;
+  onDelete: (id: string) => void;
+  onAddComment: (itemId: string, text: string) => void;
+  onLike: (itemId: string) => void;
+  onViewProfile?: (userId: string) => void;
+  onChatClose?: () => void;
+  onViewItem?: (id: string | null) => void;
   tabResetToggle?: boolean;
-  isAdminMode?: boolean;
-  onToggleAdminMode?: (val: boolean) => void;
+  ensureAuth?: (action: () => void) => void;
+  condos?: { id: string, name: string }[];
 }
 
-const CollapsibleHeader = memo(({ title, icon, count, isOpen, onToggle, hasBadge, badgeLabel }: { title: string, icon: React.ReactNode, count: number, isOpen: boolean, onToggle: () => void, hasBadge?: boolean, badgeLabel?: string }) => (
-  <button onClick={onToggle} className="flex items-center justify-between w-full py-4 px-3 group transition-all text-left">
-    <div className="flex items-center gap-3">
-      <div className={`p-2.5 rounded-xl transition-colors ${isOpen ? 'bg-pink-100 text-pink-500' : 'bg-gray-50 text-gray-400 group-hover:text-pink-400'} relative`}>
-        {icon}
-        {hasBadge && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm animate-pulse"></div>}
-      </div>
-      <div className="flex flex-col items-start">
-        <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{title} {count > 0 && <span className="text-pink-400 ml-1.5 opacity-60">({count})</span>}</h3>
-        {hasBadge && badgeLabel && <span className="text-[7px] font-black text-red-500 uppercase tracking-tighter mt-0.5 animate-pulse flex items-center gap-1"><AlertTriangle size={8}/> {badgeLabel}</span>}
-      </div>
-    </div>
-    <div className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
-      <ChevronDown size={18} className="text-gray-300" />
-    </div>
-  </button>
-));
-
-interface AppNotification {
-  id: string;
-  type: 'MARKET' | 'SKILL' | 'WANTED';
-  itemId: string;
-  title: string;
-  message: string;
-  reason: string;
-  isActionRequired: boolean;
-  isDismissed: boolean;
-  timestamp: string;
-}
-
-export const ProfilePage: React.FC<Props> = ({ 
-  profile, currentUser, marketItems, skills, wantedItems, onLogout, onUpdateProfile, 
-  onEditMarket, onDeleteMarket, onMarketStatusChange, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
-  onAddMarketComment, onGoToTransaction, onGoToSkill, onGoToWanted, onClose,
-  acknowledgedMarketMap = {}, acknowledgedSkillMap = {}, acknowledgedWantedMap = {},
-  language, tabResetToggle, isAdminMode, onToggleAdminMode
-}) => {
+const InstructionBanner = memo(({ item, profile, language = 'en' }: { item: MarketItem, profile: UserProfile | null, language?: Language }) => {
   const t = translations[language];
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showBadgeInfo, setShowBadgeInfo] = useState(false);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
-  
-  const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>(() => {
-    return JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
-  });
+  if (!profile) return null;
+  const isSeller = item.userId === profile.uid;
+  const isBuyer = item.buyerId === profile.uid;
 
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    activeSales: true,
-    pastSales: false,
-    buying: true,
-    wanted: true,
-    skills: true,
-    notifications: true,
-    likes: true
-  });
+  if (item.status === 'AVAILABLE' && item.requestStatus === 'PENDING') {
+    if (isSeller) return (
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-pulse border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{item.buyerAvatarIcon || <AlertTriangle size={24} />}</div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.buyer}: {item.buyerNickname}</div>
+          <div className="text-[13px] font-bold leading-tight">{t.wantsToBuyMsg}</div>
+        </div>
+      </div>
+    );
+    if (isBuyer) return (
+      <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+        <div className="bg-white/20 p-2 rounded-xl"><Clock size={24} /></div>
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.applicationSent}</div>
+          <div className="text-[13px] font-bold leading-tight">{t.sellerReviewingMsg}</div>
+        </div>
+      </div>
+    );
+  }
 
-  const toggleSection = useCallback((key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] })), []);
-
-  const [editNickname, setEditNickname] = useState(profile.parentNickname);
-  const [editAvatar, setEditAvatar] = useState(profile.avatarIcon);
-  const [editCondoId, setEditCondoId] = useState(profile.condoId || '');
-  const [editCustomCondoName, setEditCustomCondoName] = useState(profile.customCondoName || '');
-  const [editChildren, setEditChildren] = useState<Child[]>(profile.children);
-
-  const isOwnProfile = profile.uid === currentUser.uid;
-
-  useEffect(() => {
-    setIsEditingProfile(false);
-    setShowSettings(false);
-  }, [tabResetToggle]);
-
-  const stats = useMemo(() => {
-    return calculateUserStats(profile.uid, profile, marketItems, skills, wantedItems);
-  }, [profile, marketItems, skills, wantedItems]);
-
-  const badgeLevel = getBadgeLevel(stats);
-  const badgeLabel = getBadgeLabel(badgeLevel);
-  const badgeColor = getBadgeColor(badgeLevel);
-
-  const privacy = profile.privacySettings || { showChildren: true, showListings: true, showPastSales: true, showBuying: true, showSkills: true, showWanted: true };
-
-  const notifications = useMemo(() => {
-    if (!isOwnProfile) return [];
-    
-    const list: AppNotification[] = [];
-    marketItems.forEach(item => {
-      const isOwner = item.userId === profile.uid;
-      const isBuyer = item.buyerId === profile.uid;
-      const hasParticipated = item.comments.some(c => c.userId === profile.uid);
-      const lastComment = item.comments.length > 0 ? item.comments[item.comments.length - 1] : null;
-      const lastUpdate = item.lastUpdated || 'initial';
-      const checkIsDismissed = (id: string) => dismissedNotifIds.includes(id);
-      
-      const isSold = item.status === 'SOLD';
-      const isAcknowledged = acknowledgedMarketMap[item.id] === lastUpdate;
-      
-      // If item is SOLD and already acknowledged, don't show any notifications for it
-      if (isSold && isAcknowledged) return;
-
-      if (isOwner && item.requestStatus === 'PENDING') {
-        list.push({ id: `${item.id}-req`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request received!', reason: t.notifRequestReceived, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-req`), timestamp: lastUpdate });
-      }
-      if (isOwner && item.status === 'RESERVED' && item.buyerConfirmedCompletion && !item.sellerConfirmedCompletion) {
-        list.push({ id: `${item.id}-conf`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Buyer reported pickup!', reason: t.notifPickupReported, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-conf`), timestamp: lastUpdate });
-      }
-      if (isBuyer && item.status === 'RESERVED' && !item.buyerConfirmedCompletion) {
-        list.push({ id: `${item.id}-appr`, type: 'MARKET', itemId: item.id, title: item.title, message: 'Purchase request approved!', reason: t.notifRequestApproved, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-appr`), timestamp: lastUpdate });
-      }
-      if ((isOwner || isBuyer || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${item.id}-cmt`, type: 'MARKET', itemId: item.id, title: item.title, message: lastComment.text, reason: t.notifNewComment, isActionRequired: true, isDismissed: checkIsDismissed(`${item.id}-cmt`), timestamp: lastUpdate });
-      }
-    });
-
-    skills.forEach(skill => {
-      const isOwner = skill.userId === profile.uid;
-      const hasParticipated = skill.comments.some(c => c.userId === profile.uid);
-      const lastComment = skill.comments.length > 0 ? skill.comments[skill.comments.length - 1] : null;
-      const lastUpdate = skill.lastUpdated || 'initial';
-
-      const isClosed = skill.status === 'CLOSED';
-      const isAcknowledged = acknowledgedSkillMap[skill.id] === lastUpdate;
-
-      if (isClosed && isAcknowledged) return;
-
-      if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${skill.id}-cmt`, type: 'SKILL', itemId: skill.id, title: skill.title, message: lastComment.text, reason: t.notifNewComment, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${skill.id}-cmt`), timestamp: skill.lastUpdated });
-      }
-    });
-
-    wantedItems.forEach(wanted => {
-      const isOwner = wanted.userId === profile.uid;
-      const hasParticipated = wanted.comments.some(c => c.userId === profile.uid);
-      const lastComment = wanted.comments.length > 0 ? wanted.comments[wanted.comments.length - 1] : null;
-      if ((isOwner || hasParticipated) && lastComment && lastComment.userId !== profile.uid) {
-        list.push({ id: `${wanted.id}-cmt`, type: 'WANTED', itemId: wanted.id, title: wanted.title, message: lastComment.text, reason: t.notifDiscussion, isActionRequired: true, isDismissed: dismissedNotifIds.includes(`${wanted.id}-cmt`), timestamp: wanted.lastUpdated });
-      }
-    });
-
-    return list.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [marketItems, skills, wantedItems, profile.uid, isOwnProfile, dismissedNotifIds]);
-
-  const activeUnreadCount = useMemo(() => {
-    return notifications.filter(n => {
-      if (n.isDismissed) return false;
-      const isAcknowledged = (n.type === 'MARKET' ? acknowledgedMarketMap[n.itemId] : n.type === 'SKILL' ? acknowledgedSkillMap[n.itemId] : acknowledgedWantedMap[n.itemId]) === n.timestamp;
-      // Passive notifications (like comments) shouldn't count as unread if the item update is acknowledged
-      if (isAcknowledged && n.reason === t.notifNewComment) return false;
-      return true;
-    }).length;
-  }, [notifications, acknowledgedMarketMap, acknowledgedSkillMap, acknowledgedWantedMap, t.notifNewComment]);
-
-  const myActiveSales = useMemo(() => marketItems.filter(i => i.userId === profile.uid && i.status !== 'SOLD'), [marketItems, profile.uid]);
-  const myPurchases = useMemo(() => marketItems.filter(i => (i.buyerId === profile.uid || (i.comments.some(c => c.userId === profile.uid) && i.userId !== profile.uid))), [marketItems, profile.uid]);
-  const mySkills = useMemo(() => skills.filter(s => (s.userId === profile.uid || s.comments.some(c => c.userId === profile.uid))), [skills, profile.uid]);
-  const myWanted = useMemo(() => wantedItems.filter(w => (w.userId === profile.uid || w.comments.some(c => c.userId === profile.uid))), [wantedItems, profile.uid]);
-  const myLikes = useMemo(() => {
-    const likedMarket = marketItems.filter(i => i.likes?.includes(profile.uid));
-    const likedSkills = skills.filter(s => s.likes?.includes(profile.uid));
-    const likedWanted = wantedItems.filter(w => w.likes?.includes(profile.uid));
-    
-    return [
-      ...likedMarket.map(i => ({ ...i, itemType: 'MARKET' as const })),
-      ...likedSkills.map(s => ({ ...s, itemType: 'SKILL' as const })),
-      ...likedWanted.map(w => ({ ...w, itemType: 'WANTED' as const }))
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [marketItems, skills, wantedItems, profile.uid]);
-
-  const handleNotificationJump = (notif: AppNotification) => {
-    if (!notif.isDismissed) {
-      const nextDismissed = [...dismissedNotifIds, notif.id];
-      setDismissedNotifIds(nextDismissed);
-      localStorage.setItem('play_share_dismissed_notifs', JSON.stringify(nextDismissed));
+  if (item.status === 'RESERVED') {
+    if (isBuyer) {
+      if (!item.buyerConfirmedCompletion) return (
+        <div className="bg-gradient-to-r from-indigo-500 to-blue-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><Handshake size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.itemsReserved}</div>
+            <div className="text-[13px] font-bold leading-tight">{t.pickupInstruction}</div>
+          </div>
+        </div>
+      );
+      return (
+        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><CheckCircle size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.pickupConfirmed}</div>
+            <div className="text-[13px] font-bold leading-tight">{t.waitingSellerFinalize}</div>
+          </div>
+        </div>
+      );
     }
-    if (notif.type === 'MARKET') onGoToTransaction(notif.itemId);
-    else if (notif.type === 'SKILL') onGoToSkill(notif.itemId);
-    else if (notif.type === 'WANTED') onGoToWanted(notif.itemId);
-  };
+    if (isSeller) {
+      if (item.buyerConfirmedCompletion) return (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 animate-bounce border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl"><PackageCheck size={24} /></div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.buyerConfirmed}</div>
+            <div className="text-[13px] font-bold leading-tight">{t.handoverCompleteMsg}</div>
+          </div>
+        </div>
+      );
+      return (
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-5 rounded-[28px] mb-6 flex items-center gap-4 border-2 border-white shadow-xl">
+          <div className="bg-white/20 p-2 rounded-xl text-2xl flex items-center justify-center">{item.buyerAvatarIcon || <MessageCircle size={24} />}</div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-80">{t.reservedFor} {item.buyerNickname}</div>
+            <div className="text-[13px] font-bold leading-tight">{t.arrangePickupMsg}</div>
+          </div>
+        </div>
+      );
+    }
+  }
+  return null;
+});
 
-  const handleSaveProfile = async () => {
-    if (!editNickname.trim() || !editCondoId) return;
-    if (editCondoId === 'Other-Penang' && !editCustomCondoName.trim()) return;
-    
-    const updatedProfile: UserProfile = { 
-      ...profile, 
-      parentNickname: editNickname, 
-      avatarIcon: editAvatar, 
-      condoId: editCondoId, 
-      customCondoName: editCondoId === 'Other-Penang' ? editCustomCondoName : '',
-      children: editChildren 
-    };
-    try {
-      await setDoc(doc(db, "users", profile.uid), updatedProfile);
-      onUpdateProfile(updatedProfile);
-      setIsEditingProfile(false);
-    } catch (e: any) { alert("Error: " + e.message); }
-  };
+const MarketItemCard = memo(({ item, onClick, profile, onLike }: { item: MarketItem, onClick: () => void, profile: UserProfile | null, onLike: (e: React.MouseEvent) => void }) => {
+  const isNew = differenceInHours(new Date(), new Date(item.createdAt)) <= 72;
+  const isDiscounted = item.priceUpdatedAt && 
+                      item.previousPrice !== undefined && 
+                      item.price < item.previousPrice && 
+                      differenceInHours(new Date(), new Date(item.priceUpdatedAt)) <= 72;
 
-  const togglePrivacy = async (key: keyof PrivacySettings) => {
-    const nextPrivacy = { ...privacy, [key]: !privacy[key] };
-    const updatedProfile = { ...profile, privacySettings: nextPrivacy };
-    try {
-      await updateDoc(doc(db, "users", profile.uid), { privacySettings: nextPrivacy });
-      onUpdateProfile(updatedProfile);
-    } catch (e: any) { alert("Update failed: " + e.message); }
-  };
-
-  const addChild = () => {
-    setEditChildren([...editChildren, {
-      id: crypto.randomUUID(),
-      nickname: '',
-      age: '3',
-      gender: 'boy',
-      intro: '',
-      avatarIcon: AVATAR_ICONS.CHILDREN[0]
-    }]);
-  };
+  const isSold = item.status === 'SOLD';
+  const canClick = !isSold || (profile && (item.userId === profile.uid || item.buyerId === profile.uid));
+  const isLiked = profile ? item.likes?.includes(profile.uid) : false;
 
   return (
-    <div className={`p-6 pb-32 space-y-8 animate-fade-in overflow-y-auto max-h-screen hide-scrollbar bg-[#fdfbf7] ${onClose ? 'fixed inset-0 z-[100]' : ''}`}>
-      {onClose && (
-        <button onClick={onClose} className="flex items-center gap-2 text-gray-400 font-black text-[11px] uppercase tracking-widest bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm mb-6 active:scale-95 transition-all">
-          <ChevronLeft size={16} /> {t.back}
-        </button>
-      )}
-
-      <div className="flex justify-between items-start">
-        <div className="flex items-center gap-5">
-          <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-5xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
-          <div className="min-w-0">
-            <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate leading-none mb-2">{profile.parentNickname}</h2>
-            {badgeLevel !== 'NONE' && (
-              <div className="flex flex-col items-start gap-1">
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${badgeColor} shadow-sm animate-fade-in group relative`}>
-                  <Star size={10} fill="currentColor" />
-                  <span className="text-[9px] font-black uppercase tracking-widest leading-none">{badgeLabel}</span>
-                </div>
-                <button 
-                  onClick={() => setShowBadgeInfo(true)}
-                  className="flex items-center gap-1 text-[8px] font-black text-pink-400 uppercase tracking-widest hover:text-pink-600 transition-colors ml-1"
-                >
-                  <Info size={10} /> {t.badgeCriteria}
-                </button>
-              </div>
-            )}
-            {badgeLevel === 'NONE' && isOwnProfile && (
-              <button 
-                onClick={() => setShowBadgeInfo(true)}
-                className="flex items-center gap-1 text-[8px] font-black text-gray-400 uppercase tracking-widest hover:text-pink-400 transition-colors ml-1 mb-2"
-              >
-                <Info size={10} /> {t.badgeCriteria}
-              </button>
-            )}
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <MapPin size={12} className="shrink-0" />
-              <span className="text-[10px] font-black uppercase tracking-widest truncate">
-                {getCondoName(profile.condoId, profile.customCondoName)}
-              </span>
+    <button 
+      onClick={onClick} 
+      disabled={!canClick}
+      className={`bg-white rounded-[28px] overflow-hidden border border-gray-100 shadow-sm text-left animate-fade-in active:scale-[0.98] transition-all flex flex-col relative ${!canClick ? 'opacity-80 grayscale-[0.5]' : ''}`}
+    >
+      <div className="relative aspect-square">
+        {item.images && item.images.length > 0 ? (
+          <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
+        ) : (
+          <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={32} /></div>
+        )}
+        
+        {isSold && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+            <div className="bg-red-600 text-white px-6 py-2 rounded-xl font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-4 border-white -rotate-12 animate-pulse">
+              SOLD
             </div>
-          </div>
-        </div>
-        {isOwnProfile && (
-          <div className="flex gap-2">
-            <button onClick={() => setShowSettings(true)} className={`p-4 rounded-2xl border transition-all bg-white text-gray-400 border-gray-100 shadow-sm active:scale-95`}><Settings size={20} /></button>
-            <button onClick={() => setIsEditingProfile(true)} className="p-4 bg-pink-50 text-pink-500 rounded-2xl border border-pink-100 shadow-sm active:scale-95 transition-all"><Edit3 size={20} /></button>
           </div>
         )}
-      </div>
-
-      {currentUser.customUserId === 'testtest' && (
-        <div className="bg-white p-6 rounded-[32px] border-2 border-pink-100 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <ShieldAlert size={20} className="text-pink-500" />
-            <div>
-              <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-widest">{t.adminMode}</h3>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">{t.adminModeDesc}</p>
-            </div>
+        
+        {/* Floating Badges */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+          <div className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm ${item.status === 'AVAILABLE' ? (item.requestStatus === 'PENDING' ? 'bg-teal-400 text-white' : 'bg-green-400 text-white') : (item.status === 'SOLD' ? 'bg-gray-400 text-white' : 'bg-orange-400 text-white')}`}>
+            {item.requestStatus === 'PENDING' ? 'REQ' : item.status}
           </div>
-          <button 
-            onClick={() => onToggleAdminMode?.(!isAdminMode)} 
-            className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all active:scale-[0.98] ${isAdminMode ? 'bg-pink-50 border-2 border-pink-200' : 'bg-gray-50 border-2 border-transparent'}`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={isAdminMode ? 'text-pink-500' : 'text-gray-400'}>
-                {isAdminMode ? <Eye size={18}/> : <EyeOff size={18}/>}
-              </div>
-              <span className={`text-[12px] font-black uppercase tracking-tight ${isAdminMode ? 'text-pink-600' : 'text-gray-500'}`}>
-                {isAdminMode ? 'TEST DATA (1111)' : 'PRODUCTION DATA'}
-              </span>
+          {isNew && (
+            <div className="bg-gradient-to-r from-teal-400 to-cyan-400 text-white px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm flex items-center gap-0.5">
+              <Sparkles size={8} /> NEW
             </div>
-            <div className={`w-10 h-6 rounded-full transition-all relative ${isAdminMode ? 'bg-pink-400' : 'bg-gray-200'}`}>
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isAdminMode ? 'right-1' : 'left-1'}`} />
-            </div>
-          </button>
-        </div>
-      )}
-
-      {isOwnProfile && showBadgeInfo && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowBadgeInfo(false)} />
-          <div className="bg-white w-full max-w-sm rounded-[40px] p-8 shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[85vh] hide-scrollbar border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-pink-50 text-pink-500 rounded-2xl shadow-sm"><Star size={20} fill="currentColor"/></div>
-                <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter leading-none">{t.badgeCriteria}</h2>
-              </div>
-              <button onClick={() => setShowBadgeInfo(false)} className="p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-colors"><X size={24}/></button>
-            </div>
-
-            <p className="text-[10px] font-black text-pink-400 uppercase tracking-widest mb-6 leading-relaxed bg-pink-50/50 p-4 rounded-2xl border border-pink-100/50">
-              {t.criteriaAny}
-            </p>
-
-            <div className="space-y-4">
-              {BADGE_CRITERIA.map((crit, idx) => (
-                <div key={crit.level} className={`p-5 rounded-[32px] border transition-all ${badgeLevel === crit.level ? 'bg-pink-50 border-pink-200 ring-4 ring-pink-100/50 scale-[1.02] shadow-md' : 'bg-gray-50/50 border-gray-100'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-xl ${crit.color} flex items-center justify-center shadow-sm`}><Star size={14} fill="currentColor"/></div>
-                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-800">{getBadgeLabel(crit.level)}</span>
-                    </div>
-                    {badgeLevel === crit.level && (
-                      <div className="px-2 py-0.5 bg-pink-400 text-white rounded text-[8px] font-black uppercase tracking-widest animate-pulse">Your Rank</div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-teal-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.listingsCount}: <b className="text-gray-800">{crit.listings}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.salesCount}: <b className="text-gray-800">{crit.sales}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-orange-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.purchasesCount}: <b className="text-gray-800">{crit.purchases}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <div className="w-1.5 h-1.5 rounded-full bg-rose-400"></div>
-                       <span className="text-[9px] font-medium text-gray-500">{t.likesReceived}: <b className="text-gray-800">{crit.likesRec}</b></span>
-                    </div>
-                    <div className="flex items-center gap-2 col-span-2 mt-1 pt-3 border-t border-gray-100/50">
-                       <div className="w-5 h-5 flex items-center justify-center bg-pink-100 rounded-lg"><Heart size={10} className="text-pink-500" fill="currentColor"/></div>
-                       <span className="text-[9px] font-black uppercase tracking-widest text-pink-500">{t.likesGiven}: <b className="text-pink-600 text-[11px]">{crit.likesGiven}</b></span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <button onClick={() => setShowBadgeInfo(false)} className="w-full mt-8 py-5 bg-gray-800 text-white rounded-[28px] font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.ok}</button>
-          </div>
-        </div>
-      )}
-
-      {isOwnProfile && showSettings && (
-        <div className="fixed inset-0 z-[600] flex items-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
-            <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-2 z-10">
-              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.settings}</h2>
-              <button onClick={() => setShowSettings(false)} className="p-2 text-gray-400"><X size={24}/></button>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-black text-pink-400 uppercase tracking-widest ml-1">{t.privacy}</h3>
-              <div className="space-y-2">
-                {[
-                  { key: 'showChildren', label: t.players, icon: <User size={16}/> },
-                  { key: 'showListings', label: t.all, icon: <ShoppingBag size={16}/> },
-                  { key: 'showWanted', label: t.wishlist, icon: <Heart size={16}/> },
-                  { key: 'showSkills', label: t.skills, icon: <BookOpen size={16}/> }
-                ].map(opt => (
-                  <button key={opt.key} onClick={() => togglePrivacy(opt.key as any)} className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-2xl transition-all active:scale-[0.98]">
-                    <div className="flex items-center gap-3">
-                      <div className="text-gray-400">{opt.icon}</div>
-                      <span className="text-[12px] font-bold text-gray-700">{opt.label}</span>
-                    </div>
-                    <div className={`w-10 h-6 rounded-full transition-all relative ${privacy[opt.key as keyof PrivacySettings] ? 'bg-pink-400' : 'bg-gray-200'}`}>
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${privacy[opt.key as keyof PrivacySettings] ? 'right-1' : 'left-1'}`} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-gray-800 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest">{t.confirm}</button>
-          </div>
-        </div>
-      )}
-
-      {isEditingProfile && (
-        <div className="fixed inset-0 z-[600] flex items-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsEditingProfile(false)} />
-          <div className="w-full max-w-lg mx-auto bg-white rounded-t-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 overflow-y-auto max-h-[90vh] hide-scrollbar pb-32">
-             <div className="flex justify-between items-center mb-2 sticky top-0 bg-white py-4 z-10">
-              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.edit}</h2>
-              <button onClick={() => setIsEditingProfile(false)} className="p-2 text-gray-400"><X size={24}/></button>
-            </div>
-            
-            <div className="space-y-6">
-               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.nickname}</label>
-                <input type="text" value={editNickname} onChange={e => setEditNickname(e.target.value)} className="w-full p-4 bg-gray-50 rounded-2xl mt-1 font-bold outline-none border-2 border-transparent focus:border-pink-100" />
-               </div>
-
-                <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
-                <div className="relative mt-1">
-                  <select 
-                    value={editCondoId} 
-                    onChange={e => setEditCondoId(e.target.value)}
-                    className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none appearance-none border-2 border-transparent focus:border-pink-100"
-                  >
-                    <option value="" disabled>{t.selectCondo}</option>
-                    {CONDO_OPTIONS.map(opt => (
-                      <option key={opt.id} value={opt.id}>{opt.name}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                    <ChevronDown size={18} />
-                  </div>
-                </div>
-                {editCondoId === 'Other-Penang' && (
-                  <div className="mt-2 animate-fade-in">
-                    <input 
-                      type="text" 
-                      value={editCustomCondoName} 
-                      onChange={e => setEditCustomCondoName(e.target.value)} 
-                      placeholder="Enter your condominium name" 
-                      className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none border-2 border-pink-100" 
-                    />
-                  </div>
-                )}
-               </div>
-               
-               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.avatar}</label>
-                <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
-                  {AVATAR_ICONS.PARENTS.map(ico => (
-                    <button key={ico} onClick={() => setEditAvatar(ico)} className={`w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center text-2xl border-2 transition-all ${editAvatar === ico ? 'border-pink-400 bg-pink-50' : 'border-gray-100'}`}>{ico}</button>
-                  ))}
-                </div>
-               </div>
-
-               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-gray-800 text-[10px] uppercase tracking-widest">{t.players}</h3>
-                  <button onClick={addChild} className="text-[10px] px-4 py-2 rounded-full font-black bg-pink-100 text-pink-600 uppercase tracking-widest flex items-center gap-1"><PlusCircle size={14}/> {t.add}</button>
-                </div>
-                {editChildren.map((child, index) => (
-                  <div key={child.id} className="p-4 bg-gray-50 border border-gray-100 rounded-[28px] relative space-y-4">
-                    <button onClick={() => setEditChildren(editChildren.filter(c => c.id !== child.id))} className="absolute top-2 right-2 p-2 text-red-300 hover:text-red-500"><Trash2 size={16} /></button>
-                    
-                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                      {AVATAR_ICONS.CHILDREN.map(icon => (
-                        <button key={icon} onClick={() => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, avatarIcon: icon} : c))} className={`shrink-0 w-9 h-9 text-lg rounded-xl border-2 transition-all ${child.avatarIcon === icon ? 'border-pink-400 bg-pink-50' : 'border-white bg-white shadow-sm'}`}>{icon}</button>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <input type="text" value={child.nickname} onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, nickname: e.target.value} : c))} placeholder="..." className="flex-grow p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none" />
-                      <div className="relative">
-                        <select 
-                          value={child.age} 
-                          onChange={e => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, age: e.target.value} : c))}
-                          className="w-20 p-3 rounded-xl bg-white border border-gray-100 text-xs font-bold outline-none appearance-none pr-6"
-                        >
-                          {AGE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                        </select>
-                        <div className="absolute right-2 top-3 text-[8px] font-black text-gray-300 pointer-events-none">{t.yrs}</div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {['boy', 'girl', 'other'].map(g => (
-                        <button
-                          key={g}
-                          type="button"
-                          onClick={() => setEditChildren(editChildren.map(c => c.id === child.id ? {...c, gender: g as any} : c))}
-                          className={`flex-1 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border-2 transition-all ${
-                            child.gender === g 
-                              ? 'bg-pink-400 border-pink-400 text-white' 
-                              : 'bg-white border-white text-gray-400 shadow-sm'
-                          }`}
-                        >
-                          {t[g as keyof typeof t] || g}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-               </div>
-            </div>
-
-            <div className="flex gap-3 pt-6 pb-32">
-              <button onClick={() => setIsEditingProfile(false)} className="flex-1 py-4 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px]">{t.back}</button>
-              <button onClick={handleSaveProfile} className="flex-1 py-4 bg-pink-400 text-white rounded-2xl font-black uppercase text-[11px] shadow-lg">{t.save}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {(isOwnProfile || privacy.showChildren) && profile.children.length > 0 && (
-        <section className="space-y-4 animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-pink-100 text-pink-500 p-2 rounded-xl"><User size={16} /></div>
-            <h3 className="font-black text-gray-800 uppercase text-[11px] tracking-widest">{t.players}</h3>
-          </div>
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar">
-            {profile.children.map(child => (
-              <div key={child.id} className="bg-white p-4 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3 shrink-0">
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-xl">{child.avatarIcon}</div>
-                <div>
-                  <div className="text-[11px] font-black text-gray-800 uppercase">{child.nickname}</div>
-                  <div className="text-[9px] font-bold text-gray-400 uppercase">{child.age} {t.yrs} • {t[child.gender as keyof typeof t] || child.gender}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {isOwnProfile && notifications.length > 0 && (
-        <div className="bg-white rounded-[32px] border border-pink-100 overflow-hidden shadow-sm">
-          <CollapsibleHeader title={t.chat} icon={<Bell size={18}/>} count={activeUnreadCount} isOpen={openSections.notifications} onToggle={() => toggleSection('notifications')} hasBadge={notifications.some(n => !n.isDismissed && n.isActionRequired)} badgeLabel={t.urgent} />
-          {openSections.notifications && (
-            <div className="px-4 pb-4 space-y-2 animate-fade-in">
-               {(showAllNotifications ? notifications : notifications.slice(0, 5)).map(n => (
-                 <button key={n.id} onClick={() => handleNotificationJump(n)} className={`w-full p-4 rounded-2xl border text-left transition-all active:scale-[0.98] flex gap-4 items-start ${n.isDismissed ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-pink-100 shadow-sm'}`}>
-                   <div className={`p-2 rounded-xl shrink-0 ${n.isDismissed ? 'bg-gray-200 text-gray-400' : 'bg-pink-100 text-pink-500'}`}>
-                     {n.type === 'MARKET' ? <ShoppingBag size={16}/> : n.type === 'SKILL' ? <BookOpen size={16}/> : <Heart size={16}/>}
-                   </div>
-                   <div className="min-w-0 flex-grow">
-                     <div className="flex items-center gap-2 mb-1">
-                       <span className={`text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${n.isDismissed ? 'bg-gray-200 text-gray-500' : 'bg-pink-500 text-white'}`}>
-                         {n.reason}
-                       </span>
-                       <span className="text-[7px] font-black text-gray-300 uppercase tracking-widest">
-                         {n.type}
-                       </span>
-                     </div>
-                     <h4 className="text-[11px] font-black uppercase truncate text-gray-800">{n.title}</h4>
-                     <p className="text-[10px] leading-relaxed font-bold text-gray-500 line-clamp-1">{n.message}</p>
-                   </div>
-                 </button>
-               ))}
+          )}
+          {isDiscounted && (
+            <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest shadow-sm flex items-center gap-0.5 animate-pulse">
+              <Flame size={8} /> DISCOUNT
             </div>
           )}
         </div>
-      )}
 
-      <div className="space-y-4">
-        {(isOwnProfile || privacy.showListings) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.sell} icon={<ShoppingBag size={18}/>} count={myActiveSales.length} isOpen={openSections.activeSales} onToggle={() => toggleSection('activeSales')} />
-            {openSections.activeSales && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myActiveSales.map(item => (
-                  <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-gray-100 flex items-center justify-between bg-white text-left shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl border bg-teal-50 border-teal-100">{GENRE_ICONS[item.genre] || '📦'}</div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {(isOwnProfile || privacy.showBuying) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.all} icon={<ShoppingBasket size={18}/>} count={myPurchases.length} isOpen={openSections.buying} onToggle={() => toggleSection('buying')} />
-            {openSections.buying && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myPurchases.map(item => (
-                  <button key={item.id} onClick={() => onGoToTransaction(item.id)} className="w-full p-4 rounded-[28px] border border-orange-50 flex items-center justify-between bg-white text-left shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 bg-white border border-gray-100 rounded-xl flex items-center justify-center text-2xl shrink-0">{item.parentAvatarIcon}</div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* WANTED SECTION */}
-        {(isOwnProfile || privacy.showWanted) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.wishlist} icon={<Heart size={18}/>} count={myWanted.length} isOpen={openSections.wanted} onToggle={() => toggleSection('wanted')} />
-            {openSections.wanted && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myWanted.map(wanted => (
-                  <div key={wanted.id} className="w-full p-4 rounded-[28px] border border-amber-50 flex items-center justify-between bg-white">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl border bg-amber-50 border-amber-100">
-                         {GENRE_ICONS[wanted.genre] || <Heart size={16} fill="currentColor"/>}
-                       </div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{wanted.title}</div>
-                    </div>
-                    <div className="text-[9px] font-black text-amber-500 uppercase">RM{wanted.hopePrice}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {(isOwnProfile || privacy.showSkills) && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.skills} icon={<BookOpen size={18}/>} count={mySkills.length} isOpen={openSections.skills} onToggle={() => toggleSection('skills')} />
-            {openSections.skills && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {mySkills.map(skill => (
-                  <button key={skill.id} onClick={() => onGoToSkill(skill.id)} className="w-full p-4 rounded-[28px] border border-indigo-50 flex items-center justify-between bg-white text-left shadow-sm">
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className="w-11 h-11 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-2xl shrink-0 overflow-hidden">
-                         {skill.images && skill.images.length > 0 ? (
-                           <img src={skill.images[0]} className="w-full h-full object-cover" alt={skill.title} referrerPolicy="no-referrer" />
-                         ) : (
-                           SKILL_ICONS[skill.category] || '🌟'
-                         )}
-                       </div>
-                       <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{skill.title}</div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isOwnProfile && (
-          <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
-            <CollapsibleHeader title={t.likedPosts} icon={<Heart size={18} fill="currentColor" className="text-rose-500" />} count={myLikes.length} isOpen={openSections.likes} onToggle={() => toggleSection('likes')} />
-            {openSections.likes && (
-              <div className="px-4 pb-4 space-y-3 animate-fade-in">
-                {myLikes.map(item => (
-                  <button 
-                    key={item.id} 
-                    onClick={() => {
-                      if (item.itemType === 'MARKET') onGoToTransaction(item.id);
-                      else if (item.itemType === 'SKILL') onGoToSkill(item.id);
-                      else if (item.itemType === 'WANTED') onGoToWanted(item.id);
-                    }} 
-                    className="w-full p-4 rounded-[28px] border border-rose-50 flex items-center justify-between bg-white text-left shadow-sm"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-2xl border overflow-hidden ${item.itemType === 'MARKET' ? 'bg-teal-50 border-teal-100' : item.itemType === 'SKILL' ? 'bg-indigo-50 border-indigo-100' : 'bg-amber-50 border-amber-100'}`}>
-                         {item.itemType === 'MARKET' ? (
-                           (item as MarketItem).images && (item as MarketItem).images.length > 0 ? (
-                             <img src={(item as MarketItem).images[0]} className="w-full h-full object-cover" alt={item.title} referrerPolicy="no-referrer" />
-                           ) : (GENRE_ICONS[(item as MarketItem).genre] || '📦')
-                         ) : item.itemType === 'SKILL' ? (
-                           (item as Skill).images && (item as Skill).images.length > 0 ? (
-                             <img src={(item as Skill).images[0]} className="w-full h-full object-cover" alt={item.title} referrerPolicy="no-referrer" />
-                           ) : (SKILL_ICONS[(item as Skill).category] || '🌟')
-                         ) : (GENRE_ICONS[(item as WantedItem).genre] || '🔍')}
-                       </div>
-                       <div className="flex flex-col min-w-0">
-                         <div className="text-[12px] font-black text-gray-800 truncate uppercase tracking-tight">{item.title}</div>
-                         <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{item.itemType}</div>
-                       </div>
-                    </div>
-                    <ChevronRight size={14} className="text-gray-300"/>
-                  </button>
-                ))}
-                {myLikes.length === 0 && (
-                  <div className="py-8 text-center space-y-2">
-                    <Heart size={32} className="mx-auto text-gray-100" />
-                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No liked posts yet</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <div className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Mail size={18} className="text-pink-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Support & Inquiries</p>
-              <p className="text-[11px] font-bold text-gray-600 leading-relaxed mt-1">
-                For inquiries or questions, please email <a href="mailto:nearbyexchange@gmail.com" className="text-pink-500 underline">nearbyexchange@gmail.com</a>
-              </p>
-            </div>
+        <div className="absolute top-2 right-2 z-10">
+          <div 
+            onClick={onLike}
+            className={`p-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-1 ${isLiked ? 'bg-rose-500 text-white border-rose-400' : 'bg-white/80 text-gray-400 border-white'}`}
+          >
+            <Heart size={10} fill={isLiked ? "currentColor" : "none"} />
+            {item.likes && item.likes.length > 0 && <span className="text-[8px] font-black">{item.likes.length}</span>}
           </div>
         </div>
 
-        {isOwnProfile && (
-          <button onClick={onLogout} className="w-full py-5 bg-white border-2 border-red-50 text-red-400 rounded-[32px] font-black uppercase text-[11px] tracking-[0.2em] shadow-sm active:bg-red-50 transition-all mt-4">
-            {t.logout}
-          </button>
+        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-2 py-1 rounded-xl shadow-sm border border-teal-50">
+          <div className="flex flex-col items-end">
+            {isDiscounted && item.previousPrice && (
+               <span className="text-[7px] text-gray-400 line-through font-bold">RM{item.previousPrice}</span>
+            )}
+            <span className="text-teal-600 font-black text-[10px]">{item.type === 'FREE' ? 'FREE' : `RM${item.price}`}</span>
+          </div>
+        </div>
+      </div>
+      <div className="p-3 space-y-1">
+        <h3 className="text-[11px] font-black text-gray-800 line-clamp-1 uppercase tracking-tight">{item.title}</h3>
+      </div>
+    </button>
+  );
+});
+
+type SortOption = 'newest' | 'price_low' | 'price_high';
+
+export const MarketPlace: React.FC<Props> = ({ items, skills, wantedItems, profile, language = 'en', loading = false, initialActiveItemId, onEdit, onStatusChange, onDelete, onAddComment, onLike, onViewProfile, onChatClose, onViewItem, tabResetToggle, ensureAuth, condos = [] }) => {
+  const t = translations[language];
+  const [filterStatus, setFilterStatus] = useState<MarketItem['status'] | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string>(t.allGenres);
+  const [selectedCondition, setSelectedCondition] = useState<string>(t.anyCondition);
+  const [selectedCondoId, setSelectedCondoId] = useState<string>('ALL');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const [viewingItem, setViewingItem] = useState<MarketItem | null>(null);
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const galleryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setViewingItem(null);
+  }, [tabResetToggle]);
+
+  useEffect(() => {
+    if (initialActiveItemId) {
+      const item = items.find(i => i.id === initialActiveItemId);
+      if (item) {
+        // Validation for deep linking - restrict access to RESERVED and SOLD items
+        if ((item.status === 'RESERVED' || item.status === 'SOLD') && (!profile || (item.userId !== profile.uid && item.buyerId !== profile.uid))) {
+           alert(t.transactionPrivateMsg);
+           if (onChatClose) onChatClose();
+           return;
+        }
+        setViewingItem(item);
+      } else if (!loading && items.length > 0) {
+        // Item not found
+        alert(t.itemNotFound);
+        if (onChatClose) onChatClose();
+      }
+    }
+  }, [initialActiveItemId, items, profile?.uid, t.transactionPrivateMsg, t.itemNotFound, loading, onChatClose]);
+
+  useEffect(() => {
+    if (viewingItem) {
+      window.scrollTo(0, 0);
+      const main = document.querySelector('main');
+      if (main) main.scrollTo(0, 0);
+    }
+  }, [viewingItem?.id]);
+
+  useEffect(() => {
+    if (viewingItem) {
+      const updated = items.find(i => i.id === viewingItem.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(viewingItem)) {
+        setViewingItem(updated);
+      }
+    }
+  }, [items, viewingItem?.id]);
+
+  const [confirmRequestItem, setConfirmRequestItem] = useState<MarketItem | null>(null);
+  const [rejectRequestItem, setRejectRequestItem] = useState<MarketItem | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  const filteredItems = useMemo(() => {
+    const currentFilter = filterStatus;
+    let result = items.filter(item => {
+      if (currentFilter === 'RESERVED') {
+        if (item.requestStatus !== 'PENDING' && item.status !== 'RESERVED') return false;
+      } else if (currentFilter === 'AVAILABLE') {
+        if (item.status !== 'AVAILABLE' || item.requestStatus === 'PENDING') return false;
+      } else if (currentFilter !== 'ALL' && item.status !== currentFilter) {
+        return false;
+      }
+
+      if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (selectedGenre !== t.allGenres && item.genre !== selectedGenre) return false;
+      if (selectedCondition !== t.anyCondition && item.condition !== selectedCondition) return false;
+      if (selectedCondoId !== 'ALL' && item.condoId !== selectedCondoId) return false;
+      if (minPrice && item.price < Number(minPrice)) return false;
+      if (maxPrice && item.price > Number(maxPrice)) return false;
+      
+      return true;
+    });
+
+    return result.sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === 'price_low') return a.price - b.price;
+      if (sortBy === 'price_high') return b.price - a.price;
+      return 0;
+    });
+  }, [items, filterStatus, searchQuery, selectedGenre, selectedCondition, minPrice, maxPrice, sortBy, t.allGenres, t.anyCondition]);
+
+  const handleSendComment = (itemId: string) => {
+    const text = commentInputs[itemId];
+    if (!text?.trim()) return;
+    onAddComment(itemId, text);
+    setCommentInputs(prev => ({ ...prev, [itemId]: '' }));
+  };
+
+  const scrollGallery = (direction: 'prev' | 'next') => {
+    if (!galleryRef.current) return;
+    const { scrollLeft, clientWidth, scrollWidth } = galleryRef.current;
+    
+    if (direction === 'next') {
+      if (scrollLeft + clientWidth >= scrollWidth - 5) {
+        galleryRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        galleryRef.current.scrollBy({ left: clientWidth, behavior: 'smooth' });
+      }
+    } else {
+      if (scrollLeft <= 5) {
+        galleryRef.current.scrollTo({ left: scrollWidth, behavior: 'smooth' });
+      } else {
+        galleryRef.current.scrollBy({ left: -clientWidth, behavior: 'smooth' });
+      }
+    }
+  };
+
+  const handleConfirmRequest = () => {
+    if (confirmRequestItem) {
+      onStatusChange(confirmRequestItem.id, 'AVAILABLE', profile.uid);
+      setConfirmRequestItem(null);
+    }
+  };
+
+  const handleConfirmReject = () => {
+    if (rejectRequestItem && rejectionReason.trim()) {
+      onStatusChange(rejectRequestItem.id, 'AVAILABLE', undefined, rejectionReason);
+      setRejectRequestItem(null);
+      setRejectionReason('');
+    }
+  };
+
+  const handleBuyerCompletion = (item: MarketItem) => {
+    if (confirm(t.confirmReceipt)) {
+      onStatusChange(item.id, 'RESERVED', undefined, undefined, { buyerConfirmedCompletion: true });
+    }
+  };
+
+  const handleSellerCompletion = (item: MarketItem) => {
+    if (confirm(t.endTransactionMsg)) {
+      onStatusChange(item.id, 'SOLD', undefined, undefined, { sellerConfirmedCompletion: true });
+      setViewingItem(null);
+      if (onChatClose) onChatClose();
+    }
+  };
+
+  const handleRequestCancellation = (item: MarketItem) => {
+    const isSeller = profile && item.userId === profile.uid;
+    const msg = isSeller ? t.cancelTradeSeller : t.cancelTradeBuyer;
+    if (confirm(msg)) {
+      const updates = isSeller ? { sellerRequestedCancellation: true } : { buyerRequestedCancellation: true };
+      onStatusChange(item.id, 'RESERVED', undefined, undefined, updates);
+    }
+  };
+
+  const handleConfirmCancellation = (item: MarketItem) => {
+    if (confirm(t.returnAvailableMsg)) {
+      onStatusChange(item.id, 'AVAILABLE', undefined, undefined, { 
+        buyerId: '', 
+        buyerNickname: '', 
+        buyerAvatarIcon: '', 
+        requestStatus: 'NONE',
+        buyerRequestedCancellation: false,
+        sellerRequestedCancellation: false,
+        buyerConfirmedCompletion: false,
+        sellerConfirmedCompletion: false
+      });
+      setViewingItem(null);
+      if (onChatClose) onChatClose();
+    }
+  };
+
+  const handleItemClick = (item: MarketItem) => {
+    // Check privacy for TRADE (RESERVED) and SOLD items
+    if ((item.status === 'RESERVED' || item.status === 'SOLD') && (!profile || (item.userId !== profile.uid && item.buyerId !== profile.uid))) {
+      alert(t.transactionPrivateMsg);
+      return;
+    }
+    setViewingItem(item);
+    if (onViewItem) onViewItem(item.id);
+  };
+
+  const handleShare = () => {
+    if (!viewingItem) return;
+    const shareUrl = `${window.location.origin}${window.location.pathname}#market?id=${viewingItem.id}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: viewingItem.title,
+        text: viewingItem.description,
+        url: shareUrl,
+      }).catch(() => {
+        navigator.clipboard.writeText(shareUrl);
+        alert(t.linkCopied);
+      });
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      alert(t.linkCopied);
+    }
+  };
+
+  if (viewingItem) {
+    const isSeller = profile && viewingItem.userId === profile.uid;
+    const isBuyer = profile && viewingItem.buyerId === profile.uid;
+
+    const sellerStats = calculateUserStats(viewingItem.userId, null, items, skills || [], wantedItems || []);
+    const badgeLevel = getBadgeLevel(sellerStats);
+    const badgeColor = getBadgeColor(badgeLevel);
+
+    return (
+      <div className="animate-fade-in space-y-6 pb-20 px-4 pt-4">
+        <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { setViewingItem(null); if(onChatClose) onChatClose(); if(onViewItem) onViewItem(null); }} 
+                className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+              >
+                <ChevronLeft size={16} /> {t.market}
+              </button>
+              <button 
+                onClick={() => onLike(viewingItem.id)} 
+                className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-2xl border shadow-sm active:scale-95 transition-all ${profile && viewingItem.likes?.includes(profile.uid) ? 'bg-rose-500 text-white border-rose-400' : 'bg-white text-gray-400 border-gray-100'}`}
+              >
+                <Heart size={16} fill={profile && viewingItem.likes?.includes(profile.uid) ? "currentColor" : "none"} />
+                {viewingItem.likes && viewingItem.likes.length > 0 && <span>{viewingItem.likes.length}</span>}
+              </button>
+              <button 
+                onClick={handleShare} 
+                className="flex items-center gap-2 text-gray-400 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-all"
+              >
+                <Share2 size={16} /> {t.share}
+              </button>
+            </div>
+            <button 
+              onClick={() => onViewProfile && onViewProfile(viewingItem.userId)} 
+              className="flex flex-col items-center gap-1.5 p-2 bg-white rounded-2xl border border-teal-50 shadow-sm active:scale-90 transition-all shrink-0 relative"
+            >
+              <span className="text-xl leading-none">{viewingItem.parentAvatarIcon}</span>
+              {badgeLevel !== 'NONE' && (
+                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${badgeColor} flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-teal-50`}>
+                  <Star size={8} fill="currentColor" />
+                </div>
+              )}
+              <span className="text-[8px] font-black text-teal-500 uppercase tracking-tighter max-w-[50px] truncate text-center leading-none">
+                {viewingItem.parentNickname}
+              </span>
+            </button>
+        </div>
+
+        <InstructionBanner item={viewingItem} profile={profile} language={language} />
+
+        {viewingItem.status !== 'SOLD' && (
+          <div className="bg-white p-6 rounded-[32px] border-2 border-teal-50 shadow-lg animate-slide-down">
+              {viewingItem.userId !== profile?.uid && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+                <button 
+                  onClick={() => {
+                    if (ensureAuth) {
+                      ensureAuth(() => setConfirmRequestItem(viewingItem));
+                    } else {
+                      setConfirmRequestItem(viewingItem);
+                    }
+                  }} 
+                  className="w-full py-5 bg-teal-400 text-white rounded-[28px] font-black uppercase tracking-[0.2em] text-[14px] shadow-xl shadow-teal-100 active:scale-[0.97] transition-all border-4 border-white block"
+                >
+                  {t.requesting}
+                </button>
+              )}
+
+              {isSeller && viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && (
+                <div className="space-y-4 p-5 bg-orange-50/50 rounded-[32px] border-2 border-orange-100 mb-4">
+                  <p className="text-[11px] font-black text-orange-600 uppercase tracking-widest text-center">{t.buyerApplicationReceived}</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => onStatusChange(viewingItem.id, 'RESERVED')} className="flex-1 py-5 bg-green-500 text-white rounded-[28px] font-black uppercase text-[14px] tracking-widest shadow-xl active:scale-95 border-4 border-white transition-all">{t.confirm}</button>
+                    <button onClick={() => setRejectRequestItem(viewingItem)} className="flex-1 py-5 bg-white text-red-500 rounded-[28px] font-black uppercase text-[14px] tracking-widest border-2 border-red-100 active:scale-95 transition-all">{t.cancel}</button>
+                  </div>
+                </div>
+              )}
+
+              {isSeller && (viewingItem.status === 'AVAILABLE' || viewingItem.status === 'RESERVED') && (
+                <div className="flex flex-col gap-3">
+                  {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus !== 'PENDING' && (
+                    <button onClick={() => onEdit(viewingItem)} className="w-full py-4 bg-gray-50 text-gray-400 rounded-[24px] font-black uppercase text-[11px] tracking-widest border border-gray-100 active:scale-95 shadow-sm flex items-center justify-center gap-2 transition-all">
+                      <Edit2 size={16}/> {t.edit}
+                    </button>
+                  )}
+                  <button onClick={() => { if(confirm(t.deleteItem)) { onDelete(viewingItem.id); setViewingItem(null); if(onChatClose) onChatClose(); } }} className="w-full py-3.5 bg-white text-red-300 rounded-[24px] font-black uppercase text-[10px] tracking-widest border border-red-50 active:scale-95 flex items-center justify-center gap-2 transition-all opacity-70 hover:opacity-100">
+                    <Trash2 size={14}/> {t.deleteListing}
+                  </button>
+                </div>
+              )}
+
+              {viewingItem.status === 'AVAILABLE' && viewingItem.requestStatus === 'PENDING' && !isSeller && (
+                <div className="bg-teal-50 text-teal-600 px-4 py-3.5 rounded-full text-[12px] font-black uppercase tracking-widest text-center border border-teal-100 shadow-inner flex items-center justify-center gap-2">
+                  <PackageCheck size={18}/> {t.waitingForSeller}
+                </div>
+              )}
+          </div>
+        )}
+
+        <div className="bg-white rounded-[40px] border border-gray-100 overflow-hidden shadow-sm relative">
+          {viewingItem.images && viewingItem.images.length > 0 ? (
+            <>
+              <div ref={galleryRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
+                {viewingItem.images.map((img, i) => (
+                  <img key={i} src={img} className="w-full aspect-square object-cover snap-center shrink-0" alt={`View ${i}`} loading="lazy" referrerPolicy="no-referrer" />
+                ))}
+              </div>
+              {viewingItem.images.length > 1 && (
+                <>
+                  <button onClick={() => scrollGallery('prev')} className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg text-gray-600 z-10"><ChevronLeft size={20} /></button>
+                  <button onClick={() => scrollGallery('next')} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg text-gray-600 z-10"><ChevronRight size={20} /></button>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="aspect-square bg-gray-50 flex items-center justify-center text-gray-200"><ImageIcon size={64} /></div>
+          )}
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
+            <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.condominium}</span></div>
+            <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{getCondoName(viewingItem.condoId, viewingItem.customCondoName)}</div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <span className="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-teal-100">{t.rank} {viewingItem.condition}</span>
+                <span className="bg-gray-50 text-gray-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-gray-100">{viewingItem.type}</span>
+              </div>
+              <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight break-words line-clamp-3">{viewingItem.title}</h1>
+            </div>
+
+            <div className="flex items-center justify-between bg-teal-50/50 p-4 rounded-[28px] border border-teal-100/50 gap-2">
+              <div className="flex flex-col min-w-0">
+                <span className="text-[8px] font-black text-teal-500 uppercase tracking-widest mb-1">{t.price}</span>
+                <span className="text-2xl font-black text-teal-600 tracking-tighter leading-none break-all">
+                  {viewingItem.type === 'FREE' ? t.free : `RM ${viewingItem.price}`}
+                </span>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.via}</span>
+                <span className="text-[10px] font-black text-gray-600 uppercase tracking-tight">{viewingItem.paymentMethod}</span>
+              </div>
+            </div>
+
+            <p className="text-gray-400 text-[13px] font-medium leading-relaxed whitespace-pre-wrap">{viewingItem.description}</p>
+          </div>
+
+            <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
+              <div className="flex items-center gap-2 text-gray-400"><MapPin size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.pickupLocation}</span></div>
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{viewingItem.pickupLocation}</div>
+            </div>
+            <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm space-y-1">
+              <div className="flex items-center gap-2 text-gray-400"><Clock size={12}/><span className="text-[8px] font-black uppercase tracking-widest">{t.pickupTime}</span></div>
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-tight leading-relaxed">{viewingItem.pickupDateTime}</div>
+            </div>
+          </div>
+
+          {viewingItem.status !== 'AVAILABLE' && (
+            <div className={`border p-6 rounded-[32px] space-y-5 shadow-sm ${viewingItem.status === 'SOLD' ? 'bg-gray-50 border-gray-100' : 'bg-orange-50 border-orange-100'}`}>
+               <div className="flex items-center justify-center gap-4">
+                  <div className={`flex flex-col items-center gap-1 ${viewingItem.status === 'SOLD' || viewingItem.buyerConfirmedCompletion ? 'text-green-500' : 'text-orange-500'}`}>
+                    <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${viewingItem.status === 'SOLD' || viewingItem.buyerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-orange-200'}`}>
+                      {viewingItem.status === 'SOLD' || viewingItem.buyerConfirmedCompletion ? <Check size={20}/> : '1'}
+                    </div>
+                    <span className="text-[8px] font-black uppercase tracking-widest">{t.received}</span>
+                  </div>
+                  <div className={`w-12 h-px ${viewingItem.status === 'SOLD' ? 'bg-green-200' : 'bg-orange-200'}`}></div>
+                  <div className={`flex flex-col items-center gap-1 ${viewingItem.status === 'SOLD' || viewingItem.sellerConfirmedCompletion ? 'text-green-500' : 'text-gray-300'}`}>
+                    <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${viewingItem.status === 'SOLD' || viewingItem.sellerConfirmedCompletion ? 'bg-green-500 text-white border-green-500' : 'bg-white border-gray-100'}`}>
+                      {viewingItem.status === 'SOLD' || viewingItem.sellerConfirmedCompletion ? <Check size={20}/> : '2'}
+                    </div>
+                    <span className="text-[8px] font-black uppercase tracking-widest">{t.done}</span>
+                  </div>
+               </div>
+               {viewingItem.status === 'RESERVED' && (
+                 <div className="space-y-4">
+                   {isBuyer ? (
+                      !viewingItem.buyerConfirmedCompletion && (
+                        <button onClick={() => handleBuyerCompletion(viewingItem)} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">I've picked up the item</button>
+                      )
+                   ) : (
+                      isSeller && viewingItem.buyerConfirmedCompletion && (
+                        <button onClick={() => handleSellerCompletion(viewingItem)} className="w-full py-4 bg-green-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">Complete Transaction</button>
+                      )
+                   )}
+
+                   {/* Cancellation Section */}
+                   <div className="pt-2 border-t border-orange-200/50">
+                     <div className="space-y-2">
+                       {viewingItem.buyerRequestedCancellation && viewingItem.sellerRequestedCancellation ? (
+                         <button onClick={() => handleConfirmCancellation(viewingItem)} className="w-full py-3 bg-red-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all">Finalize Cancellation</button>
+                       ) : (
+                         <>
+                           {isBuyer && (
+                             viewingItem.buyerRequestedCancellation ? (
+                               <div className="text-center py-2 bg-orange-100/50 rounded-xl border border-orange-200">
+                                 <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
+                               </div>
+                             ) : (
+                               <button onClick={() => handleRequestCancellation(viewingItem)} className="w-full py-3 bg-white text-red-400 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">
+                                 {viewingItem.sellerRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
+                               </button>
+                             )
+                           )}
+                           {isSeller && (
+                             viewingItem.sellerRequestedCancellation ? (
+                               <div className="text-center py-2 bg-orange-100/50 rounded-xl border border-orange-200">
+                                 <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest">Cancellation Requested</p>
+                               </div>
+                             ) : (
+                               <button onClick={() => handleRequestCancellation(viewingItem)} className="w-full py-3 bg-white text-red-400 border border-red-100 rounded-xl font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all">
+                                 {viewingItem.buyerRequestedCancellation ? "Agree to Cancel Trade" : "Request Cancellation"}
+                               </button>
+                             )
+                           )}
+                         </>
+                       )}
+                     </div>
+                   </div>
+                 </div>
+               )}
+            </div>
+          )}
+
+          <div className="space-y-4 pt-6">
+            <div className="flex items-center gap-2 px-1">
+              <div className="bg-teal-100 text-teal-600 p-2 rounded-xl"><MessageCircle size={14}/></div>
+              <div className="flex-grow">
+                <h3 className="text-[11px] font-black text-gray-800 uppercase tracking-[0.2em]">
+                  {viewingItem.status === 'RESERVED' ? t.trade : viewingItem.status === 'SOLD' ? t.available : t.all}
+                </h3>
+                {isSeller && viewingItem.status === 'RESERVED' && (
+                  <p className="text-[8px] font-black text-teal-500 uppercase mt-0.5">Chatting with {viewingItem.buyerNickname}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {viewingItem.comments.map(c => {
+                const isMe = profile && c.userId === profile.uid;
+                const isItemSeller = c.userId === viewingItem.userId;
+                return (
+                  <div key={c.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                    <div className="flex flex-col items-center gap-1 shrink-0">
+                      <div className="w-10 h-10 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-2xl shadow-sm">{c.userAvatar}</div>
+                      <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter max-w-[44px] truncate text-center leading-tight">{c.userNickname}</span>
+                    </div>
+                    <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-teal-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
+                      <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-teal-50 text-right' : 'text-teal-500'}`}>
+                        {isItemSeller ? t.sell : t.all} • {format(new Date(c.createdAt), 'HH:mm')}
+                      </div>
+                      <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
+                    </div>
+                  </div>
+                );
+              })}
+              {viewingItem.comments.length === 0 && (
+                <div className="py-12 text-center text-gray-300 font-black uppercase text-[10px] border-2 border-dashed border-gray-100 rounded-[44px] tracking-[0.2em] bg-white/40">{t.noMessage}</div>
+              )}
+            </div>
+
+            {viewingItem.status !== 'SOLD' ? (
+              <div className="pt-6">
+                 <p className="text-[9px] text-gray-400 font-bold px-4 italic mb-2">{t.translationNotice}</p>
+                  <div className="flex gap-2 items-center bg-white p-2 rounded-[28px] border-2 border-teal-50 focus-within:border-teal-400 focus-within:ring-4 ring-teal-50 transition-all shadow-sm">
+                    <input 
+                      type="text" 
+                      value={commentInputs[viewingItem.id] || ''}
+                      onChange={e => setCommentInputs(prev => ({ ...prev, [viewingItem.id]: e.target.value }))}
+                      placeholder="..."
+                      className="flex-grow bg-transparent border-none px-4 py-3 text-sm font-bold outline-none placeholder:text-gray-300"
+                      onKeyDown={e => e.key === 'Enter' && handleSendComment(viewingItem.id)}
+                    />
+                    <button 
+                      onClick={() => handleSendComment(viewingItem.id)} 
+                      disabled={!(commentInputs[viewingItem.id] || '').trim()}
+                      className={`p-3 rounded-full shadow-lg active:scale-90 transition-all ${ (commentInputs[viewingItem.id] || '').trim() ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-300'}`}
+                    >
+                      <span className="sr-only">{t.send}</span>
+                      <Send size={18} />
+                    </button>
+                  </div>
+              </div>
+            ) : (
+              <div className="py-6 flex items-center justify-center gap-4 bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200">
+                <Lock size={18} className="text-gray-300" />
+                <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">{t.close}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {confirmRequestItem && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-teal-400">
+              <div className="text-center space-y-5">
+                <div className="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center text-teal-500 mx-auto border-4 border-white shadow-lg"><AlertTriangle size={40} /></div>
+                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight">{t.requesting}</h3>
+                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-4">{t.confirm} "{confirmRequestItem.title}"?</p>
+                <div className="flex gap-4 pt-6">
+                  <button onClick={() => setConfirmRequestItem(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">{t.back}</button>
+                  <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-teal-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.send}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {rejectRequestItem && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-red-400">
+              <div className="space-y-6">
+                <h3 className="text-2xl font-black text-gray-800 uppercase tracking-tight text-center">{t.cancel}</h3>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest text-center leading-relaxed">{t.description}</p>
+                <textarea 
+                  value={rejectionReason} 
+                  onChange={e => setRejectionReason(e.target.value)}
+                  placeholder="..."
+                  className="w-full p-5 bg-gray-50 border-none rounded-3xl font-bold text-sm h-32 resize-none outline-none focus:ring-4 ring-red-50"
+                />
+                <div className="flex gap-4 pt-4">
+                  <button onClick={() => { setRejectRequestItem(null); setRejectionReason(''); }} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest transition-all">{t.back}</button>
+                  <button onClick={handleConfirmReject} disabled={!rejectionReason.trim()} className={`flex-1 py-5 rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl transition-all ${rejectionReason.trim() ? 'bg-red-500 text-white shadow-red-100 active:scale-95' : 'bg-gray-100 text-gray-300 opacity-50 cursor-not-allowed'}`}>{t.cancel}</button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
+    );
+  }
+
+  return (
+    <div className="p-4 pb-32 space-y-4 relative">
+      <div className="space-y-3 sticky top-0 bg-[#fdfbf7] z-30 pt-2 pb-4">
+        <div className="flex gap-2">
+            <div className="relative flex-grow">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+            <input 
+              type="text" 
+              placeholder={t.searchPlaceholder} 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 ring-teal-100 shadow-sm"
+            />
+          </div>
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-3 rounded-2xl border transition-all ${showFilters ? 'bg-teal-400 text-white border-teal-400 shadow-lg' : 'bg-white text-gray-400 border-gray-100 shadow-sm'}`}
+          >
+            <SlidersHorizontal size={20} />
+          </button>
+        </div>
+
+        {showFilters && (
+          <div className="bg-white p-6 rounded-[32px] border border-teal-50 shadow-xl space-y-5 animate-fade-in">
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-widest">{t.sortAndFilters}</h4>
+              <button onClick={() => { setSearchQuery(''); setSelectedGenre(t.allGenres); setSelectedCondition(t.anyCondition); setSelectedCondoId('ALL'); setMinPrice(''); setMaxPrice(''); setSortBy('newest'); }} className="text-[9px] font-black text-teal-500 uppercase">{t.resetAll}</button>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condominium}</label>
+              <select 
+                value={selectedCondoId} 
+                onChange={e => setSelectedCondoId(e.target.value)} 
+                className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+              >
+                <option value="ALL">{t.anyCondo}</option>
+                {condos.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.genre}</label>
+                <select value={selectedGenre} onChange={e => setSelectedGenre(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>{t.allGenres}</option>{MARKET_GENRES.map(g => <option key={g} value={g}>{g}</option>)}</select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.condition}</label>
+                <select value={selectedCondition} onChange={e => setSelectedCondition(e.target.value)} className="w-full p-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"><option>{t.anyCondition}</option><option value="S">{t.rankS}</option><option value="A">{t.rankA}</option><option value="B">{t.rankB}</option><option value="C">{t.rankC}</option></select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.minPrice}</label>
+                <div className="relative">
+                  <Coins className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
+                  <input 
+                    type="number" 
+                    placeholder="Min" 
+                    value={minPrice}
+                    min="0"
+                    onChange={e => setMinPrice(e.target.value)}
+                    className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.maxPrice}</label>
+                <div className="relative">
+                  <Coins className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
+                  <input 
+                    type="number" 
+                    placeholder="Max" 
+                    value={maxPrice}
+                    onChange={e => setMaxPrice(e.target.value)}
+                    className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[8px] font-black text-gray-400 uppercase tracking-widest ml-1">{t.sortBy}</label>
+              <div className="relative">
+                <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" size={12}/>
+                <select 
+                  value={sortBy} 
+                  onChange={e => setSortBy(e.target.value as SortOption)} 
+                  className="w-full pl-8 pr-3 py-3 bg-gray-50 border-none rounded-xl text-[10px] font-bold outline-none appearance-none"
+                >
+                  <option value="newest">{t.newestFirst}</option>
+                  <option value="price_low">{t.priceLowToHigh}</option>
+                  <option value="price_high">{t.priceHighToLow}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+          {['ALL', 'AVAILABLE', 'RESERVED', 'SOLD'].map((f) => (
+            <button key={f} onClick={() => setFilterStatus(f as any)} className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filterStatus === f ? 'bg-teal-400 text-white shadow-lg' : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}>
+              {f === 'RESERVED' ? t.trade : f === 'ALL' ? t.all : t[f.toLowerCase() as keyof typeof t] || f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {filteredItems.map((item, index) => (
+          <React.Fragment key={item.id}>
+            {((index === 4) || (index > 4 && (index - 4) % 10 === 0)) && (
+              <div className="col-span-2">
+                <AffiliateBanner index={Math.floor((index - 4) / 10)} />
+              </div>
+            )}
+            <MarketItemCard 
+              item={item} 
+              onClick={() => handleItemClick(item)} 
+              profile={profile} 
+              onLike={(e) => { e.stopPropagation(); onLike(item.id); }}
+            />
+          </React.Fragment>
+        ))}
+      </div>
+      {loading ? (
+        <div className="p-4 space-y-4">
+          <MarketSkeleton />
+        </div>
+      ) : filteredItems.length === 0 && (
+        <div className="py-20 text-center">
+          <div className="text-gray-200 mb-4 flex justify-center"><ShoppingBag size={48}/></div>
+          <p className="text-[11px] font-black text-gray-300 uppercase tracking-widest">{t.noMatchingItems}</p>
+        </div>
+      )}
     </div>
   );
 };

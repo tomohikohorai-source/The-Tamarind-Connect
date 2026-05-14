@@ -1,133 +1,199 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // 0. Global Safety Net
-    match /{document=**} {
-      allow read, write: if false;
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "customUserId": { "type": "string" },
+        "parentNickname": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "condoCode": { "type": "string" },
+        "avatarIcon": { "type": "string" },
+        "totalLoginDays": { "type": "integer" },
+        "lastLoginDate": { "type": "string", "format": "date-time" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "condoId": { "type": "string" },
+        "customCondoName": { "type": "string" },
+        "children": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "privacySettings": { "type": "object" }
+      },
+      "required": ["uid", "parentNickname", "roomNumber"]
+    },
+    "Activity": {
+      "title": "Neighbor Activity",
+      "description": "Real-time presence and activities of neighbors",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "condoCode": { "type": "string" },
+        "parentNickname": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "parentAvatarIcon": { "type": "string" },
+        "location": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "message": { "type": "string" },
+        "childNicknames": { "type": "array", "items": { "type": "string" } },
+        "childAvatars": { "type": "array", "items": { "type": "string" } },
+        "isInvitation": { "type": "boolean" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "condoId": { "type": "string" }
+      }
+    },
+    "MarketItem": {
+      "title": "Market Item",
+      "description": "Item listed for sale or free exchange",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "condoCode": { "type": "string" },
+        "parentNickname": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "parentAvatarIcon": { "type": "string" },
+        "title": { "type": "string" },
+        "genre": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "previousPrice": { "type": "number" },
+        "priceUpdatedAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["SALE", "FREE"] },
+        "status": { "type": "string", "enum": ["AVAILABLE", "RESERVED", "SOLD"] },
+        "requestStatus": { "type": "string", "enum": ["NONE", "PENDING", "REJECTED"] },
+        "rejectionReason": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "pickupLocation": { "type": "string" },
+        "pickupDateTime": { "type": "string" },
+        "condition": { "type": "string" },
+        "comments": { "type": "array", "items": { "type": "object" } },
+        "buyerId": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "condoId": { "type": "string" },
+        "buyerConfirmedCompletion": { "type": "boolean" },
+        "sellerConfirmedCompletion": { "type": "boolean" },
+        "buyerRequestedCancellation": { "type": "boolean" },
+        "sellerRequestedCancellation": { "type": "boolean" }
+      }
+    },
+    "Skill": {
+      "title": "Skill Exchange",
+      "description": "Skill offering or request",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "condoCode": { "type": "string" },
+        "parentNickname": { "type": "string" },
+        "parentAvatarIcon": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["OFFER", "REQUEST"] },
+        "status": { "type": "string", "enum": ["AVAILABLE", "RESERVED", "CLOSED"] },
+        "requestStatus": { "type": "string", "enum": ["NONE", "PENDING", "REJECTED"] },
+        "requesterId": { "type": "string" },
+        "price": { "type": "string" },
+        "previousPrice": { "type": "string" },
+        "priceUpdatedAt": { "type": "string", "format": "date-time" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "comments": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "condoId": { "type": "string" }
+      }
+    },
+    "WantedItem": {
+      "title": "Wanted Item",
+      "description": "Item someone is looking for",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "condoCode": { "type": "string" },
+        "parentNickname": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "parentAvatarIcon": { "type": "string" },
+        "title": { "type": "string" },
+        "genre": { "type": "string" },
+        "description": { "type": "string" },
+        "hopePrice": { "type": "number" },
+        "previousHopePrice": { "type": "number" },
+        "hopePriceUpdatedAt": { "type": "string", "format": "date-time" },
+        "pickupLocation": { "type": "string" },
+        "preferredTiming": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "comments": { "type": "array", "items": { "type": "object" } },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "condoId": { "type": "string" }
+      }
+    },
+    "ReadContent": {
+      "title": "Read Content",
+      "description": "Stories and columns to read",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["NOVEL", "COLUMN"] },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "snippet": { "type": "string" },
+        "chapterNumber": { "type": "integer" },
+        "columnNumber": { "type": "integer" },
+        "seriesId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Condo": {
+      "title": "Condo Master Data",
+      "description": "Information about residential buildings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "radius": { "type": "number" }
+      }
     }
-
-    // Phase 3: Primitives
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isEmailVerified() {
-      return isSignedIn() && request.auth.token.email_verified == true;
-    }
-
-    function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'tomohiko.horai@gmail.com' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.customUserId == 'testtest'
-      );
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    // Entity Validators
-    function isValidUser(data) {
-      return data.uid == request.auth.uid &&
-             data.parentNickname is string && data.parentNickname.size() <= 100 &&
-             data.roomNumber is string && data.roomNumber.size() <= 20;
-    }
-
-    function isValidActivity(data) {
-      return data.userId == request.auth.uid &&
-             data.condoCode is string &&
-             data.message is string && data.message.size() <= 500;
-    }
-
-    function isValidMarketItem(data) {
-      return data.userId == request.auth.uid &&
-             data.title is string && data.title.size() <= 100 &&
-             data.price is number && data.price >= 0;
-    }
-
-    // Rules for Collections
-
-    // Connection check
-    match /test/connection {
-      allow read: if true;
-    }
-
-    match /users/{userId} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin();
-      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
-      allow update: if isSignedIn() && request.auth.uid == userId && 
-                    isValidUser(incoming()) &&
-                    incoming().role == existing().get('role', 'user'); // Prevent self-promotion
-      allow delete: if isAdmin();
-    }
-
-    match /activities/{activityId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidActivity(incoming());
-      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidActivity(incoming());
-      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
-    }
-
-    match /marketItems/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidMarketItem(incoming());
-      allow update: if (
-        isSignedIn() && (
-          // Action: Edit (Owner)
-          (existing().userId == request.auth.uid && isValidMarketItem(incoming()) && 
-           incoming().userId == existing().userId) || // userId is immutable
-          
-          // Action: Process Transaction (Buyer or Seller)
-          (incoming().diff(existing()).affectedKeys().hasOnly([
-            'requestStatus', 'buyerId', 'buyerNickname', 'buyerAvatarIcon', 
-            'comments', 'likes', 'lastUpdated', 'status',
-            'buyerConfirmedCompletion', 'sellerConfirmedCompletion', 
-            'buyerRequestedCancellation', 'sellerRequestedCancellation'
-          ]) && incoming().lastUpdated == request.time)
-        )
-      );
-      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
-    }
-
-    match /skills/{skillId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
-    }
-
-    match /wantedItems/{itemId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
-    }
-
-    match /readContent/{contentId} {
-      allow read: if true;
-      allow create: if isSignedIn(); 
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
-
-    match /readSeriesState/{stateId} {
-      allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    match /condos/{condoId} {
-      allow read: if true;
-      allow write: if isAdmin();
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Neighbor activities"
+    },
+    "marketItems/{itemId}": {
+      "schema": "MarketItem",
+      "description": "Items in the marketplace"
+    },
+    "skills/{skillId}": {
+      "schema": "Skill",
+      "description": "Skill exchange items"
+    },
+    "wantedItems/{wantedId}": {
+      "schema": "WantedItem",
+      "description": "Items neighbors are looking for"
+    },
+    "readContent/{contentId}": {
+      "schema": "ReadContent",
+      "description": "Novels and columns"
+    },
+    "condos/{condoId}": {
+      "schema": "Condo",
+      "description": "Master data for condos"
     }
   }
 }

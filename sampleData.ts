@@ -1,84 +1,64 @@
 
-import React from 'react';
-import { ChevronLeft, ShieldCheck, UserCheck, MessageSquare, AlertTriangle } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { UserProfile } from '@/types';
 
-interface Props {
-  onBack: () => void;
-  language: Language;
-}
+const STORAGE_KEYS = {
+  PASSCODE_VERIFIED: 'play_share_verified',
+  USER_PROFILE: 'play_share_user_profile',
+  ACKNOWLEDGED_ACTIVITIES: 'play_share_seen_activities',
+  ACKNOWLEDGED_MARKET: 'play_share_seen_market',
+  ACKNOWLEDGED_SKILLS: 'play_share_seen_skills',
+  LANGUAGE: 'play_share_language',
+  USED_PASSCODE: 'play_share_used_passcode'
+};
 
-export const SafetyGuide: React.FC<Props> = ({ onBack, language }) => {
-  const t = translations[language];
-
-  return (
-    <div className="h-full overflow-y-auto bg-[#fdfbf7] flex flex-col animate-fade-in pb-40">
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-4 border-b border-gray-100 flex items-center justify-between">
-        <button onClick={onBack} className="p-2 text-gray-400 hover:text-pink-500 transition-colors">
-          <ChevronLeft size={24} />
-        </button>
-        <h1 className="text-sm font-black text-gray-800 uppercase tracking-widest">Safety Guide</h1>
-        <div className="w-10"></div>
-      </header>
-
-      <div className="flex-grow p-6 space-y-8 max-w-lg mx-auto">
-        <section className="space-y-4">
-          <div className="w-16 h-16 bg-green-50 rounded-3xl flex items-center justify-center text-green-500 shadow-sm border-2 border-white">
-            <ShieldCheck size={32} />
-          </div>
-          <h2 className="text-2xl font-black text-gray-800 tracking-tight leading-tight">
-            How to Use Nearby Exchange Safely
-          </h2>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Our priority is to build a safe and trustworthy community for all residents. Please follow these guidelines to ensure a smooth and secure experience.
-          </p>
-        </section>
-
-        <section className="space-y-6">
-          <div className="flex gap-4">
-            <div className="p-3 bg-pink-50 text-pink-500 rounded-2xl h-fit">
-              <UserCheck size={24} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-bold text-gray-800 uppercase text-xs tracking-wider">Verify Identities</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Always check the profile of the person you are interacting with. Members with badges have been active and contributing to the community.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="p-3 bg-blue-50 text-blue-500 rounded-2xl h-fit">
-              <MessageSquare size={24} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-bold text-gray-800 uppercase text-xs tracking-wider">Communicate within the App</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Use our built-in comment system for all initial conversations and transaction details. This helps keep a record and maintains your privacy.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="p-3 bg-amber-50 text-amber-500 rounded-2xl h-fit">
-              <AlertTriangle size={24} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-bold text-gray-800 uppercase text-xs tracking-wider">Meet in Public Spaces</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                For physical exchanges, we recommend meeting in the condominium's common areas like the lobby or guard house. Avoid sharing specific apartment numbers until trust is established.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="p-6 bg-pink-50 rounded-[32px] border border-pink-100/50">
-          <h3 className="text-sm font-black text-pink-500 uppercase tracking-widest mb-3">Reporting Issues</h3>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            If you encounter any suspicious behavior or have a dispute with another member, please report it immediately to the community administrator via the profile section.
-          </p>
-        </section>
-      </div>
-    </div>
-  );
+export const store = {
+  getLanguage: (): any => {
+    return localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'en';
+  },
+  setLanguage: (lang: string) => {
+    localStorage.setItem(STORAGE_KEYS.LANGUAGE, lang);
+  },
+  isVerified: (): boolean => {
+    return localStorage.getItem(STORAGE_KEYS.PASSCODE_VERIFIED) === 'true';
+  },
+  setVerified: (v: boolean) => {
+    localStorage.setItem(STORAGE_KEYS.PASSCODE_VERIFIED, v.toString());
+  },
+  getPasscode: (): string | null => {
+    return localStorage.getItem(STORAGE_KEYS.USED_PASSCODE);
+  },
+  setPasscode: (code: string) => {
+    localStorage.setItem(STORAGE_KEYS.USED_PASSCODE, code);
+  },
+  getUserProfile: (): UserProfile | null => {
+    const data = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+    return data ? JSON.parse(data) : null;
+  },
+  setUserProfile: (profile: UserProfile) => {
+    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+  },
+  getAcknowledgedActivities: (): Record<string, string> => {
+    const data = localStorage.getItem(STORAGE_KEYS.ACKNOWLEDGED_ACTIVITIES);
+    return data ? JSON.parse(data) : {};
+  },
+  setAcknowledgedActivities: (mapping: Record<string, string>) => {
+    localStorage.setItem(STORAGE_KEYS.ACKNOWLEDGED_ACTIVITIES, JSON.stringify(mapping));
+  },
+  getAcknowledgedMarket: (): Record<string, string> => {
+    const data = localStorage.getItem(STORAGE_KEYS.ACKNOWLEDGED_MARKET);
+    return data ? JSON.parse(data) : {};
+  },
+  setAcknowledgedMarket: (mapping: Record<string, string>) => {
+    localStorage.setItem(STORAGE_KEYS.ACKNOWLEDGED_MARKET, JSON.stringify(mapping));
+  },
+  getAcknowledgedSkills: (): Record<string, string> => {
+    const data = localStorage.getItem(STORAGE_KEYS.ACKNOWLEDGED_SKILLS);
+    return data ? JSON.parse(data) : {};
+  },
+  setAcknowledgedSkills: (mapping: Record<string, string>) => {
+    localStorage.setItem(STORAGE_KEYS.ACKNOWLEDGED_SKILLS, JSON.stringify(mapping));
+  },
+  clearAll: () => {
+    localStorage.clear();
+  }
 };
