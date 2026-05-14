@@ -1,70 +1,106 @@
 
 import React from 'react';
-import { ChevronLeft, Zap, Smile, BookOpen, Clock } from 'lucide-react';
+import { ChevronLeft, FileText, Scale, ShieldAlert, Gavel, UserCheck } from 'lucide-react';
 import { Language, translations } from '../translations';
 
-interface Props {
+interface TermsOfServiceProps {
   onBack: () => void;
   language: Language;
 }
 
-export const TrustTips: React.FC<Props> = ({ onBack, language }) => {
+export const TermsOfService: React.FC<TermsOfServiceProps> = ({ onBack, language }) => {
   const t = translations[language];
 
   return (
-    <div className="flex flex-col h-full bg-[#fdfbf7] animate-fade-in touch-auto">
-      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md px-4 py-4 border-b border-gray-100 flex items-center justify-between">
-        <button onClick={onBack} className="p-2 text-gray-400 hover:text-pink-500 transition-colors">
-          <ChevronLeft size={24} />
+    <div className="flex flex-col h-full bg-white animate-in fade-in slide-in-from-right duration-300">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-100">
+        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <ChevronLeft className="text-gray-400" size={24} />
         </button>
-        <h1 className="text-sm font-black text-gray-800 uppercase tracking-widest">Building Trust</h1>
-        <div className="w-10"></div>
-      </header>
+        <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Terms of Service</h2>
+      </div>
 
-      <div className="flex-grow overflow-y-auto p-6 space-y-8 max-w-lg mx-auto pb-44">
-        <section className="space-y-4">
-          <div className="w-16 h-16 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-500 shadow-sm border-2 border-white">
-            <Smile size={32} />
+      <div className="flex-grow overflow-y-auto p-6 space-y-8 pb-32">
+        <div className="space-y-4">
+          <div className="w-16 h-16 bg-blue-50 rounded-[24px] flex items-center justify-center text-blue-600 mb-6 shadow-sm">
+            <Gavel size={32} />
           </div>
-          <h2 className="text-2xl font-black text-gray-800 tracking-tight leading-tight">
-            Tips for Building Trust with Neighbors
-          </h2>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Trust is the currency of our community. Here are some actionable tips to become a highly respected member.
+          <h1 className="text-3xl font-black text-gray-900 leading-tight">
+            Terms of Service & Community Guidelines.
+          </h1>
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            Last Updated: May 1, 2026
           </p>
-        </section>
+        </div>
 
-        <section className="space-y-8">
-          <div className="relative pl-12">
-            <div className="absolute left-0 top-0 w-8 h-8 bg-pink-100 text-pink-500 rounded-full flex items-center justify-center font-black text-sm">1</div>
-            <h3 className="font-bold text-gray-800 uppercase text-xs tracking-wider mb-2">Be Honest in Descriptions</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              When listing an item or offering a skill, be clear about its condition or your level of expertise. Honesty prevents disappointment and builds long-term reputation.
+        <div className="space-y-10 text-gray-600">
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-500">
+              <UserCheck size={16} />
+              <h3 className="text-xs font-black uppercase tracking-widest">1. Acceptance of Terms</h3>
+            </div>
+            <p className="text-sm leading-relaxed">
+              By accessing or using Nearby Exchange, you agree to be bound by these Terms of Service. 
+              Our platform is intended for use by residents of authorized residential complexes only.
             </p>
-          </div>
+          </section>
 
-          <div className="relative pl-12">
-            <div className="absolute left-0 top-0 w-8 h-8 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center font-black text-sm">2</div>
-            <h3 className="font-bold text-gray-800 uppercase text-xs tracking-wider mb-2">Punctuality Matters</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Respect your neighbors' time. If you arrange a meet-up time, stick to it. If you're running late, update them as soon as possible via comments.
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-500">
+              <ShieldAlert size={16} />
+              <h3 className="text-xs font-black uppercase tracking-widest">2. User Conduct</h3>
+            </div>
+            <p className="text-sm leading-relaxed">
+              Users must provide accurate information and interact respectfully. Prohibited behaviors include:
             </p>
-          </div>
+            <ul className="text-sm space-y-2 list-disc pl-5">
+              <li>Posting illegal, harmful, or fraudulent content.</li>
+              <li>Impersonating other residents or staff.</li>
+              <li>Harassment or discrimination against any community member.</li>
+              <li>Attempting to bypass platform security measures.</li>
+            </ul>
+          </section>
 
-          <div className="relative pl-12">
-            <div className="absolute left-0 top-0 w-8 h-8 bg-teal-100 text-teal-500 rounded-full flex items-center justify-center font-black text-sm">3</div>
-            <h3 className="font-bold text-gray-800 uppercase text-xs tracking-wider mb-2">Engage and Like</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Show appreciation for good listings by giving them a Heart. Meaningful interactions make the community feel more alive and friendly.
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-500">
+              <FileText size={16} />
+              <h3 className="text-xs font-black uppercase tracking-widest">3. Marketplace & Skill Exchange</h3>
+            </div>
+            <p className="text-sm leading-relaxed">
+              Nearby Exchange acts as a facilitator, not a party to any transactions. 
+              Users are solely responsible for the items they sell, the services they provide, 
+              and the safety of their interactions with neighbors.
             </p>
-          </div>
-        </section>
+          </section>
 
-        <div className="flex items-center gap-4 p-6 bg-amber-50 rounded-[32px] border border-amber-100">
-           <Zap size={24} className="text-amber-500 shrink-0" />
-           <p className="text-xs font-bold text-amber-800 tracking-tight">
-             Consistency is key! Regular positive interactions will quickly build your profile's credibility.
-           </p>
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-500">
+              <Scale size={16} />
+              <h3 className="text-xs font-black uppercase tracking-widest">4. Limitation of Liability</h3>
+            </div>
+            <p className="text-sm leading-relaxed">
+              Nearby Exchange shall not be liable for any disputes, damages, or losses arising from 
+              user interactions or transactions arranged through the platform. Use of the service 
+              is at your own risk.
+            </p>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-500">
+              <FileText size={16} />
+              <h3 className="text-xs font-black uppercase tracking-widest">5. Termination</h3>
+            </div>
+            <p className="text-sm leading-relaxed">
+              We reserve the right to suspend or terminate accounts that violate these terms or 
+              the community standards that maintain the safety of Nearby Exchange.
+            </p>
+          </section>
+        </div>
+
+        <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100 text-center">
+          <p className="text-[10px] text-gray-500 leading-relaxed font-bold uppercase tracking-widest">
+            For legal inquiries, please contact: nearbyexchange@gmail.com
+          </p>
         </div>
       </div>
     </div>

@@ -1,110 +1,290 @@
+import { MarketItem, Skill, WantedItem } from '../types';
 
-import React from 'react';
-import { ChevronLeft, ShieldCheck, Lock, Eye, FileText, Scale } from 'lucide-react';
-import { Language, translations } from '../translations';
+export const SAMPLE_MARKET_ITEMS: MarketItem[] = [
+  {
+    id: 'sample-m1',
+    userId: 'demo-u1',
+    condoCode: '1111',
+    parentNickname: 'Sarah',
+    roomNumber: 'A-12-03',
+    parentAvatarIcon: '👩',
+    title: 'BABY FLOAT RING(GOOD CONDITION)',
+    genre: 'Baby & Kids',
+    description: 'Used only once. Perfect for babies to enjoy the pool safely.',
+    price: 150,
+    type: 'SALE',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    paymentMethod: 'CASH',
+    pickupLocation: 'Central Red Bench, G Floor Lobby',
+    pickupDateTime: 'Weekend afternoons',
+    condition: 'A',
+    comments: [
+      {
+        id: 'c1',
+        userId: 'demo-u2',
+        userNickname: 'David',
+        userAvatar: '👨',
+        text: 'Is this still available? My son would love this!',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        id: 'c2',
+        userId: 'demo-u1',
+        userNickname: 'Sarah',
+        userAvatar: '👩',
+        text: 'Yes, it is! It\'s in great condition. Let me know if you want to see more photos.',
+        createdAt: new Date(Date.now() - 43200000).toISOString()
+      }
+    ],
+    images: ['https://lh3.googleusercontent.com/d/1xGjgNxcOu-Z5l9cNq6LWiR_p3fpArWNN'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    likes: ['demo-u2']
+  },
+  {
+    id: 'sample-m2',
+    userId: 'demo-u2',
+    condoCode: '1111',
+    parentNickname: 'David',
+    roomNumber: 'B-05-10',
+    parentAvatarIcon: '👨',
+    title: 'IKEA COFFEE TABEL',
+    genre: 'Furniture',
+    description: 'Moving out sale. Minor scratches on the surface.',
+    price: 30,
+    type: 'SALE',
+    status: 'RESERVED',
+    requestStatus: 'NONE',
+    paymentMethod: 'TNG',
+    pickupLocation: 'Lobby 3A Lounge Entrance',
+    pickupDateTime: 'Anytime after 7pm',
+    condition: 'B',
+    comments: [],
+    images: ['https://lh3.googleusercontent.com/d/1l_GN4wB1m_FhJIKwuWtpCBlBaDKZQH4G'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    buyerId: 'demo-u1',
+    buyerNickname: 'Sarah',
+    buyerAvatarIcon: '👩'
+  },
+  {
+    id: 'sample-m3',
+    userId: 'demo-u3',
+    condoCode: '1111',
+    parentNickname: 'Linda',
+    roomNumber: 'C-22-01',
+    parentAvatarIcon: '👩🏻',
+    title: 'Free House Plants',
+    genre: 'Plants & Flowers',
+    description: 'Giving away some succulents as I have too many now!',
+    price: 0,
+    type: 'FREE',
+    status: 'SOLD',
+    requestStatus: 'NONE',
+    paymentMethod: 'FREE',
+    pickupLocation: '5F Gym Entrance',
+    pickupDateTime: 'Friday morning',
+    condition: 'S',
+    comments: [],
+    images: ['https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&q=80&w=400'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    buyerId: 'demo-u2',
+    buyerNickname: 'David',
+    buyerAvatarIcon: '👨'
+  },
+  {
+    id: 'sample-m4',
+    userId: 'demo-u4',
+    condoCode: '1111',
+    parentNickname: 'Ken',
+    roomNumber: 'A-08-05',
+    parentAvatarIcon: '🧔',
+    title: 'ELECTRIC KETTELE(ALMOST NEW)',
+    genre: 'Home Appliances',
+    description: 'Used only a few times. Selling because I got a new one.',
+    price: 45,
+    type: 'SALE',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    paymentMethod: 'TNG',
+    pickupLocation: 'Demo Tower A Lobby',
+    pickupDateTime: 'Weekdays after 6pm',
+    condition: 'S',
+    comments: [
+      {
+        id: 'c3',
+        userId: 'demo-u3',
+        userNickname: 'Linda',
+        userAvatar: '👩🏻',
+        text: 'I\'m interested! Can I pick it up tomorrow evening around 7pm?',
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    ],
+    images: ['https://lh3.googleusercontent.com/d/1nH8y39KCyNxxlM7mFZuiDZdqTOlN8fF5'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-m5',
+    userId: 'demo-u3',
+    condoCode: '1111',
+    parentNickname: 'Linda',
+    roomNumber: 'C-22-01',
+    parentAvatarIcon: '👩🏻',
+    title: 'KIDS BICYKLE(16 INCH)',
+    genre: 'Sports',
+    description: 'Outgrown by my son. Still works perfectly fine.',
+    price: 80,
+    type: 'SALE',
+    status: 'RESERVED',
+    requestStatus: 'NONE',
+    paymentMethod: 'CASH',
+    pickupLocation: 'Sky Garden Level 25',
+    pickupDateTime: 'Saturday morning',
+    condition: 'B',
+    comments: [],
+    images: ['https://lh3.googleusercontent.com/d/1PSg6X1mu-TUM4GSHyhfW2kLL2GjAnzfZ'],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString(),
+    buyerId: 'demo-u4',
+    buyerNickname: 'Ken',
+    buyerAvatarIcon: '🧔'
+  }
+];
 
-interface PrivacyPolicyProps {
-  onBack: () => void;
-  language: Language;
-}
+export const SAMPLE_SKILLS: Skill[] = [
+  {
+    id: 'sample-s1',
+    userId: 'demo-u4',
+    condoCode: '1111',
+    parentNickname: 'Ken',
+    parentAvatarIcon: '🧔',
+    roomNumber: 'A-08-05',
+    title: 'Math Tutoring for Primary Kids',
+    category: 'Academic & Tutoring',
+    description: 'I am a retired teacher. Happy to help kids with their math homework.',
+    type: 'OFFER',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    price: 'RM 40/hr',
+    comments: [
+      {
+        id: 'sc1',
+        userId: 'demo-u1',
+        userNickname: 'Sarah',
+        userAvatar: '👩',
+        text: 'Hi Ken! My daughter needs some help with her algebra. Are you free this Saturday?',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
+      },
+      {
+        id: 'sc2',
+        userId: 'demo-u4',
+        userNickname: 'Ken',
+        userAvatar: '🧔',
+        text: 'Hi Sarah! Yes, I am free in the morning. Does 10am work for you?',
+        createdAt: new Date(Date.now() - 86400000).toISOString()
+      }
+    ],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-s2',
+    userId: 'demo-u1',
+    condoCode: '1111',
+    parentNickname: 'Sarah',
+    parentAvatarIcon: '👩',
+    roomNumber: 'A-12-03',
+    title: 'Baking Workshop (Cookies)',
+    category: 'Cooking & Baking',
+    description: 'Learn how to make chocolate chip cookies! Max 3 people.',
+    type: 'OFFER',
+    status: 'RESERVED',
+    requestStatus: 'NONE',
+    requesterId: 'demo-u3',
+    requesterNickname: 'Linda',
+    requesterAvatarIcon: '👩🏻',
+    price: 'Exchange for coffee beans',
+    comments: [],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-s3',
+    userId: 'demo-u2',
+    condoCode: '1111',
+    parentNickname: 'David',
+    parentAvatarIcon: '👨',
+    roomNumber: 'B-05-10',
+    title: 'Need help with PC Setup',
+    category: 'Tech & Digital',
+    description: 'Just bought a new gaming PC and need help with cable management and setup.',
+    type: 'REQUEST',
+    status: 'AVAILABLE',
+    requestStatus: 'NONE',
+    price: 'RM 50',
+    comments: [],
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  }
+];
 
-export const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack, language }) => {
-  const t = translations[language];
-
-  return (
-    <div className="flex flex-col h-full bg-white animate-in fade-in slide-in-from-right duration-300">
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md p-4 flex items-center gap-4 border-b border-gray-100">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-          <ChevronLeft className="text-gray-400" size={24} />
-        </button>
-        <h2 className="text-sm font-black text-gray-800 uppercase tracking-tight">Privacy Policy</h2>
-      </div>
-
-      <div className="flex-grow overflow-y-auto p-6 space-y-8 pb-32">
-        <div className="space-y-4">
-          <div className="w-16 h-16 bg-teal-50 rounded-[24px] flex items-center justify-center text-teal-600 mb-6 font-black text-2xl shadow-sm">
-            <ShieldCheck size={32} />
-          </div>
-          <h1 className="text-3xl font-black text-gray-900 leading-tight">
-            Your Privacy Matters to Us.
-          </h1>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-            Last Updated: April 25, 2026
-          </p>
-        </div>
-
-        <div className="space-y-10">
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <Lock size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">1. Data Collection</h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              We collect information that you provide directly to us, including your name, email address, 
-              condo residency details, and any content you post in our marketplace or skill exchange. 
-              We also automatically collect certain technical information, such as your IP address and 
-              device characteristics, when you use our services.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <Eye size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">2. How We Use Data</h3>
-            </div>
-            <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
-              <li>To provide and maintain our Service</li>
-              <li>To notify you about changes to our Service</li>
-              <li>To allow residents to connect with each other securely</li>
-              <li>To provide customer care and support</li>
-              <li>To monitor the usage of the Service for security purposes</li>
-              <li>To improve user experience and interface</li>
-            </ul>
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <Scale size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">3. Data Sharing & Third Parties</h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              We do not sell your personal data. We may use third-party service providers (like Google Analytics and AdSense) 
-              to monitor and analyze the use of our Service or to show advertisements. 
-              These third parties have their own privacy policies regarding how they handle data.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <ShieldCheck size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">4. Cookies and AdSense</h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Nearby Exchange uses cookies to enhance your experience. Third party vendors, including Google, 
-              use cookies to serve ads based on a user's prior visits to your website or other websites. 
-              Google's use of advertising cookies enables it and its partners to serve ads to users based 
-              on their visit to your sites and/or other sites on the Internet.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2 text-indigo-500">
-              <FileText size={16} />
-              <h3 className="text-xs font-black uppercase tracking-widest">5. Your Rights</h3>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              You have the right to access, update, or delete the personal information we hold about you. 
-              If you wish to exercise these rights, please contact us at the email address provided below.
-            </p>
-          </section>
-        </div>
-
-        <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-          <p className="text-[10px] text-gray-500 leading-relaxed font-bold uppercase tracking-widest text-center">
-            If you have any questions about this Privacy Policy, please contact us at nearbyexchange@gmail.com
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+export const SAMPLE_WANTED_ITEMS: WantedItem[] = [
+  {
+    id: 'sample-w1',
+    userId: 'demo-u2',
+    condoCode: '1111',
+    parentNickname: 'David',
+    roomNumber: 'B-05-10',
+    parentAvatarIcon: '👨',
+    title: 'LOOKING FOR A TENNIS RACKET',
+    genre: 'Sports',
+    description: 'Need a spare racket for a friend visiting next week.',
+    hopePrice: 50,
+    pickupLocation: 'Anywhere in the condo',
+    preferredTiming: 'Before next Wednesday',
+    images: ['https://lh3.googleusercontent.com/d/1FOnDddzSFSYpvXDtZb_0hMDL_iJS-j77'],
+    comments: [
+      {
+        id: 'wc1',
+        userId: 'demo-u4',
+        userNickname: 'Ken',
+        userAvatar: '🧔',
+        text: 'I have an old Wilson racket you can borrow. It\'s a bit heavy though.',
+        createdAt: new Date(Date.now() - 259200000).toISOString()
+      },
+      {
+        id: 'wc2',
+        userId: 'demo-u2',
+        userNickname: 'David',
+        userAvatar: '👨',
+        text: 'That would be great, Ken! Heavy is fine for my friend. I\'ll DM you.',
+        createdAt: new Date(Date.now() - 172800000).toISOString()
+      }
+    ],
+    status: 'OPEN',
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  },
+  {
+    id: 'sample-w2',
+    userId: 'demo-u3',
+    condoCode: '1111',
+    parentNickname: 'Linda',
+    roomNumber: 'C-22-01',
+    parentAvatarIcon: '👩🏻',
+    title: 'WANTED: EMPTY CARDBOAR BOXES',
+    genre: 'Others',
+    description: 'Need about 10 large boxes for moving next month.',
+    hopePrice: 0,
+    pickupLocation: 'Will pick up from your unit',
+    preferredTiming: 'Anytime this week',
+    images: ['https://lh3.googleusercontent.com/d/1aiZZa-OlMKd3kuWOSNYc0S1ZjxCev4ax'],
+    comments: [],
+    status: 'OPEN',
+    createdAt: new Date().toISOString(),
+    lastUpdated: new Date().toISOString()
+  }
+];
