@@ -1,29 +1,71 @@
-# Security Specification for Nearby Exchange
+import express from "express";
+import cors from "cors";
+import path from "path";
 
-## 1. Data Invariants
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
 
-- **Users**: Only the owner can write to their profile. Profile must contain `uid` matching `auth.uid`.
-- **Activities**: Must have `userId` matching `auth.uid`.
-- **MarketItems**: Must have `userId` matching `auth.uid` on create. Owner can update all fields. Buyers/Others can only update specific fields (e.g., status, buyerId, comments).
-- **Skills**: Must have `userId` matching `auth.uid` on create.
-- **WantedItems**: Must have `userId` matching `auth.uid` on create.
+  // CORS configuration
+  // Allow the new domain and the local dev environment
+  const allowedOrigins = [
+    "https://nearbyexchange.com",
+    "https://the-tamarind-connect.vercel.app",
+    "http://localhost:3000"
+  ];
 
-## 2. The "Dirty Dozen" Payloads
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith(".run.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }));
 
-1.  **Identity Spoofing (User)**: Authenticated user A tries to update User B's profile.
-2.  **Shadow Field Injection**: Creating a MarketItem with an unvalidated field `isVerifiedAdmin: true`.
-3.  **Cross-User Activity**: User A tries to create an activity for User B (`userId: "UserB"`).
-4.  **Price Poisoning**: Updating MarketItem with a negative price or a $1MB string.
-5.  **State Shortcut**: Setting MarketItem status from `AVAILABLE` directly to `SOLD` without a `buyerId`.
-6.  **Admin Escalation**: User tries to set their own `role: "admin"` in user profile.
-7.  **Unverified Deletion**: User B tries to delete User A's `marketItem`.
-8.  **Malformed ID**: Creating a document with ID `/..%2f..%2fantigravity/`.
-9.  **Relational Orphan**: Creating a `marketItem` with a non-existent `condoId`.
-10. **Timestamp Faking**: Providing a manual `createdAt` in the future instead of `request.time`.
-11. **PII Leak**: Unauthenticated user trying to list all user emails (if they were in the profile).
-12. **Comment Bomb**: Injecting a massive array of comments into a `marketItem`.
+  app.use(express.json());
 
-## 3. Test Runner (Draft)
+  // API routes
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", message: "Backend is running and CORS is configured for nearbyexchange.com" });
+  });
 
-`firestore.rules.test.ts` will verify these are blocked.
-(Implementation details omitted for brevity in spec, but will be enforced in rules).
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
+  // Bind to 0.0.0.0 to be accessible on all network interfaces
+  const host = "0.0.0.0";
+
+  // Only start the server if this file is run directly (not as a module)
+  // In a bundled environment (like Vercel or Cloud Run), we might just need the app object
+  // On Vercel, we don't want to call listen() as it's a serverless environment
+  if (!process.env.VERCEL && (process.env.NODE_ENV === "production" || !process.env.VITE_DEV_SERVER_ONLY)) {
+    app.listen(PORT, host, () => {
+      console.log(`Server running on http://${host}:${PORT}`);
+      console.log(`CORS allowed origins: ${allowedOrigins.join(", ")}`);
+    });
+  }
+
+  return app;
+}
+
+export const appPromise = startServer();
