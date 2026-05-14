@@ -1,11 +1,11 @@
 
 import React, { useState, useRef } from 'react';
-import { UserProfile, Skill } from '../types';
-import { SKILL_CATEGORIES, SKILL_ICONS, CONDO_OPTIONS } from '../constants';
-import { store } from '../services/store';
+import { UserProfile, Skill } from '@/types';
+import { SKILL_CATEGORIES, SKILL_ICONS, CONDO_OPTIONS } from '@/constants';
+import { store } from '@/services/store';
 import { ChevronLeft, X, BookOpen, MessageSquare, ShieldAlert, Award, CreditCard, Layers, Building2, Camera } from 'lucide-react';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   profile: UserProfile;

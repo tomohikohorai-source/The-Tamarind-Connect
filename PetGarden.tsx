@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserProfile, LocationType, Activity, Child } from '../types';
-import { LOCATION_METADATA } from '../constants';
-import { store } from '../services/store';
+import { UserProfile, LocationType, Activity, Child } from '@/types';
+import { LOCATION_METADATA } from '@/constants';
+import { store } from '@/services/store';
 import { addDays, format, isAfter } from 'date-fns';
 import { Clock, MessageSquare, Megaphone, AlertCircle, Calendar, ChevronLeft, X } from 'lucide-react';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   profile: UserProfile;

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { RESIDENT_PASSCODE, DEMO_PASSCODE } from '../constants';
-import { Language, translations } from '../translations';
+import { RESIDENT_PASSCODE, DEMO_PASSCODE } from '@/constants';
+import { Language, translations } from '@/translations';
 
 interface Props {
   onSuccess: (code: string) => void;

@@ -1,12 +1,12 @@
 
 import React, { useState, useRef } from 'react';
-import { UserProfile, MarketItem } from '../types';
-import { MARKET_LOCATIONS, DEMO_MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES, DEMO_PASSCODE, CONDO_OPTIONS } from '../constants';
-import { store } from '../services/store';
+import { UserProfile, MarketItem } from '@/types';
+import { MARKET_LOCATIONS, DEMO_MARKET_LOCATIONS, PAYMENT_METHODS, MARKET_GENRES, DEMO_PASSCODE, CONDO_OPTIONS } from '@/constants';
+import { store } from '@/services/store';
 import { ChevronLeft, X, Package, Tag, Info, MapPin, CreditCard, Clock, Calendar, MessageSquare, Camera, Trash2, Coins, Layers, ShieldAlert, Building2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   profile: UserProfile;

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronLeft, FileText, Scale, ShieldAlert, Gavel, UserCheck } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface TermsOfServiceProps {
   onBack: () => void;

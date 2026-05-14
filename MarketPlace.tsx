@@ -1,9 +1,9 @@
 
 import React, { useMemo } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile } from '@/types';
 import { Sparkles, Zap, HelpCircle, Trees, Waves, Stars, Shield, Sword, Lock, TrendingUp } from 'lucide-react';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   profile: UserProfile;

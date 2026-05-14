@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronLeft, Info, Heart, Shield, Users, Mail } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface AboutProps {
   onBack: () => void;

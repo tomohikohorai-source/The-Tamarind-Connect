@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronLeft, ShieldCheck, UserCheck, MessageSquare, AlertTriangle } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   onBack: () => void;

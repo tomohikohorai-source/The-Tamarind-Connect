@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { db, auth, collection, query, orderBy, onSnapshot, addDoc, getDocs, where, limit, doc, getDoc, setDoc, updateDoc, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
-import { ReadContent, ReadSeriesState, UserProfile } from '../types';
-import { translations } from '../translations';
+import { db, auth, collection, query, orderBy, onSnapshot, addDoc, getDocs, where, limit, doc, getDoc, setDoc, updateDoc, deleteDoc, handleFirestoreError, OperationType } from '@/firebase';
+import { ReadContent, ReadSeriesState, UserProfile } from '@/types';
+import { translations } from '@/translations';
 import { Book, Lightbulb, ChevronRight, Lock, Clock, History, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
-import { PRE_CREATED_CONTENT } from '../services/readContentData';
+import { PRE_CREATED_CONTENT } from '@/services/readContentData';
 import { ReadSkeleton } from './Skeleton';
 
 interface ReadTabProps {

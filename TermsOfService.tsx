@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronLeft, ShieldCheck, Lock, Eye, FileText, Scale } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface PrivacyPolicyProps {
   onBack: () => void;

@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { UserProfile, Child } from '../types';
-import { Language, translations } from '../translations';
-import { AVATAR_ICONS, AGE_OPTIONS, CONDO_OPTIONS } from '../constants';
-import { auth, db, doc, setDoc, handleFirestoreError, OperationType } from '../firebase';
-import { store } from '../services/store';
+import { UserProfile, Child } from '@/types';
+import { Language, translations } from '@/translations';
+import { AVATAR_ICONS, AGE_OPTIONS, CONDO_OPTIONS } from '@/constants';
+import { auth, db, doc, setDoc, handleFirestoreError, OperationType } from '@/firebase';
+import { store } from '@/services/store';
 import { Trash2, PlusCircle } from 'lucide-react';
 
 interface Props {

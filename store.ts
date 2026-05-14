@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronLeft, Zap, Smile, BookOpen, Clock } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   onBack: () => void;

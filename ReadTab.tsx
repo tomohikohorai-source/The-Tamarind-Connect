@@ -1,12 +1,12 @@
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
-import { UserProfile, Child, MarketItem, Skill, WantedItem, PrivacySettings } from '../types';
-import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS, getCondoName } from '../constants';
+import { UserProfile, Child, MarketItem, Skill, WantedItem, PrivacySettings } from '@/types';
+import { AVATAR_ICONS, GENRE_ICONS, AGE_OPTIONS, SKILL_ICONS, CONDO_OPTIONS, getCondoName } from '@/constants';
 import { Edit3, Trash2, X, User, ShoppingBag, PackageCheck, Plus, ShoppingCart, Eye, EyeOff, Settings, ShieldAlert, ChevronLeft, ChevronRight, PlusCircle, CheckCircle, Bell, MessageSquare, AlertCircle, Ban, Send, ChevronDown, ChevronUp, Trash, Clock, Edit2, ShoppingBasket, BookOpen, Star, MessageCircle, AlertTriangle, Heart, Lock, Mail, Languages, Building2, MapPin, Info } from 'lucide-react';
 import { format } from 'date-fns';
-import { db, doc, setDoc, updateDoc } from '../firebase';
-import { Language, translations } from '../translations';
-import { translateText } from '../services/geminiService';
-import { calculateUserStats, getBadgeLevel, getBadgeLabel, getBadgeColor, BADGE_CRITERIA } from '../services/badgeService';
+import { db, doc, setDoc, updateDoc } from '@/firebase';
+import { Language, translations } from '@/translations';
+import { translateText } from '@/services/geminiService';
+import { calculateUserStats, getBadgeLevel, getBadgeLabel, getBadgeColor, BADGE_CRITERIA } from '@/services/badgeService';
 
 interface Props {
   profile: UserProfile; 

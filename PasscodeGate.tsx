@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '../firebase';
+import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from '@/firebase';
 import { User, Lock, LogIn, UserPlus, AlertCircle, ChevronLeft, Eye, EyeOff, ShieldAlert, Info, Mail, X } from 'lucide-react';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 type AuthMode = 'CHOICE' | 'LOGIN' | 'SIGNUP';
 

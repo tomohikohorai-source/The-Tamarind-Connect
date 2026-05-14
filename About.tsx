@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
-import { MarketItem, Skill, WantedItem, UserProfile, WantedComment } from '../types';
-import { MARKET_GENRES, GENRE_ICONS, getCondoName } from '../constants';
+import { MarketItem, Skill, WantedItem, UserProfile, WantedComment } from '@/types';
+import { MARKET_GENRES, GENRE_ICONS, getCondoName } from '@/constants';
 import { Heart, Search, SlidersHorizontal, ChevronLeft, ChevronRight, MessageCircle, Send, Sparkles, Flame, Image as ImageIcon, Edit2, Trash2, MapPin, Clock, Lock, ArrowUpDown, Coins, Info, Share2, Star } from 'lucide-react';
 import { format, differenceInHours } from 'date-fns';
 import { AffiliateBanner } from './AffiliateBanner';
-import { calculateUserStats, getBadgeLevel, getBadgeColor } from '../services/badgeService';
-import { Language, translations } from '../translations';
+import { calculateUserStats, getBadgeLevel, getBadgeColor } from '@/services/badgeService';
+import { Language, translations } from '@/translations';
 import { WantedSkeleton } from './Skeleton';
 
 interface Props {

@@ -1,13 +1,13 @@
 
 import React, { useState, useMemo, useRef, useEffect, memo } from 'react';
-import { Activity, LocationType, UserProfile } from '../types';
-import { LOCATION_METADATA } from '../constants';
+import { Activity, LocationType, UserProfile } from '@/types';
+import { LOCATION_METADATA } from '@/constants';
 import { format, addDays, isSameDay, isWithinInterval, isAfter, isBefore } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Clock, MessageCircle, Megaphone, Edit3, Trash2, Sparkles } from 'lucide-react';
 import { AffiliateBanner } from './AffiliateBanner';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   activities: Activity[];

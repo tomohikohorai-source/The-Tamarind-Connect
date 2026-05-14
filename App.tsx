@@ -1,28 +1,28 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment, ReadContent } from './types';
-import { Language, translations } from './translations';
-import { AuthScreen } from './components/AuthScreen';
-import { ProfileSetup } from './components/ProfileSetup';
-import { ProfilePage } from './components/ProfilePage';
-import { PasscodeGate } from './components/PasscodeGate';
-import { MarketPlace } from './components/MarketPlace';
-import { MarketItemForm } from './components/MarketItemForm';
-import { SkillExchange } from './components/SkillExchange';
-import { SkillForm } from './components/SkillForm';
-import { WantedList } from './components/WantedList';
-import { WantedItemForm } from './components/WantedItemForm';
-import { ReadTab } from './components/ReadTab';
-import { About } from './components/About';
-import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { TermsOfService } from './components/TermsOfService';
-import { SafetyGuide } from './components/SafetyGuide';
-import { CommunityGuide } from './components/CommunityGuide';
-import { TrustTips } from './components/TrustTips';
-import { LoginRequiredModal } from './components/LoginRequiredModal';
-import { store } from './services/store';
-import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from './constants';
-import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from './services/sampleData';
+import { AppState, UserProfile, Activity, MarketItem, Skill, WantedItem, AppTab, MarketComment, SkillComment, WantedComment, ReadContent } from '@/types';
+import { Language, translations } from '@/translations';
+import { AuthScreen } from '@/components/AuthScreen';
+import { ProfileSetup } from '@/components/ProfileSetup';
+import { ProfilePage } from '@/components/ProfilePage';
+import { PasscodeGate } from '@/components/PasscodeGate';
+import { MarketPlace } from '@/components/MarketPlace';
+import { MarketItemForm } from '@/components/MarketItemForm';
+import { SkillExchange } from '@/components/SkillExchange';
+import { SkillForm } from '@/components/SkillForm';
+import { WantedList } from '@/components/WantedList';
+import { WantedItemForm } from '@/components/WantedItemForm';
+import { ReadTab } from '@/components/ReadTab';
+import { About } from '@/components/About';
+import { PrivacyPolicy } from '@/components/PrivacyPolicy';
+import { TermsOfService } from '@/components/TermsOfService';
+import { SafetyGuide } from '@/components/SafetyGuide';
+import { CommunityGuide } from '@/components/CommunityGuide';
+import { TrustTips } from '@/components/TrustTips';
+import { LoginRequiredModal } from '@/components/LoginRequiredModal';
+import { store } from '@/services/store';
+import { DEMO_PASSCODE, CONDO_OPTIONS, CONDOS } from '@/constants';
+import { SAMPLE_MARKET_ITEMS, SAMPLE_SKILLS, SAMPLE_WANTED_ITEMS } from '@/services/sampleData';
 import { PlusCircle, UserCircle, RefreshCw, ShoppingBag, LogOut, BookOpen, Heart, Share2, ExternalLink, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { Capacitor } from '@capacitor/core';
@@ -31,7 +31,7 @@ import {
   db, auth, collection, addDoc, updateDoc, deleteDoc, doc, 
   onSnapshot, query, orderBy, getDoc, onAuthStateChanged, signOut, arrayUnion, arrayRemove, where, setDoc,
   handleFirestoreError, OperationType, serverTimestamp
-} from './firebase';
+} from '@/firebase';
 
 export const App: React.FC = () => {
   const [isVerified, setIsVerified] = useState(true); // Skip passcode gate by default

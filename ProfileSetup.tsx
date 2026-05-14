@@ -1,12 +1,12 @@
 
 import React, { useState, useRef } from 'react';
-import { UserProfile, WantedItem } from '../types';
-import { MARKET_GENRES, CONDO_OPTIONS } from '../constants';
-import { store } from '../services/store';
+import { UserProfile, WantedItem } from '@/types';
+import { MARKET_GENRES, CONDO_OPTIONS } from '@/constants';
+import { store } from '@/services/store';
 import { ChevronLeft, X, Package, Info, Camera, Trash2, Coins, Layers, ShieldAlert, Calendar, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 
-import { Language, translations } from '../translations';
+import { Language, translations } from '@/translations';
 
 interface Props {
   profile: UserProfile;
