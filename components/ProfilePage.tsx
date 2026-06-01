@@ -66,6 +66,16 @@ interface AppNotification {
   timestamp: string;
 }
 
+const BADGE_CONFIG = [
+  { rank: 'Legend', color: 'bg-indigo-600', textColor: 'text-white', requirements: { posts: 120, purchases: 60, likesGiven: 500, likesReceived: 300 } },
+  { rank: 'Diamond', color: 'bg-cyan-500', textColor: 'text-white', requirements: { posts: 60, purchases: 30, likesGiven: 250, likesReceived: 150 } },
+  { rank: 'Platinum', color: 'bg-slate-300', textColor: 'text-slate-800', requirements: { posts: 30, purchases: 15, likesGiven: 100, likesReceived: 70 } },
+  { rank: 'Gold', color: 'bg-amber-400', textColor: 'text-white', requirements: { posts: 15, purchases: 7, likesGiven: 50, likesReceived: 30 } },
+  { rank: 'Silver', color: 'bg-gray-300', textColor: 'text-gray-700', requirements: { posts: 5, purchases: 3, likesGiven: 20, likesReceived: 10 } },
+  { rank: 'Bronze', color: 'bg-orange-600', textColor: 'text-white', requirements: { posts: 1, purchases: 1, likesGiven: 5, likesReceived: 3 } },
+  { rank: 'Novice', color: 'bg-gray-100', textColor: 'text-gray-400', requirements: { posts: 0, purchases: 0, likesGiven: 0, likesReceived: 0 } },
+];
+
 export const ProfilePage: React.FC<Props> = ({ 
   profile, currentUser, marketItems, skills, wantedItems, onLogout, onUpdateProfile, 
   onEditMarket, onDeleteMarket, onMarketStatusChange, onAddMarket, onAddSkill, onEditSkill, onDeleteSkill, 
@@ -77,6 +87,48 @@ export const ProfilePage: React.FC<Props> = ({
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [showBadgeInfo, setShowBadgeInfo] = useState(false);
+
+  // Calculate Badge Rank
+  const userMarketItems = useMemo(() => marketItems.filter(i => i.userId === profile.uid), [marketItems, profile.uid]);
+  const userSkills = useMemo(() => skills.filter(s => s.userId === profile.uid), [skills, profile.uid]);
+  const userWanted = useMemo(() => wantedItems.filter(w => w.userId === profile.uid), [wantedItems, profile.uid]);
+  const totalPosts = userMarketItems.length + userSkills.length + userWanted.length;
+  
+  const purchasesCount = useMemo(() => marketItems.filter(i => i.buyerId === profile.uid && i.status === 'SOLD').length, [marketItems, profile.uid]);
+  const likesGivenCount = useMemo(() => {
+    return marketItems.filter(i => i.likes?.includes(profile.uid)).length +
+           skills.filter(s => s.likes?.includes(profile.uid)).length +
+           wantedItems.filter(w => w.likes?.includes(profile.uid)).length;
+  }, [marketItems, skills, wantedItems, profile.uid]);
+  const likesReceivedCount = useMemo(() => {
+    const myMarketLikes = marketItems.filter(i => i.userId === profile.uid).reduce((acc, i) => acc + (i.likes?.length || 0), 0);
+    const mySkillLikes = skills.filter(s => s.userId === profile.uid).reduce((acc, s) => acc + (s.likes?.length || 0), 0);
+    const myWantedLikes = wantedItems.filter(w => w.userId === profile.uid).reduce((acc, w) => acc + (w.likes?.length || 0), 0);
+    return myMarketLikes + mySkillLikes + myWantedLikes;
+  }, [marketItems, skills, wantedItems, profile.uid]);
+
+  const stats = useMemo(() => ({
+    posts: totalPosts,
+    purchases: purchasesCount,
+    likesGiven: likesGivenCount,
+    likesReceived: likesReceivedCount
+  }), [totalPosts, purchasesCount, likesGivenCount, likesReceivedCount]);
+
+  const badgeRank = useMemo(() => {
+    for (let i = 0; i < BADGE_CONFIG.length; i++) {
+      const config = BADGE_CONFIG[i];
+      if (stats.posts >= config.requirements.posts ||
+          stats.purchases >= config.requirements.purchases ||
+          stats.likesGiven >= config.requirements.likesGiven ||
+          stats.likesReceived >= config.requirements.likesReceived) {
+        return config;
+      }
+    }
+    return BADGE_CONFIG[BADGE_CONFIG.length - 1];
+  }, [stats]);
+  
+  const badgeLabel = (t[`badge${badgeRank.rank}` as keyof typeof t] || badgeRank.rank) + " " + t.exchangeMember;
   
   const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>(() => {
     return JSON.parse(localStorage.getItem('play_share_dismissed_notifs') || '[]');
@@ -257,7 +309,14 @@ export const ProfilePage: React.FC<Props> = ({
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 bg-white rounded-[32px] flex items-center justify-center text-5xl border-2 border-pink-100 shadow-lg shrink-0">{profile.avatarIcon}</div>
           <div className="min-w-0">
-            <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate leading-none mb-2">{profile.parentNickname}</h2>
+            <h2 className="text-2xl font-black text-gray-800 tracking-tighter truncate leading-none mb-1">{profile.parentNickname}</h2>
+            <button 
+              onClick={() => setShowBadgeInfo(true)}
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full ${badgeRank.color} ${badgeRank.textColor} text-[8px] font-black uppercase tracking-widest mb-2 shadow-sm active:scale-95 transition-all`}
+            >
+              <Star size={8} fill="currentColor" />
+              {badgeLabel}
+            </button>
             <div className="flex items-center gap-1.5 text-gray-400">
               <MapPin size={12} className="shrink-0" />
               <span className="text-[10px] font-black uppercase tracking-widest truncate">
@@ -273,6 +332,110 @@ export const ProfilePage: React.FC<Props> = ({
           </div>
         )}
       </div>
+
+      {isOwnProfile && showBadgeInfo && (
+        <div className="fixed inset-0 z-[700] flex flex-col items-center justify-start p-6 animate-fade-in overflow-y-auto">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowBadgeInfo(false)} />
+          <div className="w-full max-w-sm bg-white rounded-[40px] p-8 shadow-2xl relative animate-slide-up space-y-6 my-auto">
+            <div className="text-center space-y-2">
+              <div className={`w-16 h-16 ${badgeRank.color} ${badgeRank.textColor} rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl border-4 border-white`}>
+                <Star size={32} fill="currentColor" />
+              </div>
+              <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">{t.badgeCriteria}</h2>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed">{t.badgeCriteriaDesc}</p>
+            </div>
+
+            <div className="bg-white rounded-3xl border-2 border-gray-100 overflow-hidden">
+              <div className="grid grid-cols-5 gap-0 bg-gray-50 border-b border-gray-100 py-3 px-2">
+                <div className="text-[8px] font-black uppercase tracking-widest text-gray-400 flex items-center justify-start ml-2">{t.rank}</div>
+                <div className="text-[8px] font-black text-gray-400 flex flex-col items-center gap-1">
+                  <Edit3 size={10} />
+                  <span>POST</span>
+                </div>
+                <div className="text-[8px] font-black text-gray-400 flex flex-col items-center gap-1">
+                  <ShoppingCart size={10} />
+                  <span>BUY</span>
+                </div>
+                <div className="text-[8px] font-black text-gray-400 flex flex-col items-center gap-1">
+                  <Heart size={10} />
+                  <span>LIKE</span>
+                </div>
+                <div className="text-[8px] font-black text-gray-400 flex flex-col items-center gap-1">
+                  <Star size={10} />
+                  <span>RECV</span>
+                </div>
+              </div>
+              
+              <div className="divide-y divide-gray-50">
+                {BADGE_CONFIG.map((config) => {
+                  const isCurrent = badgeRank.rank === config.rank;
+                  return (
+                    <div key={config.rank} className={`grid grid-cols-5 gap-0 py-3 px-2 items-center transition-all ${isCurrent ? 'bg-pink-50/50' : ''}`}>
+                      <div className="flex items-center gap-2 ml-2">
+                        <div className={`w-2 h-2 rounded-full ${config.color}`} />
+                        <span className={`text-[9px] font-black uppercase tracking-tight ${isCurrent ? 'text-gray-800' : 'text-gray-400'}`}>
+                          {t[`badge${config.rank}` as keyof typeof t] || config.rank}
+                        </span>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className={`text-[10px] font-black font-mono ${stats.posts >= config.requirements.posts ? 'text-pink-500' : 'text-gray-300'}`}>{config.requirements.posts}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className={`text-[10px] font-black font-mono ${stats.purchases >= config.requirements.purchases ? 'text-pink-500' : 'text-gray-300'}`}>{config.requirements.purchases}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className={`text-[10px] font-black font-mono ${stats.likesGiven >= config.requirements.likesGiven ? 'text-pink-500' : 'text-gray-300'}`}>{config.requirements.likesGiven}</span>
+                      </div>
+                      <div className="flex justify-center">
+                        <span className={`text-[10px] font-black font-mono ${stats.likesReceived >= config.requirements.likesReceived ? 'text-pink-500' : 'text-gray-300'}`}>{config.requirements.likesReceived}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  <Edit3 size={10} />
+                  {t.postsCount}
+                </div>
+                <div className="text-[14px] font-black text-gray-800">{stats.posts}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  <ShoppingCart size={10} />
+                  {t.purchasesCount}
+                </div>
+                <div className="text-[14px] font-black text-gray-800">{stats.purchases}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  <Heart size={10} />
+                  {t.likesGivenCount}
+                </div>
+                <div className="text-[14px] font-black text-gray-800">{stats.likesGiven}</div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  <Star size={10} />
+                  {t.likesReceivedCount}
+                </div>
+                <div className="text-[14px] font-black text-gray-800">{stats.likesReceived}</div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowBadgeInfo(false)} 
+              className="w-full py-4 bg-gray-900 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest active:scale-[0.98] transition-all shadow-xl shadow-gray-200"
+            >
+              {t.close}
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {currentUser.customUserId === 'testtest' && (
         <div className="bg-white p-6 rounded-[32px] border-2 border-pink-100 shadow-sm space-y-4">

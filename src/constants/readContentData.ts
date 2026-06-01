@@ -375,6 +375,186 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "Chapter 60: The Eternal Guardian",
       content: "Sarah returned to her balcony, the silver compass now a permanent part of a new display in the rooftop museum. The foundation was stronger than ever, its influence reaching across the entire state. The 'Penang Pearl' was now a household name.\n\nShe looked out at the two lights across the water, and then toward the distant horizon where she knew the Lighthouse was shining. She had found more than a home; she had found a family that spanned generations.\n\nThe shadows of the city were no longer something to be feared, but a canvas for new stories. As the sun set, the first pulses of light began to flicker. One, two, three—the heartbeat of a community that would never be forgotten.",
       snippet: "The journey reaches a beautiful conclusion as Sarah reflects on the power of community and the eternal light of the Pearl."
+    },
+    {
+      chapter: 61,
+      title: "Chapter 61: The Antique Box",
+      content: "Aman stood inside a dusty antique shop on Armenian Street, surrounded by old grandfather clocks and brass bowls. High on a shelf sat a wooden box carved with traditional shadow play theater patterns in intricate detail. The shopkeeper smiled. 'That box belonged to the old master puppeteer who worked with the Lims. It hasn't been opened in sixty years.' Aman felt a magnetic pull toward it, sensing that the box was waiting for him.",
+      snippet: "Aman discovers an old locked box in an Armenian Street antique shop, once belonging to a master puppeteer."
+    },
+    {
+      chapter: 62,
+      title: "Chapter 62: The Shadow Puppet",
+      content: "Using a small brass key from his collection, Aman carefully opened the antique box. Resting on velvet lay a magnificent shadow puppet of a tiger, its leather hide meticulously carved and colored. When he held it against the sunlight, the shadow cast on the wall was filled with tiny, precise pinprick holes. They formed a constellation map of the old shophouses along Armenian Street.",
+      snippet: "Unlocks the antique box, Aman finds a beautifully carved tiger shadow puppet holding a cosmic map."
+    },
+    {
+      chapter: 63,
+      title: "Chapter 63: The Forgotten Script",
+      content: "Beneath the shadow puppet, Aman found a handbook written in a beautiful combination of Jawi and Hokkien script. The pages detailed traditional Wayang Kulit acoustic layouts, explaining how the acoustic resonance of old shophouses was tuned. It mentioned 'the whispering bricks' that could carry warning frequencies across the community. Aman realized the puppet theater was part of an early public safety system.",
+      snippet: "A bilingual handbook reveals of a secret acoustic communication system built into George Town's masonry."
+    },
+    {
+      chapter: 64,
+      title: "Chapter 64: Sound of the Gamelan",
+      content: "Among the items in the box was a heavy metal record designed for an old gramophone. When playing it, a mesmerizing sequence of gamelan tones filled the room, followed by a rhythmic vibration in the table's wood. Aman measured the frequency on his tablet; it was a perfect match with the signal coming from the Hin Bus Depot's Clockwork Heart. The cultural threads were truly interconnected.",
+      snippet: "Armenian Street gamelan frequencies are discovered to be in perfect harmony with the Hin Bus Depot."
+    },
+    {
+      chapter: 65,
+      title: "Chapter 65: The Secret Stage",
+      content: "Aman visited the community center where the old puppet theater stage was preserved. Checking beneath the wooden floorboards according to the script's diagram, his fingers found a hidden spring-loaded drawer. It slid open with a soft click, revealing a series of hollow copper tubes that acted as resonators. These resonators were designed to amplify specific acoustic frequencies across the street.",
+      snippet: "A hidden chamber beneath the historic puppet stage reveals a system of hollow copper resonators."
+    },
+    {
+      chapter: 66,
+      title: "Chapter 66: The Puppet Master's Journal",
+      content: "Inside the resonance drawer lay a handwritten journal detailing the Lims' creation of the theater network. *'When we play the tiger's song, the sound travels through the clay of our walls. It is a voice for the voiceless, bringing caution and hope to every home during times of crisis.'* The puppet show wasn't just entertainment; it was a beautifully integrated auditory alert system for the whole neighborhood.",
+      snippet: "A master's journal explains how shadow puppet performances and acoustic walls protected the community."
+    },
+    {
+      chapter: 67,
+      title: "Chapter 67: The Resonance Box",
+      content: "Aman and Mei connected a modern digital synthesizer to the copper resonators under the wooden stage. When they played a soft chord, the sound didn't just play on stage; it vibrated through the floorboards and could be heard clearly from the neighboring courtyard without any artificial speakers. The natural, warm resonance of the old timber was incredibly efficient and beautiful.",
+      snippet: "Aman tests the restoration of the acoustic stage, producing crystal-clear resonant sound without modern speakers."
+    },
+    {
+      chapter: 68,
+      title: "Chapter 68: The Stained Glass Clue",
+      content: "During the acoustic test, the sunlight filtered through a stained-glass window in the center's hall, casting red and blue circles on the stage. Aman aligned the tiger puppet with the light beams. The shadows on the floor formed the letters 'B-R-A-S-S-S-M-I-T-H'. A note in the handbook confirmed that the final piece of the acoustic amplifier lay with the traditional brass artisans of George Town.",
+      snippet: "Sunlight and stained glass align through the puppet to point toward Penang's remaining traditional blacksmiths."
+    },
+    {
+      chapter: 69,
+      title: "Chapter 69: Meeting the Brass Maker",
+      content: "Following the clue, Aman found **Uncle Han**, the last traditional brass smith in the heritage district. When shown the puppet and resonators, Han's eyes welled with tears. 'My grandfather cast the original sound dishes for the Lim theater,' Uncle Han said. He led Aman to his store's backroom and pulled out a beautifully polished gong inscribed with the community lotus emblem.",
+      snippet: "Aman meets Uncle Han, a traditional brass smith who holds the original heritage resonance gong."
+    },
+    {
+      chapter: 70,
+      title: "Chapter 70: Harmonizing the Frequencies",
+      content: "With Uncle Han's help, they installed the heritage gong behind the stage. When struck, the deep, rich sound echoed down Armenian Street, carrying a frequency that triggered the Clockwork Heart at the Hin Bus Depot to pulse in a rhythmic, welcoming blue. The physical and mechanical systems of Penang were communicating with each other through pure, natural harmony.",
+      snippet: "Installing the brass gong unites the Armenian Street puppet stage acoustics with the Hin Bus Depot."
+    },
+    {
+      chapter: 71,
+      title: "Chapter 71: The Whispering Wall",
+      content: "Aman discovered that the brick walls of the Armenian Street shophouses contain integrated clay vents designed as acoustic chambers. Standing at one end of the block, he could whisper into a small wall niche, and Mei could hear him perfectly at the other end. This secret network of community care allowed neighbors to check on each other during storms.",
+      snippet: "Uncovers a whispering wall system in the heritage shophouses that acted as a neighborhood communication line."
+    },
+    {
+      chapter: 72,
+      title: "Chapter 72: The Community Symphony",
+      content: "The foundation organized a grand community shadow play performance on Armenian Street. Locals gathered with lanterns as Aman operated the tiger puppet. The sound of the gamelan and Uncle Han's gong traveled flawlessly through the acoustic bricks, filling the air with warmth. It proved that community is built on shared experiences and voices that echo together.",
+      snippet: "A beautiful shadow play festival on Armenian Street unites the neighborhood in sound and light."
+    },
+    {
+      chapter: 73,
+      title: "Chapter 73: The Hidden Vault",
+      content: "Beneath the gong's stone pedestal, a secret panel opened, revealing a small iron vault. Inside were original town charters and community agreements written in golden ink, demonstrating that the Armenian Street residents had pledged to always share water, food, and space in times of need. The historical commitment to mutual aid was clearly detailed.",
+      snippet: "A secret stone panel beneath the gong opens to reveal community mutual-aid treaties of the early Lims."
+    },
+    {
+      chapter: 74,
+      title: "Chapter 74: The Restoration",
+      content: "The Armenian Street Puppet Theater was officially restored as an interactive heritage gallery. Visitors could manipulate the puppets, explore the whispering walls, and listen to the rich tones of Uncle Han's brass work. Aman and Mei welcomed children from local schools, passing down the wisdom of Penang's acoustic architects to the next generation.",
+      snippet: "The Armenian Street theater is fully restored, becoming a thriving center for education and cultural art."
+    },
+    {
+      chapter: 75,
+      title: "Chapter 75: Echoes of Joy",
+      content: "Sarah, Kael, Mei, and Aman stood on the roof of the shophouse. The sky was clear, and the beacons of the Penang Pearl shone brightly on the horizon. Below, the warm acoustic tones of the shadow play theater drifted through the evening air, bringing peace. The heritage network had grown stronger, showing that memory, art, and community will always find a way to stay alive.",
+      snippet: "The story of the whispering shophouse finishes beautifully as Armenian Street thrives with community harmony."
+    },
+    {
+      chapter: 76,
+      title: "Chapter 76: The Altitude Shift",
+      content: "Elena, a young botanist studying tropical mountain canopy, stepped off the Penang Hill funicular railway. The morning fog was thick, giving the ancient rainforest a mystical quality. Investigating reports of a unique bio-luminescent flora, she noticed a faint, rhythmic green shimmer deep in the valley below. Unsheathing her compass, she decided to venture off the main path.",
+      snippet: "Elena notices a mysterious green glow deep in the Penang Hill forest and sets off to find its source."
+    },
+    {
+      chapter: 77,
+      title: "Chapter 77: The Overgrown Trail",
+      content: "Pushing through dense ferns and wild gingers, Elena found a forgotten hiking trail. The stepping stones were faded, but on a large granite boulder, she saw a familiar symbol carved into the stone—the circular lotus emblem of the Lims. Her heart beat faster. The legend of the Lims reached even the highest peaks of the island.",
+      snippet: "Elena finds an old overgrown pathway on Penang Hill marked with the historical Lim family emblem."
+    },
+    {
+      chapter: 78,
+      title: "Chapter 78: The Glass Dome",
+      content: "The trail ended at a clearing where a magnificent, Victorian-style glass dome stood. Nestled against the mountain cliff, it was completely overgrown with moss, but its iron framework was perfectly intact. Wiping the dust off the glass door, Elena stepped inside. The air was warm, sweet, and filled with a faint green light that seemed to rise from the soil.",
+      snippet: "Elena discovers a hidden Victorian greenhouse hidden in the dense jungle of Penang Hill."
+    },
+    {
+      chapter: 79,
+      title: "Chapter 79: The Glimmering Orchid",
+      content: "In the center of the greenhouse, a beautiful, unique orchid species was growing on a bed of volcanic soil. Its petals shivered with a gentle, glowing green light, pulsing in a pattern that seemed to match the blinking of the Gurney Drive Pearl beacon. This was the legendary Mount Penang Orchid, a natural wonder thought to be lost forever.",
+      snippet: "Elena finds a glowing orchid whose natural light pulses in perfect rhythm with the Penang Pearl."
+    },
+    {
+      chapter: 80,
+      title: "Chapter 80: The Solar Chronometer",
+      content: "Beneath the glowing orchid, a brass solar chronometer was set into the stone pedestal. The instrument was aligned to track the elevation of the sun. Elena realized that during solstices and equinoxes, the solar rays filtered through the greenhouse glass panels in a way that focused energy directly onto the orchids, sparking their natural luminescence.",
+      snippet: "A brass solar clock inside the greenhouse is discovered to regulate the orchids' glowing cycles."
+    },
+    {
+      chapter: 81,
+      title: "Chapter 81: The Seed Vault",
+      content: "Elena found a secret door leading to a temperature-controlled vault beneath the dome. Inside was a beautifully organized seed collection, containing thousands of rare and extinct plant species of Malaysia. The Lims had created a perfect agricultural safety net, designed to restore Penang's crops in the event of an ecological crisis.",
+      snippet: "An underground vault reveals a state-of-the-art agricultural seed bank preserved by the Lims."
+    },
+    {
+      chapter: 82,
+      title: "Chapter 82: The Botanist's Log",
+      content: "A leather-bound journal written by the Lim botanists lay open on a reading desk. *'The mountain is our mother, and its seeds are our future. If the city below ever loses its connection to the earth, let this sanctuary be the seed that grows a new forest.'* Elena felt a profound duty to share and protect this precious library of life.",
+      snippet: "A botanist's journal reveals the Lims' plan to safeguard Penang's natural biodiversity."
+    },
+    {
+      chapter: 83,
+      title: "Chapter 83: The Soil Secret",
+      content: "The journal contained a formula for a specialized, natural soil mixture that could accelerate plant growth without any chemicals. Elena tested it on a small herb pot. Within hours, the seeds sprouted, glowing with a healthy, vibrant luster. This organic wisdom could revolutionize urban community gardening in the condo below.",
+      snippet: "Elena tests an ancient organic formula that dramatically boosts plant growth and resilience."
+    },
+    {
+      chapter: 84,
+      title: "Chapter 84: The Canopy Walk",
+      content: "To trace the natural water flow used by the greenhouse, Elena climbed up to the old Penang Hill canopy walk. From high above, she could see a series of bamboo pipes built along the branches, directing clean rainwater and mountain nutrients straight into the dome. It was a masterpiece of gravity-fed engineering.",
+      snippet: "Exploring the canopy walk, Elena discovers a gravity-fed rainwater harvesting system for the dome."
+    },
+    {
+      chapter: 85,
+      title: "Chapter 85: The Solar Lens",
+      content: "Elena adjusted the large glass prism on top of the dome, aligning it with the afternoon solar path. When the sun ray struck the glass, it split into a beautiful spectrum, bathing the orchids in warm, colored light. The flowers responded by opening fully, releasing a sweet and calming fragrance through the mountain clearing.",
+      snippet: "A solar lens adjustment activates the orchids' fragrance and full color spectrum."
+    },
+    {
+      chapter: 86,
+      title: "Chapter 86: The Bioluminescent Spark",
+      content: "As the sun set, the entire greenhouse erupted in a brilliant, soft neon glow. Thousands of tiny orchids, ferns, and mosses shivered with bio-luminescent light, transforming the dome into an emerald jewel on the dark hillside. Elena stared in complete wonder; it was the most beautiful natural spectacle she had ever seen.",
+      snippet: "As night falls, the greenhouse glows in beautiful emerald colors on the hillside."
+    },
+    {
+      chapter: 87,
+      title: "Chapter 87: Connecting the Triangle",
+      content: "Looking out from the mountain ridge, the emerald light of the greenhouse aligned perfectly with the blue pulse of the Hin Bus Depot and the golden beam of the Gurney Drive Pearl. Together, they formed a perfect coordinate triangle over Penang, a network of culture, history, and nature that watched over the residents.",
+      snippet: "The mountain greenhouse glow aligns with the other beacons to complete a heritage triangle."
+    },
+    {
+      chapter: 88,
+      title: "Chapter 88: The Public Garden",
+      content: "Elena, Mei, and Sarah organized an education tour for the condo's residents. Families and children climbed Penang Hill to learn about biodiversity, seed preservation, and clean planting. The children's eyes sparkled as they held the glowing flowers, feeling a deep connection to the natural world around them.",
+      snippet: "The foundation hosts an educational tour at the greenhouse, planting the seeds of conservation."
+    },
+    {
+      chapter: 89,
+      title: "Chapter 89: The Eternal Root",
+      content: "Elena realized that the flora's glowing network was interconnected through subterranean roots that shared nutrients. Just like the plants, the community thrived by sharing and caring for one another. She decided to dedicate her career to maintaining this sanctuary and building neighborhood plant exchanges.",
+      snippet: "Elena discovers that the plants' natural unity perfectly mirrors the goal of community connection."
+    },
+    {
+      chapter: 90,
+      title: "Chapter 90: The Beacon of Nature",
+      content: "With the greenhouse fully integrated, Penang Hill now had a sanctuary of light. Sarah, Kael, Mei, and Elena watched the stars from the mountain peak. Below them, George Town was a sea of warm lights, protected by the legacy of the Pearls. The journey of heritage was complete, and its future was bright and eternal.",
+      snippet: "The canopy story reaches a breathtaking finish as Penang's nature and community thrive forever."
     }
   ],
   columns: [
@@ -737,6 +917,186 @@ export const PRE_CREATED_CONTENT: ReadData = {
       title: "Community Living: Tips for Happy Neighbors",
       content: "Living in a condo is all about shared space. Small gestures like holding the lift, keeping noise levels low in the evenings, and participating in community events can make a huge difference in building a positive environment.\n\nUsing community apps to share resources or organize group activities also helps build a sense of belonging. The 'Nearby Exchange' is a great example of how technology can bring us closer together, proving that even in a big building, we can all be good neighbors.",
       snippet: "How small actions and community engagement can lead to a happier life for all residents."
+    },
+    {
+      id: 61,
+      title: "The Heritage of Wayang Kulit (Shadow Puppetry)",
+      content: "Traditional Wayang Kulit, or shadow puppetry, is a beautiful fusion of theater, craftsmanship, and storytelling. Puppets are made from carefully carved leather and manipulated behind a backlit white screen.\n\nThe storyteller, or 'Dalang', controls the puppets while narrating epic tales of good and evil, accompanied by a traditional gamelan orchestra. Preserving this art form is vital to keeping Penang's auditory and visual folklore alive.",
+      snippet: "Discover the craftsmanship and dramatic stories behind traditional Malaysian shadow puppetry."
+    },
+    {
+      id: 62,
+      title: "Traditional Nyonya Kebaya Artisans",
+      content: "The **Nyonya Kebaya** is an elegant, traditional blouse-dress embroidered with stunning botanical and animal patterns. Originally worn by Peranakan women, each piece is a labor of love, requiring weeks of hand-guided sewing-machine embroidery.\n\nArtisans carefully cut away excess fabric around the embroidery lines to create a lace-like effect. Today's designers are blending modern fabrics with traditional motifs to ensure this graceful attire remains a wardrobe staple.",
+      snippet: "Explore the intricate embroidery and heritage fashion of Peranakan Nyonya Kebaya."
+    },
+    {
+      id: 63,
+      title: "The Art of Woodcarving in Clan Temples",
+      content: "Walk into any ancient clan house in George Town, and you will be greeted by magnificent, gold-leafed woodcarvings on doors and beams. Master woodcarvers spent years chiseling solid timber into dragons, phoenixes, and legendary scenes.\n\nThese carvings aren't just decorative; they offer blessings of longevity, wealth, and protection to the community. Restoring these delicate structures is an ongoing effort that requires extreme patience and skills.",
+      snippet: "How master carvers chiseled historic blessings of wood and gold into Penang's temples."
+    },
+    {
+      id: 64,
+      title: "Exploring Penang's Tropical Spice Gardens",
+      content: "Located in Teluk Bahang, the **Tropical Spice Garden** is a living museum of regional flora. Spanning eight acres of secondary jungle, it houses over 500 species of aromatic herbs, spices, and exotic tropical plants.\n\nVisitors can learn about the history of the global spice trade, which put Penang on the world map. A walk through its peaceful trails offers sensory education, filled with the aroma of cinnamon, nutmeg, and fresh lemongrass.",
+      snippet: "Discover a rainforest paradise dedicated to the plants that shaped Penang's history."
+    },
+    {
+      id: 65,
+      title: "Preserving Dialects in George Town",
+      content: "The linguistic map of Penang is incredibly rich, featuring unique variations of **Penang Hokkien**, Cantonese, and Teochew. Unlike standard continental variations, Penang Hokkien includes many loanwords from Malay and English.\n\nLocal theater groups and culinary historians are actively recording oral histories and writing plays in dialect to ensure future generations can speak the organic, melodic vocabulary of their grandparents.",
+      snippet: "How local storytellers are keeping the colorful, blended Penang dialects alive."
+    },
+    {
+      id: 66,
+      title: "The Legacy of Peranakan Ceramic Tiles",
+      content: "Peranakan houses are famous for their colorful, glazed ceramic tiles decorating the front entrances. Imported from Japan and Europe in the early 20th century, these tiles feature vibrant floral, geometric, and positive symbolic motifs.\n\nThey were designed to withstand the tropical rain and sun while displaying the wealth and artistic taste of the household. Modern conservationists are now manufacturing replicas to help restore old shophouses.",
+      snippet: "The history and preservation of the gorgeous decorative tiles gracing George Town facades."
+    },
+    {
+      id: 67,
+      title: "Penang Hill Rail Link: A Century of Engineering",
+      content: "The **Penang Hill Funicular Railway** has been carrying residents and travelers to the summit since 1923. It features one of the steepest tunnel tracks in Asia, designed to overcome the dense granite terrain.\n\nMaintaining the railway's structural integrity while updating its speed and capacity is a testament to Malaysia's engineering expertise. The funicular remains a beloved, eco-friendly way to enjoy the refreshing mountain air.",
+      snippet: "Celebrating over 100 years of the funicular railway that conquered the granite peaks."
+    },
+    {
+      id: 68,
+      title: "Exploring the Mangroves of Seberang Perai",
+      content: "On the mainland of Penang lies **Seberang Perai**, home to crucial mangrove wetlands. These unique ecosystems act as natural storm barriers, protecting the coastal soil and providing nurseries for local fish, crabs, and birds.\n\nEducational boardwalks allow people to explore these swamp forests without disrupting the wildlife. Supporting mangrove restoration is a powerful way for urban residents to contribute to climate resiliency.",
+      snippet: "Discover the rich wetland sanctuaries and natural storm defenses of Seberang Perai."
+    },
+    {
+      id: 69,
+      title: "Traditional Handmade Incense Makers",
+      content: "In the heart of George Town, a few elderly masters still mix sandalwood powder and glue powder by hand to roll traditional incense sticks. The process is highly physical, requiring perfect timing and sun-drying to prevent warping.\n\nThese aromatic sticks are used in local temples and homes, releasing a sweet woodiness that has defined the atmosphere of the heritage district for generations. It is a slow, meditative craft facing modern automation.",
+      snippet: "Meet the traditional artisans who preserve the ancient art of rolling incense by hand."
+    },
+    {
+      id: 70,
+      title: "Preserving Street Art Murals",
+      content: "Penang's world-famous street art, such as the 'Children on a Bicycle' by Ernest Zacharevic, has become central to the city's identity. But humidity, rain, and sunlight naturally peel the paint off the plaster walls.\n\nLocal arts councils host restoration labs where conservators apply organic protectants to slow the degeneration. It is a dialogue between transient modern expression and permanent architectural heritage.",
+      snippet: "The modern science and conservation techniques used to save George Town's iconic murals."
+    },
+    {
+      id: 71,
+      title: "The Story of Kapitan Keling Mosque",
+      content: "Founded in 1801 by the leader of the Indian Muslim community, the **Kapitan Keling Mosque** is a masterpiece of Indo-Islamic architecture. It features cream-colored domes, elegant minarets, and a peaceful, arched interior corridor.\n\nIts design beautifully incorporates traditional star-and-crescent motifs with local climate adaptions like high-dome ventilation. It remains a key landmark of religious harmony along the 'Street of Harmony'.",
+      snippet: "Explore the elegant history and architectural detail of Penang's historic Kapitan Keling Mosque."
+    },
+    {
+      id: 72,
+      title: "St. George the Martyr Church",
+      content: "The oldest Anglican church in Southeast Asia, **St. George's Church**, stands as a serene white monument in George Town. Built in 1818, its Greek-revival pillars and grand spire reflect classic Western neoclassical balance.\n\nThe large lawns and shaded trees surrounding the church offer a tranquil public green space. Preserving its historical pipe organ and brick structures is a shared community effort, representing Penang's diverse spiritual heritage.",
+      snippet: "Tracing the neoclassical history of St. George's Church, a serene monument of light."
+    },
+    {
+      id: 73,
+      title: "The Rich History of Gurney Drive",
+      content: "Originally known as New Coast Road, **Gurney Drive** has evolved from an elite residential beachfront into a bustling coastal promenade. It is famous for its sunset vistas, cooling ocean breezes, and world-class hawker food center.\n\nModern reclamation efforts aim to create a green public park, 'Gurney Bay', ensuring that the waterfront remains accessible for recreation, community exercise, and green living in the high-rise era.",
+      snippet: "How a historic quiet waterfront became Penang's premier seaside gathering promenade."
+    },
+    {
+      id: 74,
+      title: "Traditional Chinese Apothecaries",
+      content: "Stepping into a traditional medicine hall in Penang is like entering a historical archive. Wooden cabinets with hundreds of small drawers contain roots, dried roots, and herbs designed to restore the body's natural balance.\n\nExperienced herbalists diagnose patients by reading pulses and blending customized teas. This holistic knowledge, passed down through oral apprentice systems, continues to thrive alongside modern medical clinics.",
+      snippet: "A look inside the atmospheric Chinese medicine halls that keep ancient holistic healing alive."
+    },
+    {
+      id: 75,
+      title: "Preserving Mountain Flora: Botanical Gardens",
+      content: "Established in 1884, the **Penang Botanical Gardens**—also known as the Waterfall Gardens—nestle in a deep forest valley. It is a critical center for tropical botany, dedicated to orchid collection and fern propagation.\n\nThe gardens are also home to hundreds of playful long-tailed macaques. Safeguarding the ancient trees and maintaining clean mountain water streams are essential to preserving the park's biodiversity.",
+      snippet: "Explore Penang's historic 'Waterfall Gardens' and its critical role in tropical botany."
+    },
+    {
+      id: 76,
+      title: "Traditional Lantern Making Artisans",
+      content: "Traditional paper lanterns require years of practice to master. Craftsmen bend thin bamboo strips into complex frames, wrap them in hand-painted silk, and apply waterproof lacquer to protect them from the tropical rain.\n\nThese lanterns are hung in temple doorways to bring light and prosperity. Local workshops are teaching young students the math and design of bamboo framing to prevent this delicate skill from disappearing.",
+      snippet: "The mathematics and craftsmanship of framing Penang's traditional hand-painted lanterns."
+    },
+    {
+      id: 77,
+      title: "The Pinang Peranakan Mansion",
+      content: "The **Pinang Peranakan Mansion** offers a rich window into the opulent lifestyle of Penang's 19th-century elite. Combining Chinese carved wooden panels, English floor tiles, and Scottish ironwork, the architecture is globally unique.\n\nIt houses thousands of Peranakan antiques, jewelry, and tableware, preserving the distinct hybrid culture that arose from centuries of trade. Maintaining this private museum helps visitors understand the island's historical multicultural elite.",
+      snippet: "Step inside a green-walled mansion showcasing the opulent wealth of Peranakan heritage."
+    },
+    {
+      id: 78,
+      title: "Chew Jetty: Living Maritime Heritage",
+      content: "The **Chew Jetty** is the largest of Penang's historic wooden clan jetties, built on stilts over the muddy harbor. Originally established by Chinese immigrants in the late 19th century, each jetty belongs to a specific family clan.\n\nDespite the pressures of urban development, families continue to live on the wood planks, balancing tourism with their historic maritime way of life. It is a living testament to coastal resilience and community unity.",
+      snippet: "The history of the stilt-house communities that anchored Penang's maritime economy."
+    },
+    {
+      id: 79,
+      title: "Local Birds of Penang National Park",
+      content: "Penang National Park, located at the island's northwest tip, is home to a staggering array of bird species. Birders can spot the majestic White-bellied Sea Eagle soaring over the coast, or the colorful Mangrove Pitta in the trees.\n\nProtecting these nesting grounds from deforestation is critical. Sustainable ecotourism guides help visitors experience these beautiful creatures while minimizing human impact on their fragile forest nesting sites.",
+      snippet: "Where to spot sea eagles and rare colorful parrots in Penang's protected forest reserves."
+    },
+    {
+      id: 80,
+      title: "The Art of Teochew Iron-Rod Puppetry",
+      content: "Teochew iron-rod puppetry is a rare and endangered theatrical art native to Penang. Clay-headed, fabric-bodied puppets are controlled by three iron rods attached to their backs, allowing for extremely precise and lifelike movements.\n\nPerforming classical dramas with stylized singing and live drum beats, the few surviving troupes are translating scripts into digital formats to help global archives study their unique kinetic choreography.",
+      snippet: "Discover Penang's rare iron-rod theatre and its effort to preserve lifelike kinetic storytelling."
+    },
+    {
+      id: 81,
+      title: "Trishaws of George Town: A Slower Pace",
+      content: "In the 1940s, trishaws were Penang's primary mode of transport. Today, these three-wheeled passenger cycles are a nostalgic, eco-friendly way for travelers to explore George Town's narrow alleys at a slower, relaxed pace.\n\nTrishaw riders are local historians in their own right, sharing stories of the buildings and residents. Helping riders maintain their cycles preserves an iconic piece of the city's living, slow-moving street culture.",
+      snippet: "Support the three-wheeled heritage cycles that keep George Town's streets slow and breezy."
+    },
+    {
+      id: 82,
+      title: "Culinary Heritage: Traditional Roti Jala",
+      content: "Roti Jala, or net bread, is a classic Malaysian pancake shaped like a delicate lace net. Made by pouring turmeric-flavored batter through a special five-nozzle cup onto a hot griddle, it is rolled and served with spicy curry.\n\nThe art lies in the swift, circular hand movements that create symmetrical patterns. Preserving these traditional cooking techniques brings families together, sharing flavor and heritage across neighborly kitchens.",
+      snippet: "The swirling hand gestures and savory heritage of making traditional Malaysian lace crepes."
+    },
+    {
+      id: 83,
+      title: "Preserving the Clan Houses",
+      content: "Penang's **Khoo Kongsi** and other clan houses are grand architectural structures built to support families of the same surname. They provided housing, education, and welfare to newly arrived immigrants from southern China.\n\nToday, these buildings serve as important cultural hubs, hosting festivals and ancestral prayers. Restoring their granite courtyards and terracotta roofs fosters a deep sense of historical continuity and ancestral pride.",
+      snippet: "How Surname Clan Houses acted as the original community welfare and education systems."
+    },
+    {
+      id: 84,
+      title: "Balancing Fruit Farms and Forestry",
+      content: "The hills of **Balik Pulau** on the island's quiet west coast are famous for their tropical fruit orchards, especially durian and nutmeg. Farmers work alongside conservationists to balance agriculture with forest preservation.\n\nSustainable organic farming protects the watershed, preventing soil erosion while producing some of the world's finest fruits. Visiting these orchards helps urban kids understand where their food comes from.",
+      snippet: "Explore the organic fruit orchards of Balik Pulau and their sustainable farming methods."
+    },
+    {
+      id: 85,
+      title: "The History of Muka Head Lighthouse",
+      content: "Perched 242 meters above sea level at the tip of Penang National Park, the **Muka Head Lighthouse** has guided sailors since 1883. Its stone tower offers a panoramic view of the Andaman Sea and the dense jungle canopy below.\n\nHistorically, lighthouse keepers lived isolated lives, keeping the fuel burning to safeguard incoming trade ships. Today, it remains an active aid to navigation and a popular reward for adventurous forest hikers.",
+      snippet: "A trek to the historic cliffside lighthouse that has guarded Penang's seas for over a century."
+    },
+    {
+      id: 86,
+      title: "Traditional Brass and Copper Smithing",
+      content: "Traditional metalsmiths in Penang use hand-carved clay molds and charcoal furnaces to melt brass and copper. They hammer and polish the hot metal into offering trays, incense burners, and beautiful sounding gongs for temples.\n\nEach hammer stroke changes the density of the metal, altering the resonance of the sound. Apprentices learn to 'hear' the temperature of the copper, preserving a sensory and physical craft that modern factories cannot replicate.",
+      snippet: "Explore the roaring fires and acoustic precision of Penang's remaining brass smiths."
+    },
+    {
+      id: 87,
+      title: "Marine Conservation in Teluk Bahang",
+      content: "The sandy beaches of **Teluk Bahang** are nesting sites for endangered Green and Olive Ridley sea turtles. Conservation centers monitor the coastline, protecting nests from predators and coastal light pollution.\n\nCommunity-led beach cleanups keep the waters clear of plastic waste, ensuring that young hatchlings can safely navigate back to the sea. It shows how neighborhood environmental care protects ocean biodiversity.",
+      snippet: "How volunteers and marine scientists protect endangered sea turtles nesting in Penang."
+    },
+    {
+      id: 88,
+      title: "Penang Hill Canopy Walk",
+      content: "Located within 'The Habitat' on Penang Hill, the canopy tree-walk allows visitors to walk 15 meters above the rainforest floor. It offers close-up views of ancient trees, giant squirrels, and rare orchids without harming the canopy.\n\nThe structures are designed using tension-cables that expand with the tree's natural growth, avoiding any nails or bolts in the wood. It is a stunning model of low-impact, sustainable ecotourism engineering.",
+      snippet: "Walk among the ancient treetops via a sustainable, tension-cable canopy bridge."
+    },
+    {
+      id: 89,
+      title: "The Story of Traditional Kuih Artisans",
+      content: "Malaysian **Kuih** are bite-sized colorful sweet treats made from glutinous rice, coconut milk, and pandan leaf juice. Steaming these delicate layers requires precise heat control and years of recipe perfecting.\n\nTraditional makers wake up at 3:00 AM to prepare them fresh, using natural dyes like blue pea flowers. Supporting these morning market stalls keeps the island's sweet, ancestral culinary identity alive.",
+      snippet: "A sweet journey through the history, natural dyes, and steaming of traditional Kuih."
+    },
+    {
+      id: 90,
+      title: "Digital Community Tools: The Future of Exchange",
+      content: "As modern developments rise, preserving the warm community Spirit of Penang becomes even more critical. New community applications, like the **Nearby Exchange**, leverage technology to resurrect the mutual-aid principles of old clan communities.\n\nBy helping neighbors trade skills, share tools, and check on one another, we carry the ancient wisdom of the Lims into the digital age. It proves that the truest pearl of Penang will always be the caring bonds between its people.",
+      snippet: "How modern technology can revive traditional neighborhood mutual-aid and connection."
     }
   ]
 };

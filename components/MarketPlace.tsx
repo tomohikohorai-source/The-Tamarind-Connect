@@ -816,11 +816,6 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
       <div className="grid grid-cols-2 gap-4">
         {filteredItems.map((item, index) => (
           <React.Fragment key={item.id}>
-            {((index === 4) || (index > 4 && (index - 4) % 10 === 0)) && (
-              <div className="col-span-2">
-                <AffiliateBanner index={Math.floor((index - 4) / 10)} />
-              </div>
-            )}
             <MarketItemCard 
               item={item} 
               onClick={() => handleItemClick(item)} 

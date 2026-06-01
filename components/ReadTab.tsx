@@ -353,36 +353,9 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth,
           <h1 className="text-2xl font-black text-gray-900 leading-tight">{selectedItem.title}</h1>
 
           <div className="prose prose-sm max-w-none prose-indigo">
-            {profile || (selectedItem.type === 'NOVEL' && selectedItem.chapterNumber <= 5) || (selectedItem.type === 'COLUMN' && (selectedItem.columnNumber || 0) <= 5) ? (
-              <div className="text-gray-700 leading-relaxed font-medium">
-                <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="relative">
-                  <div className="text-gray-700 leading-relaxed font-medium line-clamp-6 overflow-hidden select-none">
-                    <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
-                </div>
-                
-                <div className="bg-gradient-to-b from-transparent to-gray-50 p-8 rounded-3xl border-2 border-dashed border-gray-200 flex flex-col items-center text-center space-y-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-indigo-500">
-                    <Lock size={24} />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-tight">{t.loginToRead}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t.authAnnouncement}</p>
-                  </div>
-                  <button 
-                    onClick={onShowAuth}
-                    className="px-8 py-3 bg-indigo-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 active:scale-95 transition-all"
-                  >
-                    {t.readMore}
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="text-gray-700 leading-relaxed font-medium">
+              <ReactMarkdown>{selectedItem.content}</ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>

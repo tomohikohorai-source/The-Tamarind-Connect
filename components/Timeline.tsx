@@ -262,7 +262,7 @@ export const Timeline: React.FC<Props> = ({ activities, profile, language = 'en'
         style={{ animation: 'day-slide 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
       >
         {renderSection(LocationType.POOL)}
-        <AffiliateBanner />
+        {/* <AffiliateBanner /> */}
         {renderSection(LocationType.OUTDOOR)}
         {renderSection(LocationType.INDOOR)}
       </div>
