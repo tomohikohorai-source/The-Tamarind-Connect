@@ -1,7 +1,7 @@
 
 import { initializeApp } from 'firebase/app';
 import { 
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, 
+  initializeFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, 
   query, orderBy, getDoc, setDoc, limit, arrayUnion, arrayRemove, getDocs, 
   writeBatch, where, getDocFromServer, serverTimestamp 
 } from 'firebase/firestore';
@@ -12,8 +12,10 @@ import {
 import firebaseConfig from './firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
-// Using firestoreDatabaseId from config as per instructions
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId); 
+// Initialize Firestore with long polling enabled to handle proxy-blocked environments/iframes
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, (firebaseConfig as any).firestoreDatabaseId);
 export const auth = getAuth(app);
 
 export enum OperationType {

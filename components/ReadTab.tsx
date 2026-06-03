@@ -105,6 +105,58 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth,
       return;
     }
 
+    // Special Trigger for New Story (Chapter 76, series_story_6, Chapter 1) Instant Launch
+    const hasNewStory1 = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_6' && c.chapterNumber === 1);
+    if (!hasNewStory1 && PRE_CREATED_CONTENT.novels.length >= 76) {
+      isGeneratingRef.current = true;
+      setGenerating(true);
+      try {
+        const stateDoc = await getDoc(doc(db, "readSeriesState", "current_novel"));
+        let state = stateDoc.exists() ? (stateDoc.data() as ReadSeriesState) : null;
+        if (state && state.currentChapter < 76) {
+          await updateDoc(doc(db, "readSeriesState", "current_novel"), {
+            currentChapter: 76
+          });
+        }
+        
+        const novelData = PRE_CREATED_CONTENT.novels[75]; // index 75 is Chapter 76
+        const displayTitle = novelData.title.replace(/^Chapter \d+: /, "Chapter 1: ");
+        await addDoc(collection(db, "readContent"), {
+          title: displayTitle,
+          content: novelData.content,
+          snippet: novelData.snippet,
+          type: 'NOVEL',
+          chapterNumber: 1,
+          seriesId: "series_story_6",
+          createdAt: new Date().toISOString()
+        });
+
+        const hasColumn76 = existingContents.some(c => c.type === 'COLUMN' && c.columnNumber === 76);
+        if (!hasColumn76 && PRE_CREATED_CONTENT.columns.length >= 76) {
+          const colData = PRE_CREATED_CONTENT.columns[75];
+          await addDoc(collection(db, "readContent"), {
+            title: colData.title,
+            content: colData.content,
+            snippet: colData.snippet,
+            type: 'COLUMN',
+            columnNumber: 76,
+            createdAt: new Date().toISOString()
+          });
+        }
+        
+        await updateDoc(doc(db, "readSeriesState", "current_novel"), {
+          currentChapter: 77,
+          lastGeneratedDate: today
+        });
+      } catch (error) {
+        console.error("Failed to post new story chapter 1:", error);
+      } finally {
+        setGenerating(false);
+        isGeneratingRef.current = false;
+      }
+      return;
+    }
+
     const hasTodayNovel = existingContents.some(c => c.type === 'NOVEL' && c.createdAt.startsWith(today));
     const hasTodayColumn = existingContents.some(c => c.type === 'COLUMN' && c.createdAt.startsWith(today));
     
