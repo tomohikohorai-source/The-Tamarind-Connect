@@ -157,23 +157,130 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth,
       return;
     }
 
-    const hasTodayNovel = existingContents.some(c => c.type === 'NOVEL' && c.createdAt.startsWith(today));
-    const hasTodayColumn = existingContents.some(c => c.type === 'COLUMN' && c.createdAt.startsWith(today));
+    // New additions posting logic starting today (2026-06-28)
+    const startDateStr = '2026-06-28';
+    const start = new Date(`${startDateStr}T00:00:00`);
+    const current = new Date(`${today}T00:00:00`);
+    const diffTime = current.getTime() - start.getTime();
+    const daysElapsed = diffTime < 0 ? 0 : Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    if (!hasTodayNovel || !hasTodayColumn) {
-      if (existingContents.length > 0) {
-        isGeneratingRef.current = true;
-        setGenerating(true);
-        try {
-          await postDailyContent(today, hasTodayNovel, hasTodayColumn);
-        } catch (error) {
-          console.error("Failed to post daily content:", error);
-        } finally {
-          setGenerating(false);
-          isGeneratingRef.current = false;
-        }
+    // For novels, we have 15 chapters per series (series 7, 8, 9)
+    const targetNovelChapter = Math.min(15, daysElapsed + 1);
+    // For columns, we have 45 chapters (column 91 to 135)
+    const targetColumnChapter = Math.min(45, daysElapsed + 1);
+
+    const batchNew = [];
+
+    // Check for each chapter from 1 to targetNovelChapter
+    for (let ch = 1; ch <= targetNovelChapter; ch++) {
+      // Series 7 (Global Chapter 91, which is index 90 in PRE_CREATED_CONTENT.novels)
+      const hasSeries7Ch = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_7' && c.chapterNumber === ch);
+      if (!hasSeries7Ch && PRE_CREATED_CONTENT.novels.length >= (90 + ch)) {
+        const novelData = PRE_CREATED_CONTENT.novels[89 + ch];
+        const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
+        batchNew.push(addDoc(collection(db, "readContent"), {
+          title: displayTitle,
+          content: novelData.content,
+          snippet: novelData.snippet,
+          type: 'NOVEL',
+          chapterNumber: ch,
+          seriesId: 'series_story_7',
+          createdAt: new Date().toISOString()
+        }));
+      }
+
+      // Series 8 (Global Chapter 106, which is index 105 in PRE_CREATED_CONTENT.novels)
+      const hasSeries8Ch = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_8' && c.chapterNumber === ch);
+      if (!hasSeries8Ch && PRE_CREATED_CONTENT.novels.length >= (105 + ch)) {
+        const novelData = PRE_CREATED_CONTENT.novels[104 + ch];
+        const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
+        batchNew.push(addDoc(collection(db, "readContent"), {
+          title: displayTitle,
+          content: novelData.content,
+          snippet: novelData.snippet,
+          type: 'NOVEL',
+          chapterNumber: ch,
+          seriesId: 'series_story_8',
+          createdAt: new Date().toISOString()
+        }));
+      }
+
+      // Series 9 (Global Chapter 121, which is index 120 in PRE_CREATED_CONTENT.novels)
+      const hasSeries9Ch = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_9' && c.chapterNumber === ch);
+      if (!hasSeries9Ch && PRE_CREATED_CONTENT.novels.length >= (120 + ch)) {
+        const novelData = PRE_CREATED_CONTENT.novels[119 + ch];
+        const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
+        batchNew.push(addDoc(collection(db, "readContent"), {
+          title: displayTitle,
+          content: novelData.content,
+          snippet: novelData.snippet,
+          type: 'NOVEL',
+          chapterNumber: ch,
+          seriesId: 'series_story_9',
+          createdAt: new Date().toISOString()
+        }));
+      }
+    }
+
+    for (let col = 1; col <= targetColumnChapter; col++) {
+      const colNum = 90 + col;
+      const hasCol = existingContents.some(c => c.type === 'COLUMN' && c.columnNumber === colNum);
+      if (!hasCol && PRE_CREATED_CONTENT.columns.length >= colNum) {
+        const colData = PRE_CREATED_CONTENT.columns[colNum - 1];
+        batchNew.push(addDoc(collection(db, "readContent"), {
+          title: colData.title,
+          content: colData.content,
+          snippet: colData.snippet,
+          type: 'COLUMN',
+          columnNumber: colNum,
+          createdAt: new Date().toISOString()
+        }));
+      }
+    }
+
+    if (batchNew.length > 0) {
+      isGeneratingRef.current = true;
+      setGenerating(true);
+      try {
+        await Promise.all(batchNew);
+      } catch (error) {
+        console.error("Failed to post new series chapters or columns:", error);
+      } finally {
+        setGenerating(false);
+        isGeneratingRef.current = false;
       }
       return;
+    }
+
+    // Main series daily posting logic
+    const stateDoc = await getDoc(doc(db, "readSeriesState", "current_novel"));
+    if (stateDoc.exists()) {
+      const state = stateDoc.data() as ReadSeriesState;
+      let mainSeriesId = state.currentSeriesId;
+      if (state.currentChapter > 30) {
+        const storyIndex = Math.floor((state.currentChapter - 31) / 15);
+        const storyNumber = storyIndex + 3;
+        mainSeriesId = `series_story_${storyNumber}`;
+      }
+
+      const hasTodayNovel = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === mainSeriesId && c.createdAt.startsWith(today));
+      const hasTodayColumn = existingContents.some(c => c.type === 'COLUMN' && c.columnNumber === state.currentChapter && c.createdAt.startsWith(today));
+      
+      if (!hasTodayNovel || !hasTodayColumn) {
+        if (existingContents.length > 0) {
+          isGeneratingRef.current = true;
+          setGenerating(true);
+          try {
+            await postDailyContent(today, hasTodayNovel, hasTodayColumn);
+          } catch (error) {
+            console.error("Failed to post daily content:", error);
+          } finally {
+            setGenerating(false);
+            isGeneratingRef.current = false;
+          }
+        }
+        return;
+      }
     }
   };
 
