@@ -17,6 +17,8 @@ interface ReadTabProps {
 
 import { ReadSkeleton } from './Skeleton';
 
+let globalIsGeneratingNewAdditions = false;
+
 export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth, tabResetToggle }) => {
   const t = translations[language];
   const [contents, setContents] = useState<ReadContent[]>([]);
@@ -157,99 +159,136 @@ export const ReadTab: React.FC<ReadTabProps> = ({ profile, language, onShowAuth,
       return;
     }
 
-    // New additions posting logic starting today (2026-06-28)
-    const startDateStr = '2026-06-28';
+    // New additions posting logic starting from 2026-06-29
+    const startDateStr = '2026-06-29';
     const start = new Date(`${startDateStr}T00:00:00`);
     const current = new Date(`${today}T00:00:00`);
     const diffTime = current.getTime() - start.getTime();
     const daysElapsed = diffTime < 0 ? 0 : Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // For novels, we have 15 chapters per series (series 7, 8, 9)
-    const targetNovelChapter = Math.min(15, daysElapsed + 1);
+    // There are 45 total new chapters across Series 7, 8, 9 (15 chapters each)
+    const maxChaptersToPost = Math.min(45, daysElapsed + 1);
     // For columns, we have 45 chapters (column 91 to 135)
     const targetColumnChapter = Math.min(45, daysElapsed + 1);
 
-    const batchNew = [];
-
-    // Check for each chapter from 1 to targetNovelChapter
-    for (let ch = 1; ch <= targetNovelChapter; ch++) {
-      // Series 7 (Global Chapter 91, which is index 90 in PRE_CREATED_CONTENT.novels)
-      const hasSeries7Ch = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_7' && c.chapterNumber === ch);
-      if (!hasSeries7Ch && PRE_CREATED_CONTENT.novels.length >= (90 + ch)) {
-        const novelData = PRE_CREATED_CONTENT.novels[89 + ch];
-        const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
-        batchNew.push(addDoc(collection(db, "readContent"), {
-          title: displayTitle,
-          content: novelData.content,
-          snippet: novelData.snippet,
-          type: 'NOVEL',
-          chapterNumber: ch,
-          seriesId: 'series_story_7',
-          createdAt: new Date().toISOString()
-        }));
+    // Auto-clean any ahead-of-schedule chapters/columns in the database
+    const aheadOfScheduleIds: string[] = [];
+    existingContents.forEach(item => {
+      if (item.type === 'NOVEL' && ['series_story_7', 'series_story_8', 'series_story_9'].includes(item.seriesId)) {
+        let seqIndex = 0;
+        if (item.seriesId === 'series_story_7') {
+          seqIndex = item.chapterNumber;
+        } else if (item.seriesId === 'series_story_8') {
+          seqIndex = 15 + item.chapterNumber;
+        } else if (item.seriesId === 'series_story_9') {
+          seqIndex = 30 + item.chapterNumber;
+        }
+        if (seqIndex > maxChaptersToPost) {
+          aheadOfScheduleIds.push(item.id);
+        }
+      } else if (item.type === 'COLUMN' && item.columnNumber && item.columnNumber >= 91) {
+        if (item.columnNumber - 90 > targetColumnChapter) {
+          aheadOfScheduleIds.push(item.id);
+        }
       }
+    });
 
-      // Series 8 (Global Chapter 106, which is index 105 in PRE_CREATED_CONTENT.novels)
-      const hasSeries8Ch = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_8' && c.chapterNumber === ch);
-      if (!hasSeries8Ch && PRE_CREATED_CONTENT.novels.length >= (105 + ch)) {
-        const novelData = PRE_CREATED_CONTENT.novels[104 + ch];
-        const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
-        batchNew.push(addDoc(collection(db, "readContent"), {
-          title: displayTitle,
-          content: novelData.content,
-          snippet: novelData.snippet,
-          type: 'NOVEL',
-          chapterNumber: ch,
-          seriesId: 'series_story_8',
-          createdAt: new Date().toISOString()
-        }));
-      }
-
-      // Series 9 (Global Chapter 121, which is index 120 in PRE_CREATED_CONTENT.novels)
-      const hasSeries9Ch = existingContents.some(c => c.type === 'NOVEL' && c.seriesId === 'series_story_9' && c.chapterNumber === ch);
-      if (!hasSeries9Ch && PRE_CREATED_CONTENT.novels.length >= (120 + ch)) {
-        const novelData = PRE_CREATED_CONTENT.novels[119 + ch];
-        const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
-        batchNew.push(addDoc(collection(db, "readContent"), {
-          title: displayTitle,
-          content: novelData.content,
-          snippet: novelData.snippet,
-          type: 'NOVEL',
-          chapterNumber: ch,
-          seriesId: 'series_story_9',
-          createdAt: new Date().toISOString()
-        }));
-      }
+    if (aheadOfScheduleIds.length > 0) {
+      Promise.all(aheadOfScheduleIds.map(id => deleteDoc(doc(db, "readContent", id)))).catch(err => {
+        console.error("Failed to delete ahead-of-schedule contents:", err);
+      });
     }
 
-    for (let col = 1; col <= targetColumnChapter; col++) {
-      const colNum = 90 + col;
-      const hasCol = existingContents.some(c => c.type === 'COLUMN' && c.columnNumber === colNum);
-      if (!hasCol && PRE_CREATED_CONTENT.columns.length >= colNum) {
-        const colData = PRE_CREATED_CONTENT.columns[colNum - 1];
-        batchNew.push(addDoc(collection(db, "readContent"), {
-          title: colData.title,
-          content: colData.content,
-          snippet: colData.snippet,
-          type: 'COLUMN',
-          columnNumber: colNum,
-          createdAt: new Date().toISOString()
-        }));
-      }
-    }
+    // Filter existing content for generation checks so ahead-of-schedule items don't block correct generation
+    const filteredContents = existingContents.filter(item => !aheadOfScheduleIds.includes(item.id));
 
-    if (batchNew.length > 0) {
-      isGeneratingRef.current = true;
-      setGenerating(true);
-      try {
-        await Promise.all(batchNew);
-      } catch (error) {
-        console.error("Failed to post new series chapters or columns:", error);
-      } finally {
-        setGenerating(false);
-        isGeneratingRef.current = false;
+    // Retrieve state document to see if already run today
+    const additionsStateDoc = await getDoc(doc(db, "readSeriesState", "new_additions"));
+    const additionsState = additionsStateDoc.exists() ? additionsStateDoc.data() : { lastGeneratedDate: "" };
+
+    if (additionsState.lastGeneratedDate !== today && !globalIsGeneratingNewAdditions) {
+      const batchNew = [];
+      const baseTime = new Date();
+
+      // Check for each chapter from 1 to maxChaptersToPost in the global sequence
+      for (let i = 1; i <= maxChaptersToPost; i++) {
+        let seriesId = '';
+        let ch = 1;
+        if (i <= 15) {
+          seriesId = 'series_story_7';
+          ch = i;
+        } else if (i <= 30) {
+          seriesId = 'series_story_8';
+          ch = i - 15;
+        } else {
+          seriesId = 'series_story_9';
+          ch = i - 30;
+        }
+
+        const hasNovelCh = filteredContents.some(c => c.type === 'NOVEL' && c.seriesId === seriesId && c.chapterNumber === ch);
+        if (!hasNovelCh && PRE_CREATED_CONTENT.novels.length >= (90 + i)) {
+          const novelData = PRE_CREATED_CONTENT.novels[89 + i];
+          const displayTitle = novelData.title.replace(/^Chapter \d+: /, `Chapter ${ch}: `);
+          
+          // Offset createdAt by i minutes to ensure correct chronological ordering
+          const itemTime = new Date(baseTime.getTime() - (45 - i) * 60 * 1000);
+
+          batchNew.push(addDoc(collection(db, "readContent"), {
+            title: displayTitle,
+            content: novelData.content,
+            snippet: novelData.snippet,
+            type: 'NOVEL',
+            chapterNumber: ch,
+            seriesId: seriesId,
+            createdAt: itemTime.toISOString()
+          }));
+        }
       }
-      return;
+
+      for (let col = 1; col <= targetColumnChapter; col++) {
+        const colNum = 90 + col;
+        const hasCol = filteredContents.some(c => c.type === 'COLUMN' && c.columnNumber === colNum);
+        if (!hasCol && PRE_CREATED_CONTENT.columns.length >= colNum) {
+          const colData = PRE_CREATED_CONTENT.columns[colNum - 1];
+          
+          // Offset createdAt by col minutes to ensure correct chronological ordering
+          const itemTime = new Date(baseTime.getTime() - (45 - col) * 60 * 1000);
+
+          batchNew.push(addDoc(collection(db, "readContent"), {
+            title: colData.title,
+            content: colData.content,
+            snippet: colData.snippet,
+            type: 'COLUMN',
+            columnNumber: colNum,
+            createdAt: itemTime.toISOString()
+          }));
+        }
+      }
+
+      if (batchNew.length > 0) {
+        globalIsGeneratingNewAdditions = true;
+        isGeneratingRef.current = true;
+        setGenerating(true);
+        try {
+          await Promise.all([
+            ...batchNew,
+            setDoc(doc(db, "readSeriesState", "new_additions"), { lastGeneratedDate: today })
+          ]);
+        } catch (error) {
+          console.error("Failed to post new series chapters or columns:", error);
+        } finally {
+          setGenerating(false);
+          isGeneratingRef.current = false;
+          globalIsGeneratingNewAdditions = false;
+        }
+        return;
+      } else {
+        try {
+          await setDoc(doc(db, "readSeriesState", "new_additions"), { lastGeneratedDate: today });
+        } catch (error) {
+          console.error("Failed to update new_additions state:", error);
+        }
+      }
     }
 
     // Main series daily posting logic
