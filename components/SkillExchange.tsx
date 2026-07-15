@@ -85,6 +85,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
   const [showFilters, setShowFilters] = useState(false);
   
   const [viewingSkill, setViewingSkill] = useState<Skill | null>(null);
+  const [acceptingSkill, setAcceptingSkill] = useState<Skill | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const galleryRef = useRef<HTMLDivElement>(null);
 
@@ -348,7 +349,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
             <div className="space-y-4 p-5 bg-indigo-50/50 rounded-[32px] border-2 border-indigo-100 mb-4">
               <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest text-center">{t.inquiryReceived} {viewingSkill.requesterNickname}</p>
               <div className="flex gap-3">
-                <button onClick={() => onStatusChange(viewingSkill.id, 'RESERVED')} className="flex-1 py-5 bg-indigo-500 text-white rounded-[28px] font-black uppercase text-[14px] tracking-widest shadow-xl active:scale-95 border-4 border-white transition-all">{t.confirm}</button>
+                <button onClick={() => setAcceptingSkill(viewingSkill)} className="flex-1 py-5 bg-indigo-500 text-white rounded-[28px] font-black uppercase text-[14px] tracking-widest shadow-xl active:scale-95 border-4 border-white transition-all">{t.confirm}</button>
                 <button onClick={() => onStatusChange(viewingSkill.id, 'AVAILABLE', undefined, 'declined')} className="flex-1 py-5 bg-white text-gray-400 rounded-[28px] font-black uppercase text-[14px] tracking-widest border-2 border-gray-100 active:scale-95 transition-all">{t.cancel}</button>
               </div>
             </div>
@@ -364,6 +365,10 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
               <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight">{viewingSkill.title}</h1>
               <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
                 {SKILL_ICONS[viewingSkill.category]} {viewingSkill.category}
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-black uppercase tracking-widest mt-1">
+                <Clock size={12} />
+                <span>{format(new Date(viewingSkill.createdAt), 'yyyy/MM/dd HH:mm')}</span>
               </div>
             </div>
 
@@ -426,7 +431,7 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                   </div>
                   <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-indigo-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                     <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-indigo-50 text-right' : 'text-indigo-500'}`}>
-                      {c.userNickname} • {format(new Date(c.createdAt), 'HH:mm')}
+                      {c.userNickname} • {format(new Date(c.createdAt), 'yyyy/MM/dd HH:mm')}
                     </div>
                     <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
                   </div>
@@ -478,6 +483,66 @@ export const SkillExchange: React.FC<Props> = ({ skills, profile, initialActiveS
                 <div className="flex gap-4 pt-6">
                   <button onClick={() => setConfirmRequestSkill(null)} className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase text-[11px] tracking-widest">{t.back}</button>
                   <button onClick={handleConfirmRequest} className="flex-1 py-5 bg-indigo-400 text-white rounded-3xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all">{t.send}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {acceptingSkill && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-[44px] p-10 w-full max-w-sm shadow-2xl animate-fade-in border-4 border-indigo-400">
+              <div className="text-center space-y-5">
+                <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-500 mx-auto border-4 border-white shadow-lg"><CheckCircle size={40} /></div>
+                <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">
+                  {language === 'ja' ? 'リクエストを承認' : 'Accept Request'}
+                </h3>
+                <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest px-2">
+                  {language === 'ja'
+                    ? 'リクエストを承認します。この投稿の募集を継続しますか、それとも予約中にして締め切りますか？'
+                    : 'Accept this request? Would you like to keep recruiting for this post, or set it to Reserved?'}
+                </p>
+                <div className="flex flex-col gap-3 pt-4">
+                  <button 
+                    onClick={() => {
+                      onStatusChange(acceptingSkill.id, 'AVAILABLE', undefined, undefined, {
+                        requesterId: '',
+                        requesterNickname: '',
+                        requesterAvatarIcon: '',
+                        requestStatus: 'NONE'
+                      });
+                      setAcceptingSkill(null);
+                    }} 
+                    className="w-full py-4 bg-teal-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all animate-fade-in"
+                  >
+                    {language === 'ja' ? '承認して、募集を継続する（受付中）' : 'Approve & Keep Recruiting (Available)'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      onStatusChange(acceptingSkill.id, 'RESERVED');
+                      setAcceptingSkill(null);
+                    }} 
+                    className="w-full py-4 bg-indigo-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all animate-fade-in"
+                  >
+                    {language === 'ja' ? '承認して、募集を終了する（予約中）' : 'Approve & Close Recruiting (Reserved)'}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      onDelete(acceptingSkill.id);
+                      setAcceptingSkill(null);
+                      setViewingSkill(null);
+                      if (onChatClose) onChatClose();
+                    }} 
+                    className="w-full py-4 bg-red-500 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl active:scale-95 transition-all animate-fade-in"
+                  >
+                    {language === 'ja' ? '投稿を削除する' : 'Delete Post'}
+                  </button>
+                  <button 
+                    onClick={() => setAcceptingSkill(null)} 
+                    className="w-full py-3 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase text-[11px] tracking-widest border border-gray-100"
+                  >
+                    {t.back}
+                  </button>
                 </div>
               </div>
             </div>

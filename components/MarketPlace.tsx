@@ -498,6 +498,10 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                 <span className="bg-gray-50 text-gray-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-gray-100">{viewingItem.type}</span>
               </div>
               <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight break-words line-clamp-3">{viewingItem.title}</h1>
+              <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-black uppercase tracking-widest mt-1">
+                <Clock size={12} />
+                <span>{format(new Date(viewingItem.createdAt), 'yyyy/MM/dd HH:mm')}</span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between bg-teal-50/50 p-4 rounded-[28px] border border-teal-100/50 gap-2">
@@ -619,7 +623,7 @@ export const MarketPlace: React.FC<Props> = ({ items, profile, language = 'en', 
                     </div>
                     <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-teal-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                       <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-teal-50 text-right' : 'text-teal-500'}`}>
-                        {isItemSeller ? t.sell : t.all} • {format(new Date(c.createdAt), 'HH:mm')}
+                        {isItemSeller ? t.sell : t.all} • {format(new Date(c.createdAt), 'yyyy/MM/dd HH:mm')}
                       </div>
                       <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
                     </div>

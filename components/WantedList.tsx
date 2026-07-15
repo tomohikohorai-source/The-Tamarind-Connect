@@ -224,6 +224,10 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
                 <span className="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">{t.lookingFor}</span>
               </div>
               <h1 className="text-2xl font-black text-gray-800 uppercase tracking-tighter leading-tight">{viewingItem.title}</h1>
+              <div className="flex items-center gap-1.5 text-gray-400 text-[9px] font-black uppercase tracking-widest mt-1">
+                <Clock size={12} />
+                <span>{format(new Date(viewingItem.createdAt), 'yyyy/MM/dd HH:mm')}</span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between bg-amber-50/50 p-4 rounded-[28px] border border-amber-100/50">
@@ -296,7 +300,7 @@ export const WantedList: React.FC<Props> = ({ items, profile, language = 'en', l
                     </div>
                     <div className={`p-4 rounded-[24px] text-[13px] shadow-sm max-w-[80%] ${isMe ? 'bg-amber-500 text-white' : 'bg-white text-gray-700 border border-gray-100'}`}>
                       <div className={`text-[8px] font-black uppercase mb-1 opacity-80 ${isMe ? 'text-amber-50 text-right' : 'text-amber-500'}`}>
-                        {isItemOwner ? t.owner : t.neighbor} • {format(new Date(c.createdAt), 'HH:mm')}
+                        {isItemOwner ? t.owner : t.neighbor} • {format(new Date(c.createdAt), 'yyyy/MM/dd HH:mm')}
                       </div>
                       <div className="font-bold leading-relaxed whitespace-pre-wrap">{c.text}</div>
                     </div>
